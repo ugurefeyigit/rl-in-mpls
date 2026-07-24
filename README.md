@@ -123,6 +123,22 @@ a longer-but-better detour region, a redundancy ring, and a 2 Gbps backbone
 link (P2–P5) whose failure forces mass rerouting. Details:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+## Configuration guide
+
+Everything tunable lives in `configs/` as commented YAML; no source edits needed:
+
+| File | What you change there |
+|---|---|
+| `topology.yaml` | Routers (id/role/position), links (capacity, delay, admin weight). Adding/removing links automatically reshapes candidate paths, observations and the UI |
+| `traffic_classes.yaml` | Class SLAs/priorities, diurnal profiles (hour, multiplier control points), the demand matrix (src/dst/class/base Mbps) |
+| `scenarios.yaml` | Scenario windows, demand multipliers, scripted events (`link_down`, `link_up`, `burst`, `flash_crowd`, `multiplier`), randomization ranges for training |
+| `reward.yaml` | All reward weights and normalization params — the formula is documented in the file header |
+| `training.yaml` | PPO hyperparameters, timesteps, seeds, control-interval/k-paths/cooldown (`env:` block feeds both training and the live server) |
+| `baselines.yaml` | Greedy trigger/margin/cooldown, CSPF period/headroom/hysteresis |
+
+Changing `env:` values (e.g. `k_paths`) changes the observation/action shapes —
+retrain before loading a model trained under different shapes.
+
 ## Honest limitations (read before presenting)
 
 - **Flow-level abstraction** — no packets, no TCP dynamics; delay/loss are

@@ -195,7 +195,27 @@ Shown because the brief demands them, and because they are true:
 
 ## 10. Reward ablations
 
-<!-- ABLATIONS -->
+Two variants were retrained with individual reward terms zeroed
+(`scripts/train.py --zero-weight …`, 80k steps each — shorter than the main
+400k run, so compare direction, not magnitude; scored below under the FULL
+standard reward, 3 seeds, results/abl_*_stats.csv):
+
+| Policy (training reward) | full_day reward | full_day SLA viol. | evening_peak reward | mean max-util (full_day) |
+|---|---:|---:|---:|---:|
+| main `ppo_te` (400k, full reward) | **153.8** | **201** | −34.5 | **0.80** |
+| `ablate_stability` (no reroute/flap penalties, 80k) | 117.3 | 219 | **−31.9** | 0.85 |
+| `ablate_congestion` (no loss/overload/max-util penalties, 80k) | −18.4 | 607 | −145.0 | 0.94 |
+
+- **Removing the congestion terms is catastrophic**: SLA violations triple
+  on full_day and the evening peak collapses (−145 vs −34.5) — the policy
+  happily parks demands on hot links because only delivered-ratio and SLA
+  terms push back, too weakly. Reward design demonstrably matters.
+- **Removing the stability terms** degrades full_day moderately (117 vs 154
+  under the standard reward, which charges it for the flaps it never
+  learned to avoid) and matches on evening_peak. Notably the *main* policy
+  already reroutes nearly every interval — evidence that at 0.08 the
+  reroute penalty is barely load-bearing and would need to be several times
+  larger to purchase operational stability (ties into failure case #3).
 
 ## 11. Statistical caveats
 
@@ -238,6 +258,39 @@ telemetry) is the dominant risk; nothing in this repository closes it.
 - **Advisory / shadow** (conceptual here): the decision panel already shows
   the full recommendation payload an operator would approve; wiring an
   approve/reject gate is future work.
+
+## Acceptance checklist
+
+The 28 criteria from the project brief, verified:
+
+1. ✅ Runs without editing source (`scripts/demo.py`, configs in YAML)
+2. ✅ Topology visible (Cytoscape view)
+3. ✅ Traffic changes over time (diurnal + noise + events; test `test_traffic_differs_across_seeds_and_time`)
+4. ✅ Link utilization responds to traffic (test `test_flow_conservation_on_links`)
+5. ✅ Routing choices affect metrics (test `test_actions_change_outcomes_vs_noop`)
+6. ✅ Baselines run (static/greedy/cspf/random, evaluated)
+7. ✅ Genuine RL agent trains (MaskablePPO, curve −173→+161)
+8. ✅ Model save/load (checkpoints, best_model, `/api/agent/load` via model_tag on session start)
+9. ✅ Actions from live observations (`AlgoRunner._step_rl` — predict on current obs)
+10. ✅ Not timestamp-predetermined (policy input = telemetry; traffic exogenous but decisions computed)
+11. ✅ Frontend shows selected actions (decision tape + agent panel)
+12. ✅ Old and new paths shown (decision panel, LSP highlighting)
+13. ✅ Reward components visible (agent panel bars, TensorBoard)
+14. ✅ RL vs baseline on identical scenarios (compare mode, paired eval)
+15. ✅ Link failures injectable (UI + API + scripted)
+16. ✅ Traffic bursts injectable (UI + API + scripted)
+17. ✅ Results exportable (CSV/JSON endpoints + results/)
+18. ✅ Multi-seed evaluation (5 seeds, CIs)
+19. ✅ Setup instructions work (README quick start; pip freeze in requirements.txt)
+20. ✅ README states limitations honestly
+21. ✅ No fake charts/static metrics (all UI data from engine snapshots over WS)
+22. ✅ Locally demonstrable (Windows laptop, CPU only)
+23. ✅ Critical logic tested (32 pytest cases)
+24. ✅ Fixed-seed demonstration (`demo.py`, seed 42, disclosed)
+25. ✅ Meaningful learned policy shown (deceptive_local_optimum: SLA 4 vs 20)
+26. ✅ Limitation/failure case shown (five, §9)
+27. ✅ Fuzzie.API decision justified (ADR-001)
+28. ✅ Internally coherent (single Python service, one config source of truth)
 
 ## 15. Future work
 
