@@ -42,9 +42,14 @@ class ScenarioSpec:
     events: list[dict[str, Any]]
     randomize: dict[str, Any] | None = None
 
-    def materialize(self, rng: np.random.Generator) -> "ScenarioSpec":
+    def materialize(self, rng: np.random.Generator, demand_ids: list[str],
+                    egress_ids: list[str]) -> "ScenarioSpec":
         """Return a concrete copy: if this spec has a `randomize` block, draw
-        the actual bursts/failures from ``rng`` (used by random_day training)."""
+        the actual bursts/failures from ``rng`` (used by random_day training).
+
+        Demand and egress candidates come from the loaded configuration —
+        nothing about the demand count or PE naming is assumed here.
+        """
         if not self.randomize:
             return self
         spec = copy.deepcopy(self)
@@ -56,7 +61,7 @@ class ScenarioSpec:
             events.append({
                 "t_min": int(rng.integers(30, self.duration_min - 60)),
                 "type": "burst",
-                "demands": [f"D{int(rng.integers(1, 18))}"],
+                "demands": [demand_ids[int(rng.integers(0, len(demand_ids)))]],
                 "factor": float(rng.uniform(*r["burst_factor"])),
                 "duration_min": int(rng.uniform(*r["burst_duration_min"])),
             })
@@ -70,7 +75,7 @@ class ScenarioSpec:
             events.append({
                 "t_min": int(rng.integers(60, self.duration_min - 120)),
                 "type": "flash_crowd",
-                "dst": str(rng.choice(["PE5", "PE6", "PE7", "PE8"])),
+                "dst": str(rng.choice(egress_ids)),
                 "factor": float(rng.uniform(*r["flash_crowd_factor"])),
                 "duration_min": int(rng.integers(45, 100)),
             })
@@ -143,7 +148,10 @@ class TrafficModel:
 
     def __post_init__(self) -> None:
         self._rng = np.random.default_rng(self.seed)
-        self.scenario = self.scenario.materialize(np.random.default_rng(self.seed + 7919))
+        demand_ids = [d.id for d in self.config.demands]
+        egress_ids = sorted({d.dst for d in self.config.demands})
+        self.scenario = self.scenario.materialize(
+            np.random.default_rng(self.seed + 7919), demand_ids, egress_ids)
         self._noise = np.zeros(len(self.config.demands))
 
     def advance_noise(self) -> None:

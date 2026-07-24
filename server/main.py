@@ -1,9 +1,13 @@
-"""FastAPI backend: simulation control, telemetry streaming, training control.
+"""FastAPI backend: simulation control, telemetry streaming, advisor mode,
+training control, presentation support.
 
 Run:  python -m uvicorn server.main:app --port 8000
 Docs: http://127.0.0.1:8000/docs        (OpenAPI, always current)
-UI:   http://127.0.0.1:8000/            (dashboard, served statically)
+UI:   http://127.0.0.1:8000/            (Advanced engineering console)
+      http://127.0.0.1:8000/present     (Presentation Mode)
 WS:   ws://127.0.0.1:8000/ws/telemetry  (tick stream, JSON)
+
+Set ALLOW_TRAINING=false (the demo default) to disable the training endpoint.
 """
 
 from __future__ import annotations
@@ -12,31 +16,65 @@ import asyncio
 import csv
 import io
 import json
+import logging
+import os
 import subprocess
 import sys
 from collections import deque
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from mplssim.display import display_bundle, scenario_label
 from mplssim.factory import get_scenarios, get_topology, get_traffic_config
-from mplssim.experiments.runner import summarize_records
+from mplssim.validation import ConfigError, validate_configs
 from server import db
-from server.session import SimSession, list_checkpoints
+from server.events import log_event, recent_events
+from server.session import (
+    SessionConfig, SessionError, SessionState, SimSession, list_checkpoints,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
-app = FastAPI(
-    title="RL-in-MPLS Traffic Engineering API",
-    version="1.0.0",
-    description="Flow-level MPLS-TE simulation with RL and heuristic controllers.",
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
 )
 
 STATE: dict[str, Any] = {"session": None, "training": None}
+
+
+def training_allowed() -> bool:
+    return os.environ.get("ALLOW_TRAINING", "true").strip().lower() not in (
+        "false", "0", "no", "off")
+
+
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    try:
+        validate_configs()
+        log_event("startup", training_allowed=training_allowed())
+    except ConfigError as e:
+        # Fail loudly in the log; endpoints will re-raise on use.
+        logging.getLogger("mplssim.server").error("CONFIG INVALID: %s", e)
+    yield
+
+
+app = FastAPI(
+    title="RL-in-MPLS Traffic Engineering API",
+    version="1.1.0",
+    description="Flow-level MPLS-TE simulation with RL and heuristic controllers.",
+    lifespan=lifespan,
+)
 
 
 # ------------------------------------------------------------------ schemas
@@ -48,6 +86,8 @@ class StartRequest(BaseModel):
     safety_filter: bool = True
     speed: str = "1x"
     autostart: bool = True
+    advisor: bool = False
+    interface_mode: str = "advanced"
 
 
 class SpeedRequest(BaseModel):
@@ -68,10 +108,17 @@ class MultiplierRequest(BaseModel):
     factor: float = 1.0
 
 
+class RunUntilRequest(BaseModel):
+    condition: str = "next_event"   # next_event | congestion | end
+    max_steps: int = 300
+    util_threshold: float = 0.9
+
+
 class TrainRequest(BaseModel):
     timesteps: int = 100000
     tag: str = "ppo_custom"
     seed: int = 42
+    confirm: bool = False
 
 
 def current_session() -> SimSession:
@@ -79,6 +126,16 @@ def current_session() -> SimSession:
     if s is None:
         raise HTTPException(404, "no active session — POST /api/simulation/start first")
     return s
+
+
+def _handle(coro):
+    """Await a session coroutine, mapping SessionError to HTTP 409."""
+    async def run():
+        try:
+            return await coro
+        except SessionError as e:
+            raise HTTPException(409, str(e)) from e
+    return run()
 
 
 # ------------------------------------------------------------- static info
@@ -91,12 +148,17 @@ def topology() -> dict:
     }
 
 
+@app.get("/api/display")
+def display() -> dict:
+    return display_bundle(get_topology())
+
+
 @app.get("/api/scenarios")
 def scenarios() -> dict:
     return {
-        name: {"description": s.description, "start_hour": s.start_hour,
-               "duration_min": s.duration_min, "events": s.events,
-               "randomized": s.randomize is not None}
+        name: {"description": s.description, "display_name": scenario_label(name),
+               "start_hour": s.start_hour, "duration_min": s.duration_min,
+               "events": s.events, "randomized": s.randomize is not None}
         for name, s in get_scenarios().items()
     }
 
@@ -118,79 +180,107 @@ def checkpoints() -> list[dict]:
     return list_checkpoints()
 
 
+@app.get("/api/events")
+def events(limit: int = 100) -> list[dict]:
+    return recent_events(limit)
+
+
+# ---------------------------------------------------------------- benchmark
+@app.get("/api/benchmark")
+def benchmark() -> dict:
+    """Published V1 multi-seed evaluation, read from the committed CSV —
+    never hardcoded. Marks the winner per scenario by mean reward."""
+    path = ROOT / "results" / "eval_stats.csv"
+    if not path.exists():
+        raise HTTPException(404, "results/eval_stats.csv not found")
+    df = pd.read_csv(path)
+    out: dict[str, Any] = {"source": "results/eval_stats.csv (Version 1, 5 seeds, paired)",
+                           "scenarios": {}}
+    for scen, g in df.groupby("scenario"):
+        rows = {}
+        for _, r in g.iterrows():
+            rows[r["algorithm"]] = {
+                "reward_mean": round(float(r["reward_sum_mean"]), 1),
+                "reward_ci95": round(float(r["reward_sum_ci95"]), 1),
+                "max_util_mean": round(float(r["max_util_mean_mean"]), 3),
+                "sla_violations_mean": round(float(r["sla_violations_total_mean"]), 1),
+                "reroutes_mean": round(float(r["reroutes_total_mean"]), 1),
+                "n_seeds": int(r["n_seeds"]),
+            }
+        winner = max(rows, key=lambda a: rows[a]["reward_mean"])
+        out["scenarios"][scen] = {
+            "display_name": scenario_label(scen),
+            "algorithms": rows,
+            "winner": winner,
+        }
+    return out
+
+
 # ------------------------------------------------------ simulation control
 @app.post("/api/simulation/start")
 async def sim_start(req: StartRequest) -> dict:
     old: SimSession | None = STATE["session"]
     if old is not None:
-        old.pause()
+        await old.pause()
     if req.scenario not in get_scenarios():
         raise HTTPException(400, f"unknown scenario {req.scenario}")
+    for a in req.algorithms:
+        if a not in ("rl", "static", "greedy", "cspf", "random"):
+            raise HTTPException(400, f"unknown algorithm {a}")
     try:
-        session = SimSession(
-            scenario=req.scenario, algorithms=req.algorithms, seed=req.seed,
-            model_tag=req.model_tag, safety_filter=req.safety_filter, speed=req.speed,
-        )
-    except FileNotFoundError as e:
+        session = SimSession(SessionConfig(
+            scenario=req.scenario, algorithms=tuple(req.algorithms),
+            seed=req.seed, model_tag=req.model_tag,
+            safety_filter=req.safety_filter, speed=req.speed,
+            interface_mode=req.interface_mode, advisor=req.advisor,
+        ))
+    except (FileNotFoundError, ConfigError, ValueError) as e:
         raise HTTPException(400, str(e)) from e
     STATE["session"] = session
     session.subscribers.append(WS_HUB.send)
-    if req.autostart:
-        session.start()
+    if req.autostart and not req.advisor:
+        await session.resume()
     return session.status()
 
 
 @app.post("/api/simulation/pause")
-def sim_pause() -> dict:
-    s = current_session()
-    s.pause()
-    return s.status()
+async def sim_pause() -> dict:
+    return await _handle(current_session().pause())
 
 
 @app.post("/api/simulation/resume")
-def sim_resume() -> dict:
-    s = current_session()
-    s.start()
-    return s.status()
+async def sim_resume() -> dict:
+    return await _handle(current_session().resume())
 
 
 @app.post("/api/simulation/step")
 async def sim_step() -> dict:
-    s = current_session()
-    if s.running:
-        raise HTTPException(409, "pause the simulation before stepping manually")
-    if s.done:
-        raise HTTPException(409, "scenario finished — reset to run again")
-    payload = await asyncio.to_thread(s.step_once)
-    await s._broadcast(payload)
-    return payload
+    return await _handle(current_session().step_manual())
 
 
 @app.post("/api/simulation/reset")
 async def sim_reset() -> dict:
-    s = current_session()
-    s.pause()
-    session = SimSession(scenario=s.scenario, algorithms=s.algorithms, seed=s.seed,
-                         speed=s.speed)
-    STATE["session"] = session
-    session.subscribers.append(WS_HUB.send)
-    return session.status()
+    return await _handle(current_session().reset())
+
+
+@app.post("/api/simulation/run-until")
+async def sim_run_until(req: RunUntilRequest) -> dict:
+    return await _handle(current_session().run_until(
+        req.condition, req.max_steps, req.util_threshold))
 
 
 @app.post("/api/simulation/speed")
-def sim_speed(req: SpeedRequest) -> dict:
-    s = current_session()
+async def sim_speed(req: SpeedRequest) -> dict:
     try:
-        s.set_speed(req.speed)
+        return await current_session().set_speed(req.speed)
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
-    return s.status()
 
 
 @app.get("/api/simulation/status")
 def sim_status() -> dict:
     s: SimSession | None = STATE["session"]
-    return s.status() if s else {"running": False, "session": None}
+    return s.status() if s else {"state": "idle", "running": False, "session": None}
 
 
 @app.get("/api/telemetry/current")
@@ -200,40 +290,51 @@ def telemetry_current() -> dict:
 
 # ----------------------------------------------------------- interventions
 @app.post("/api/failure/inject")
-def failure_inject(req: FailureRequest) -> dict:
-    s = current_session()
-    try:
-        s.inject_failure(req.link)
-    except KeyError as e:
-        raise HTTPException(400, str(e)) from e
-    return {"ok": True, "failed_links": s.runners[0].eng.snapshot()["failed_links"]}
+async def failure_inject(req: FailureRequest) -> dict:
+    if req.link not in get_topology().link_defs:
+        raise HTTPException(400, f"unknown link {req.link}")
+    return await _handle(current_session().inject_failure(req.link))
 
 
 @app.post("/api/failure/recover")
-def failure_recover(req: FailureRequest) -> dict:
-    s = current_session()
-    try:
-        s.recover_link(req.link)
-    except KeyError as e:
-        raise HTTPException(400, str(e)) from e
-    return {"ok": True, "failed_links": s.runners[0].eng.snapshot()["failed_links"]}
+async def failure_recover(req: FailureRequest) -> dict:
+    if req.link not in get_topology().link_defs:
+        raise HTTPException(400, f"unknown link {req.link}")
+    return await _handle(current_session().recover_link(req.link))
 
 
 @app.post("/api/traffic/burst")
-def traffic_burst(req: BurstRequest) -> dict:
+async def traffic_burst(req: BurstRequest) -> dict:
     s = current_session()
-    try:
-        s.inject_burst(req.demand, req.factor, req.duration_min)
-    except KeyError as e:
-        raise HTTPException(400, f"unknown demand {req.demand}") from e
-    return {"ok": True}
+    if req.demand not in s.runners[0].eng.demand_by_id:
+        raise HTTPException(400, f"unknown demand {req.demand}")
+    return await _handle(s.inject_burst(req.demand, req.factor, req.duration_min))
 
 
 @app.post("/api/traffic/multiplier")
-def traffic_multiplier(req: MultiplierRequest) -> dict:
-    s = current_session()
-    s.set_multiplier(req.factor)
-    return {"ok": True, "factor": req.factor}
+async def traffic_multiplier(req: MultiplierRequest) -> dict:
+    return await _handle(current_session().set_multiplier(req.factor))
+
+
+# ---------------------------------------------------------------- advisor
+@app.post("/api/advisor/propose")
+async def advisor_propose() -> dict:
+    return await _handle(current_session().advisor_propose())
+
+
+@app.post("/api/advisor/approve")
+async def advisor_approve() -> dict:
+    return await _handle(current_session().advisor_approve())
+
+
+@app.post("/api/advisor/reject")
+async def advisor_reject() -> dict:
+    return await _handle(current_session().advisor_reject())
+
+
+@app.get("/api/advisor/status")
+def advisor_status() -> dict:
+    return current_session().advisor_status()
 
 
 # ----------------------------------------------------------------- metrics
@@ -242,7 +343,12 @@ def metrics_history() -> dict:
     s = current_session()
     return {
         "runs": [
-            {"algorithm": r.algorithm, "history": r.eng.metrics_history}
+            {"algorithm": r.algorithm,
+             "history": [
+                 {**h["metrics"], "reward": h["reward"],
+                  "n_failed_links": h["n_failed_links"]}
+                 for h in r.history
+             ]}
             for r in s.runners
         ]
     }
@@ -279,18 +385,24 @@ def agent_status() -> dict:
 
 
 # ------------------------------------------------------------------ export
-@app.get("/api/export/results")
-def export_results(fmt: str = "csv") -> Response:
-    s = current_session()
+def _session_rows(s: SimSession) -> list[dict]:
     rows: list[dict] = []
     for r in s.runners:
-        for h in r.eng.metrics_history:
-            row = {k: v for k, v in h.items() if k != "failed_links"}
-            row["n_failed_links"] = len(h["failed_links"])
+        for h in r.history:
+            row = dict(h["metrics"])
+            row["n_failed_links"] = h["n_failed_links"]
+            row["reward"] = h["reward"]
+            row.update({f"rc_{k}": v for k, v in h["components"].items()})
             row["algorithm"] = r.algorithm
-            row["scenario"] = s.scenario
-            row["seed"] = s.seed
+            row["scenario"] = s.config.scenario
+            row["seed"] = s.config.seed
             rows.append(row)
+    return rows
+
+
+@app.get("/api/export/results")
+def export_results(fmt: str = "csv") -> Response:
+    rows = _session_rows(current_session())
     if not rows:
         raise HTTPException(409, "no metrics recorded yet")
     if fmt == "json":
@@ -306,23 +418,23 @@ def export_results(fmt: str = "csv") -> Response:
 
 @app.post("/api/export/save-run")
 def save_run() -> dict:
-    import pandas as pd
+    from mplssim.experiments.runner import summarize_records
     s = current_session()
     ids = []
     for r in s.runners:
-        hist = [
-            {**{k: v for k, v in h.items() if k != "failed_links"},
-             "n_failed_links": len(h["failed_links"]),
-             "reward": 0.0}
-            for h in r.eng.metrics_history
-        ]
-        if not hist:
+        if not r.history:
             continue
-        df = pd.DataFrame(hist)
-        df["reward"] = 0.0  # live sessions track reward on the decision stream
-        summary = summarize_records(df, r.algorithm, s.scenario, s.seed, engine=r.eng)
-        summary["cumulative_reward"] = r.cumulative_reward
-        ids.append(db.save_run("live", s.scenario, r.algorithm, s.seed, summary))
+        df = pd.DataFrame([
+            {**h["metrics"], "reward": h["reward"],
+             "n_failed_links": h["n_failed_links"]}
+            for h in r.history
+        ])
+        summary = summarize_records(df, r.algorithm, s.config.scenario,
+                                    s.config.seed, engine=r.eng)
+        summary["cumulative_reward"] = round(r.cumulative_reward, 4)
+        ids.append(db.save_run("live", s.config.scenario, r.algorithm,
+                               s.config.seed, summary))
+    log_event("run_saved", ids=ids, scenario=s.config.scenario)
     return {"saved_run_ids": ids}
 
 
@@ -334,6 +446,12 @@ def runs(limit: int = 50) -> list[dict]:
 # ---------------------------------------------------------------- training
 @app.post("/api/agent/train")
 def train_start(req: TrainRequest) -> dict:
+    if not training_allowed():
+        raise HTTPException(403, "Training is disabled during presentation mode "
+                                 "(ALLOW_TRAINING=false).")
+    if not req.confirm:
+        raise HTTPException(400, "training requires confirm=true (the UI shows "
+                                 "a confirmation dialog first)")
     job = STATE.get("training")
     if job and job["proc"].poll() is None:
         raise HTTPException(409, "a training job is already running")
@@ -353,6 +471,7 @@ def train_start(req: TrainRequest) -> dict:
     threading.Thread(target=_pump, daemon=True).start()
     STATE["training"] = {"proc": proc, "log": log, "tag": req.tag,
                          "timesteps": req.timesteps}
+    log_event("training_started", model_tag=req.tag, timesteps=req.timesteps)
     return {"started": True, "tag": req.tag, "timesteps": req.timesteps}
 
 
@@ -360,10 +479,11 @@ def train_start(req: TrainRequest) -> dict:
 def training_progress() -> dict:
     job = STATE.get("training")
     if not job:
-        return {"active": False, "log": []}
+        return {"active": False, "allowed": training_allowed(), "log": []}
     running = job["proc"].poll() is None
     return {
         "active": running,
+        "allowed": training_allowed(),
         "exit_code": None if running else job["proc"].returncode,
         "tag": job["tag"],
         "timesteps": job["timesteps"],
@@ -398,6 +518,7 @@ WS_HUB = WsHub()
 async def ws_telemetry(ws: WebSocket) -> None:
     await ws.accept()
     WS_HUB.sockets.append(ws)
+    log_event("ws_connected", clients=len(WS_HUB.sockets))
     s: SimSession | None = STATE["session"]
     if s is not None:
         await ws.send_text(json.dumps(s.payload()))
@@ -407,12 +528,23 @@ async def ws_telemetry(ws: WebSocket) -> None:
     except WebSocketDisconnect:
         if ws in WS_HUB.sockets:
             WS_HUB.sockets.remove(ws)
+        log_event("ws_disconnected", clients=len(WS_HUB.sockets))
 
 
 # ---------------------------------------------------------------- frontend
 @app.get("/")
 def index() -> FileResponse:
     return FileResponse(ROOT / "frontend" / "index.html")
+
+
+@app.get("/advanced")
+def advanced() -> FileResponse:
+    return FileResponse(ROOT / "frontend" / "index.html")
+
+
+@app.get("/present")
+def present() -> FileResponse:
+    return FileResponse(ROOT / "frontend" / "present.html")
 
 
 app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")

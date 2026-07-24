@@ -146,6 +146,34 @@ class SimulationEngine:
         links = self._path_links[d_idx][p_idx]
         return float(np.min(self.capacity[links] - self.link_load[links]))
 
+    def projected_link_loads_after_move(self, d_idx: int, p_idx: int) -> np.ndarray:
+        """Link loads as they WOULD be after moving demand d to candidate p.
+
+        Removes the demand's traffic from its current path first, then adds it
+        to the proposed path. This matters when old and new paths share links:
+        checking raw current loads there double-counts the demand's own
+        traffic. Used by action validation, masking, candidate info and the
+        heuristics so all consumers agree.
+        """
+        loads = self.link_load.copy()
+        vol = float(self.demand_volumes[d_idx])
+        if not self.disconnected[d_idx]:
+            loads[self._path_links[d_idx][int(self.current_path[d_idx])]] -= vol
+        loads[self._path_links[d_idx][p_idx]] += vol
+        return loads
+
+    def projected_path_headroom(self, d_idx: int, p_idx: int) -> float:
+        """Min (capacity - projected load) along candidate p after the move."""
+        links = self._path_links[d_idx][p_idx]
+        loads = self.projected_link_loads_after_move(d_idx, p_idx)
+        return float(np.min(self.capacity[links] - loads[links]))
+
+    def projected_bottleneck_after_move(self, d_idx: int, p_idx: int) -> float:
+        """Max utilization along candidate p after the move (projected)."""
+        links = self._path_links[d_idx][p_idx]
+        loads = self.projected_link_loads_after_move(d_idx, p_idx)
+        return float(np.max(loads[links] / self.capacity[links]))
+
     def candidate_info(self, d_idx: int) -> list[dict[str, Any]]:
         d = self.demands[d_idx]
         out = []
@@ -157,6 +185,7 @@ class SimulationEngine:
                 "admin_cost": self._path_costs[d_idx][p],
                 "available": self.path_available(d_idx, p),
                 "bottleneck_util": round(self.path_bottleneck_util(d_idx, p), 4),
+                "projected_bottleneck_util": round(self.projected_bottleneck_after_move(d_idx, p), 4),
                 "available_bandwidth_mbps": round(self.path_available_bandwidth(d_idx, p), 1),
                 "is_current": int(self.current_path[d_idx]) == p,
             })
@@ -177,8 +206,9 @@ class SimulationEngine:
         if source in ("rl", "greedy") and self.step_count < int(self.cooldown_until[d_idx]):
             return False, f"cooldown until step {int(self.cooldown_until[d_idx])}"
         if d.cls.protected:
-            vol = float(self.demand_volumes[d_idx])
-            if self.path_available_bandwidth(d_idx, p_idx) < vol:
+            # projected check: the demand's own traffic is first removed from
+            # its current path, so shared links are not double-counted
+            if self.projected_path_headroom(d_idx, p_idx) < 0.0:
                 return False, "insufficient bandwidth for protected class"
         return True, "ok"
 
@@ -368,6 +398,7 @@ class SimulationEngine:
         agg["reroutes"] = self.reroutes_this_interval
         agg["flaps"] = self.flaps_this_interval
         agg["frr_events"] = self.frr_events_this_interval
+        agg["n_demands"] = self.n_demands
         agg["failed_links"] = [lid for lid, up in self.link_up.items() if not up]
         self.metrics_history.append(agg)
         # Counters accumulate from the moment a controller acts (between

@@ -127,9 +127,12 @@ def summarize_records(df: pd.DataFrame, algorithm: str, scenario: str,
         "max_delay_ms": float(df["max_delay_ms"].max()),
         "loss_ratio_mean": float(df["loss_ratio"].mean()),
         "delivered_ratio_mean": float(df["delivered_ratio"].mean()),
+        # Mbps * seconds = megabits; /1000 converts to gigabits exactly once.
+        # (V1 published files divided twice — values there are Gbit/1000; the
+        # column name is unchanged so corrected re-runs are comparable.)
         "dropped_gbit_total": float(
-            ((df["offered_mbps"] - df["carried_mbps"]) * 5 * 60 / 1000).sum() / 1000
-        ),  # Gbit lost over the episode (5-min intervals)
+            ((df["offered_mbps"] - df["carried_mbps"]) * 5 * 60 / 1000).sum()
+        ),
         "sla_violation_steps": int((df["sla_violations"] > 0).sum()),
         "sla_violations_total": int(df["sla_violations"].sum()),
         "priority_sla_success_mean": float(df["priority_sla_success"].mean()),

@@ -158,20 +158,37 @@ class CspfController:
 
 
 class RandomController:
-    """Uniform random valid reroute (or no-op) — the sanity floor for RL."""
+    """Random-policy sanity floor for RL.
+
+    Exact rule (documented so code and report agree): with probability
+    ``noop_prob`` (0.5) the controller takes no action; otherwise it samples
+    uniformly from the set of CURRENTLY VALID reroute actions — the same
+    validity mask the RL policy sees (failed paths, cooldowns, same-path and
+    protected-bandwidth checks all excluded). If no reroute is valid, it
+    falls back to no-op.
+    """
 
     name = "random"
 
-    def __init__(self, seed: int = 0) -> None:
+    def __init__(self, seed: int = 0, noop_prob: float = 0.5) -> None:
         self.rng = np.random.default_rng(seed)
+        self.noop_prob = noop_prob
+
+    def valid_actions(self, eng: SimulationEngine) -> list[tuple[int, int]]:
+        return [
+            (d, p)
+            for d in range(eng.n_demands)
+            for p in range(len(eng.demands[d].candidate_paths))
+            if eng.validate_action(d, p, source="rl")[0]
+        ]
 
     def decide(self, eng: SimulationEngine) -> list[tuple[int, int]]:
-        if self.rng.random() < 0.5:
+        if self.rng.random() < self.noop_prob:
             return []
-        d = int(self.rng.integers(0, eng.n_demands))
-        p = int(self.rng.integers(0, len(eng.demands[d].candidate_paths)))
-        ok, _ = eng.validate_action(d, p, source="rl")
-        return [(d, p)] if ok else []
+        valid = self.valid_actions(eng)
+        if not valid:
+            return []
+        return [valid[int(self.rng.integers(0, len(valid)))]]
 
     def reset(self) -> None:
         pass

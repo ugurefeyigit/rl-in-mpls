@@ -83,7 +83,10 @@ class MplsTeEnv(gym.Env):
         self.k = self.engine_cfg.k_paths
         self.n_demands = self.eng.n_demands
         self.n_dlinks = self.eng.topo.n_dlinks
-        self.demand_features = 10 + self.k + 1  # doc block: 15 with k=4
+        # per-demand layout: 5 scalars + current-path one-hot (k) +
+        # per-candidate bottleneck (k) + cooldown + disconnected = 7 + 2k
+        # (with k=4 this is 15, matching the pretrained ppo_te model)
+        self.demand_features = 7 + 2 * self.k
         obs_dim = (LINK_FEATURES * self.n_dlinks
                    + self.demand_features * self.n_demands
                    + GLOBAL_FEATURES)

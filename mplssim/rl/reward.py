@@ -81,7 +81,7 @@ def compute_reward(
         "flap": -w["flap"] * (1.0 if flapped else 0.0),
         "invalid": -w["invalid"] * (1.0 if invalid else 0.0),
         "disconnected": -w["disconnected"] * clip01(
-            interval["disconnected_demands"] / max(1, 17)
+            interval["disconnected_demands"] / max(1, interval.get("n_demands", 17))
         ),
     }
     return sum(comp.values()), comp

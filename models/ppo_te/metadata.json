@@ -1,0 +1,21 @@
+{
+ "tag": "ppo_te",
+ "n_dlinks": 64,
+ "n_demands": 17,
+ "k_paths": 4,
+ "observation_dim": 586,
+ "action_dim": 69,
+ "config_hashes": {
+  "baselines.yaml": "1f6042ffbabbc6e59da75b618869901b0dcea2ed8690f6f587e3f4aa5001eee8",
+  "reward.yaml": "a67bde79b684cb5020f5a191aaf26ad009fcc9b075b14e0b5403b2e6db5da2c6",
+  "scenarios.yaml": "da1b65d306af76a6da9d8efadfc70a8fdec3199f9522946b600f7b3e3d75f67f",
+  "topology.yaml": "e79c67ac4e13891b2c9b9c59a62b63df56b5f519edfa5fc72b5093b795a1e682",
+  "traffic_classes.yaml": "0a4857b1a2065640cde1782a528fd093bde628f063547718a2f66ce757bd242d",
+  "training.yaml": "76248fd761c4cc3fe0d30dd239b1b6d6cd26f972353b6c4b1e40b0689044cfbd"
+ },
+ "algorithm": "MaskablePPO",
+ "total_timesteps": 400000,
+ "training_seed": 42,
+ "training_scenario": "random_day",
+ "frozen": "v1-original-results"
+}

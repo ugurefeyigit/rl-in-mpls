@@ -1,4 +1,4 @@
-# MPLS backbone topology: 18 routers, 28 undirected links (56 directed).
+# MPLS backbone topology: 18 routers, 32 undirected links (64 directed).
 # Roles: PE_IN (ingress LER), PE_OUT (egress LER), P (core LSR), AGG (aggregation LSR).
 # capacity_mbps is per direction. delay_ms is one-way propagation delay.
 # weight is the administrative IGP/TE metric used by shortest-path and CSPF.
