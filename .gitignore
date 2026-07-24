@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+runs/
+models/smoke/
+results/runs.db
+results/*.csv
+results/*.json
+!results/figures/.gitkeep
+*.egg-info/
+.venv/
+venv/

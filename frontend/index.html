@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RL-in-MPLS — Traffic Engineering Console</title>
+<link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+<header id="topbar">
+  <div class="brand">
+    <span class="brand-mark">◆</span>
+    <span class="brand-name">RL-in-MPLS</span>
+    <span class="brand-sub">traffic-engineering console</span>
+  </div>
+  <div class="clockbox">
+    <span id="sim-clock" class="mono">--:--</span>
+    <span id="sim-day-phase" class="phase-chip">idle</span>
+  </div>
+  <div class="runbox">
+    <span id="run-desc" class="mono muted">no session</span>
+    <span id="conn-dot" class="conn-dot" title="WebSocket status">●</span>
+  </div>
+</header>
+
+<main id="layout">
+  <!-- ====================== control rail ====================== -->
+  <aside id="controls">
+    <h2>Session</h2>
+    <label>Scenario
+      <select id="sel-scenario"></select>
+    </label>
+    <div id="scenario-desc" class="hint"></div>
+    <label>Mode
+      <select id="sel-mode">
+        <option value="single">Single algorithm</option>
+        <option value="compare">Compare A vs B</option>
+      </select>
+    </label>
+    <div class="row2">
+      <label>Algorithm A
+        <select id="sel-algo-a">
+          <option value="rl">RL (MaskablePPO)</option>
+          <option value="static">Static shortest path</option>
+          <option value="greedy">Greedy (util-aware)</option>
+          <option value="cspf">CSPF periodic reopt</option>
+          <option value="random">Random (floor)</option>
+        </select>
+      </label>
+      <label id="algo-b-wrap" class="hidden">Algorithm B
+        <select id="sel-algo-b">
+          <option value="static">Static shortest path</option>
+          <option value="rl">RL (MaskablePPO)</option>
+          <option value="greedy">Greedy (util-aware)</option>
+          <option value="cspf">CSPF periodic reopt</option>
+        </select>
+      </label>
+    </div>
+    <div class="row2">
+      <label>Model tag
+        <select id="sel-model"></select>
+      </label>
+      <label>Seed
+        <input id="inp-seed" class="mono" type="number" value="42">
+      </label>
+    </div>
+    <label class="check"><input id="chk-safety" type="checkbox" checked>
+      Safety filter (constraint checker on RL actions)</label>
+
+    <div class="btnrow">
+      <button id="btn-start" class="primary">Start session</button>
+      <button id="btn-reset" title="Rebuild the session at t=0">Reset</button>
+    </div>
+    <div class="btnrow">
+      <button id="btn-pause">Pause</button>
+      <button id="btn-resume">Resume</button>
+      <button id="btn-step" title="Advance one 5-minute control interval">Step ▸</button>
+    </div>
+    <label>Speed</label>
+    <div class="btnrow" id="speed-row">
+      <button data-speed="1x" class="speed active">1×</button>
+      <button data-speed="5x" class="speed">5×</button>
+      <button data-speed="20x" class="speed">20×</button>
+      <button data-speed="fast" class="speed">fast</button>
+    </div>
+
+    <h2>Interventions</h2>
+    <div class="row2">
+      <label>Link
+        <select id="sel-fail-link"></select>
+      </label>
+      <div class="btncol">
+        <button id="btn-fail" class="danger">Fail link</button>
+        <button id="btn-recover">Recover</button>
+      </div>
+    </div>
+    <div class="row2">
+      <label>Demand
+        <select id="sel-burst-demand"></select>
+      </label>
+      <label>Burst ×
+        <input id="inp-burst-factor" class="mono" type="number" value="2.0" step="0.1" min="0.1">
+      </label>
+    </div>
+    <button id="btn-burst">Inject 60-min burst</button>
+    <label>Global demand ×<span id="mult-val" class="mono"> 1.00</span>
+      <input id="inp-mult" type="range" min="0.5" max="2.0" step="0.05" value="1.0">
+    </label>
+
+    <h2>Export</h2>
+    <div class="btnrow">
+      <a class="btn-link" href="/api/export/results?fmt=csv" download>CSV</a>
+      <a class="btn-link" href="/api/export/results?fmt=json" download>JSON</a>
+      <button id="btn-save-run">Save summary</button>
+    </div>
+  </aside>
+
+  <!-- ====================== topology hero ====================== -->
+  <section id="stage">
+    <div id="topo-wrap">
+      <div class="topo-pane" id="topo-pane-a">
+        <div class="pane-title mono" id="pane-title-a">—</div>
+        <div class="cy" id="cy-a"></div>
+      </div>
+      <div class="topo-pane hidden" id="topo-pane-b">
+        <div class="pane-title mono" id="pane-title-b">—</div>
+        <div class="cy" id="cy-b"></div>
+      </div>
+    </div>
+    <div id="legend">
+      <span class="lg"><i class="sw" style="background:#2ea043"></i>&lt;50%</span>
+      <span class="lg"><i class="sw" style="background:#d29922"></i>50–75%</span>
+      <span class="lg"><i class="sw" style="background:#f0883e"></i>75–90%</span>
+      <span class="lg"><i class="sw" style="background:#f85149"></i>90–100%</span>
+      <span class="lg"><i class="sw" style="background:#db61a2"></i>&gt;100%</span>
+      <span class="lg"><i class="sw sw-dash"></i>failed</span>
+      <span class="lg"><i class="sw sw-path"></i>selected LSP</span>
+      <span class="lg">□ PE &nbsp; ○ P &nbsp; ◇ AGG</span>
+    </div>
+    <div id="hovercard" class="hidden mono"></div>
+    <!-- signature element: the decision tape -->
+    <div id="tape">
+      <div class="tape-head mono">DECISION TAPE</div>
+      <div id="tape-lines" class="mono"></div>
+    </div>
+  </section>
+
+  <!-- ====================== analysis rail ====================== -->
+  <aside id="panels">
+    <nav id="tabs">
+      <button data-tab="agent" class="active">Agent</button>
+      <button data-tab="metrics">Metrics</button>
+      <button data-tab="matrix">Matrix</button>
+      <button data-tab="lsps">LSPs</button>
+      <button data-tab="links">Links</button>
+      <button data-tab="training">Training</button>
+      <button data-tab="runs">Runs</button>
+    </nav>
+
+    <div class="tab-body" id="tab-agent">
+      <div id="agent-decision">
+        <div class="placeholder">Start a session to see controller decisions.</div>
+      </div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-metrics">
+      <label class="inline">Metric
+        <select id="sel-metric">
+          <option value="max_util">Max link utilization</option>
+          <option value="mean_util">Mean link utilization</option>
+          <option value="util_std">Utilization std dev</option>
+          <option value="mean_delay_ms">Mean end-to-end delay (ms)</option>
+          <option value="p95_delay_ms">p95 delay (ms)</option>
+          <option value="loss_ratio">Loss ratio</option>
+          <option value="delivered_ratio">Delivered traffic ratio</option>
+          <option value="sla_violations">SLA violations</option>
+          <option value="congested_links">Congested links</option>
+          <option value="reroutes">Reroutes / interval</option>
+          <option value="jain_fairness">Jain fairness</option>
+        </select>
+      </label>
+      <div id="chart-metric" class="chart tall"></div>
+      <div id="chart-reward" class="chart"></div>
+      <div id="chart-components" class="chart"></div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-matrix">
+      <div id="chart-matrix" class="chart tall"></div>
+      <div id="matrix-detail" class="hint">Click a cell to list its demands.</div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-lsps">
+      <div class="table-wrap"><table id="tbl-lsps"></table></div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-links">
+      <div class="table-wrap"><table id="tbl-links"></table></div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-training">
+      <div class="row2">
+        <label>Timesteps <input id="inp-train-steps" class="mono" type="number" value="100000"></label>
+        <label>Tag <input id="inp-train-tag" class="mono" value="ppo_custom"></label>
+      </div>
+      <button id="btn-train" class="primary">Start training job</button>
+      <div class="hint">Training runs as a separate process on the backend; this view only monitors it. TensorBoard: <span class="mono">tensorboard --logdir runs</span></div>
+      <pre id="train-log" class="mono"></pre>
+      <h3>Checkpoints</h3>
+      <div class="table-wrap"><table id="tbl-checkpoints"></table></div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-runs">
+      <button id="btn-refresh-runs">Refresh</button>
+      <div class="table-wrap"><table id="tbl-runs"></table></div>
+    </div>
+  </aside>
+</main>
+
+<script src="/static/vendor/cytoscape.min.js"></script>
+<script src="/static/vendor/echarts.min.js"></script>
+<script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

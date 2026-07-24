@@ -1,0 +1,39 @@
+# Reward weights. Every component is normalized to roughly [0, 1] per control
+# interval BEFORE weighting, so weights express relative importance directly.
+# The total per-step reward is:
+#
+#   R = + w.delivered      * delivered_traffic_ratio
+#       + w.priority_sla   * priority_weighted_sla_success
+#       - w.max_util       * max(0, max_utilization - util_free_threshold) / (1 - util_free_threshold)
+#       - w.util_spread    * utilization_std
+#       - w.delay          * clip(mean_path_delay_ms / delay_norm_ms, 0, 1)
+#       - w.loss           * clip(lost_traffic_ratio / loss_norm, 0, 1)
+#       - w.sla            * sla_violation_fraction
+#       - w.overload       * clip(total_overload_ratio, 0, 1)
+#       - w.reroute        * (1 if a reroute was applied this step else 0)
+#       - w.flap           * (1 if the reroute reverses a recent one else 0)
+#       - w.invalid        * (1 if the proposed action was invalid/rejected else 0)
+#       - w.disconnected   * disconnected_demand_fraction
+#
+# See mplssim/rl/reward.py for the exact implementation and docs/REPORT.md for
+# the tuning discussion. Components are logged individually every step.
+
+weights:
+  delivered: 1.0
+  priority_sla: 1.0
+  max_util: 1.2
+  util_spread: 0.2
+  delay: 0.4
+  loss: 2.0
+  sla: 1.0
+  overload: 1.5
+  reroute: 0.08
+  flap: 0.25
+  invalid: 0.3
+  disconnected: 2.0
+
+params:
+  util_free_threshold: 0.60   # utilization below this is "free" (no penalty)
+  delay_norm_ms: 60.0         # mean path delay that saturates the delay penalty
+  loss_norm: 0.05             # 5% network loss ratio saturates the loss penalty
+  flap_window_steps: 6        # reroute of same demand within N steps counts as flapping

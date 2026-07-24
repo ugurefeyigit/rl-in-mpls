@@ -1,0 +1,72 @@
+# MPLS backbone topology: 18 routers, 28 undirected links (56 directed).
+# Roles: PE_IN (ingress LER), PE_OUT (egress LER), P (core LSR), AGG (aggregation LSR).
+# capacity_mbps is per direction. delay_ms is one-way propagation delay.
+# weight is the administrative IGP/TE metric used by shortest-path and CSPF.
+#
+# Engineered properties (referenced in docs/ARCHITECTURE.md):
+#   - Hidden shared bottleneck: shortest paths from PE1/PE2 toward PE5/PE6 funnel
+#     through P5->P8 (1000 Mbps) even though P2-P5 is a 2000 Mbps backbone.
+#     The detour via P6->A1 avoids it at +2 hops.
+#   - Longer-but-better region: P4-P7 (250 Mbps, weight 60) is a long detour that
+#     is only useful under failures; naive shortest-path never uses it.
+#   - Redundancy ring: P4-P5-P6-P7 vertical segments plus A1-A2.
+#   - Critical failure link: P2-P5 (2 Gbps backbone). Its loss forces mass rerouting.
+
+routers:
+  - {id: PE1, role: PE_IN,  x: 60,  y: 90}
+  - {id: PE2, role: PE_IN,  x: 60,  y: 240}
+  - {id: PE3, role: PE_IN,  x: 60,  y: 390}
+  - {id: PE4, role: PE_IN,  x: 60,  y: 540}
+  - {id: P1,  role: P,      x: 280, y: 120}
+  - {id: P2,  role: P,      x: 280, y: 300}
+  - {id: P3,  role: P,      x: 280, y: 480}
+  - {id: P4,  role: P,      x: 500, y: 70}
+  - {id: P5,  role: P,      x: 500, y: 230}
+  - {id: P6,  role: P,      x: 500, y: 400}
+  - {id: P7,  role: P,      x: 500, y: 560}
+  - {id: P8,  role: P,      x: 720, y: 120}
+  - {id: A1,  role: AGG,    x: 720, y: 320}
+  - {id: A2,  role: AGG,    x: 720, y: 500}
+  - {id: PE5, role: PE_OUT, x: 940, y: 90}
+  - {id: PE6, role: PE_OUT, x: 940, y: 240}
+  - {id: PE7, role: PE_OUT, x: 940, y: 390}
+  - {id: PE8, role: PE_OUT, x: 940, y: 540}
+
+links:
+  # --- West access (PE ingress to core) ---
+  - {id: L1,  a: PE1, z: P1, capacity_mbps: 1000, delay_ms: 2, weight: 10}
+  - {id: L2,  a: PE2, z: P1, capacity_mbps: 500,  delay_ms: 2, weight: 20}
+  - {id: L3,  a: PE2, z: P2, capacity_mbps: 500,  delay_ms: 2, weight: 20}
+  - {id: L4,  a: PE3, z: P2, capacity_mbps: 1000, delay_ms: 2, weight: 10}
+  - {id: L5,  a: PE3, z: P3, capacity_mbps: 500,  delay_ms: 2, weight: 20}
+  - {id: L6,  a: PE4, z: P3, capacity_mbps: 1000, delay_ms: 2, weight: 10}
+  - {id: L7,  a: PE1, z: P2, capacity_mbps: 250,  delay_ms: 3, weight: 40}
+  - {id: L8,  a: PE4, z: P2, capacity_mbps: 250,  delay_ms: 3, weight: 40}
+  # --- West core to middle core ---
+  - {id: L9,  a: P1, z: P4, capacity_mbps: 1000, delay_ms: 3, weight: 10}
+  - {id: L10, a: P1, z: P5, capacity_mbps: 500,  delay_ms: 3, weight: 20}
+  - {id: L11, a: P2, z: P5, capacity_mbps: 2000, delay_ms: 3, weight: 5}
+  - {id: L12, a: P2, z: P6, capacity_mbps: 500,  delay_ms: 4, weight: 20}
+  - {id: L13, a: P3, z: P6, capacity_mbps: 1000, delay_ms: 3, weight: 10}
+  - {id: L14, a: P3, z: P7, capacity_mbps: 500,  delay_ms: 3, weight: 20}
+  # --- Middle core mesh / ring ---
+  - {id: L15, a: P4, z: P5, capacity_mbps: 500,  delay_ms: 2, weight: 15}
+  - {id: L16, a: P5, z: P6, capacity_mbps: 500,  delay_ms: 2, weight: 15}
+  - {id: L17, a: P6, z: P7, capacity_mbps: 500,  delay_ms: 2, weight: 15}
+  - {id: L18, a: P4, z: P7, capacity_mbps: 250,  delay_ms: 8, weight: 60}
+  # --- Middle core to east ---
+  - {id: L19, a: P4, z: P8, capacity_mbps: 1000, delay_ms: 3, weight: 10}
+  - {id: L20, a: P5, z: P8, capacity_mbps: 1000, delay_ms: 3, weight: 10}
+  - {id: L21, a: P5, z: A1, capacity_mbps: 500,  delay_ms: 3, weight: 25}
+  - {id: L22, a: P6, z: A1, capacity_mbps: 1000, delay_ms: 3, weight: 10}
+  - {id: L23, a: P6, z: A2, capacity_mbps: 500,  delay_ms: 4, weight: 20}
+  - {id: L24, a: P7, z: A2, capacity_mbps: 1000, delay_ms: 3, weight: 10}
+  - {id: L25, a: P8, z: A1, capacity_mbps: 500,  delay_ms: 2, weight: 20}
+  - {id: L26, a: A1, z: A2, capacity_mbps: 250,  delay_ms: 2, weight: 40}
+  # --- East access (core to PE egress) ---
+  - {id: L27, a: P8, z: PE5, capacity_mbps: 1000, delay_ms: 2, weight: 10}
+  - {id: L28, a: P8, z: PE6, capacity_mbps: 500,  delay_ms: 2, weight: 15}
+  - {id: L29, a: A1, z: PE6, capacity_mbps: 500,  delay_ms: 2, weight: 15}
+  - {id: L30, a: A1, z: PE7, capacity_mbps: 1000, delay_ms: 2, weight: 10}
+  - {id: L31, a: A2, z: PE7, capacity_mbps: 500,  delay_ms: 2, weight: 20}
+  - {id: L32, a: A2, z: PE8, capacity_mbps: 1000, delay_ms: 2, weight: 10}

@@ -1,0 +1,88 @@
+# Traffic classes and their SLA definitions.
+# priority: higher = more important (used for priority-weighted SLA scoring).
+# max_latency_ms / max_loss_pct: SLA thresholds evaluated per control interval.
+# protected: demands of this class may only be moved to paths with sufficient
+#            available bandwidth (enforced by action masking / safety filter).
+# profile: diurnal demand curve (see profiles section below).
+# burstiness: scales the AR(1) noise applied to the demand volume.
+
+classes:
+  voice:
+    priority: 5
+    max_latency_ms: 60
+    max_loss_pct: 0.5
+    protected: true
+    profile: business
+    burstiness: 0.05
+    color: "#e15759"
+  video:
+    priority: 4
+    max_latency_ms: 120
+    max_loss_pct: 1.0
+    protected: false
+    profile: evening_video
+    burstiness: 0.15
+    color: "#4e79a7"
+  vpn:
+    priority: 3
+    max_latency_ms: 150
+    max_loss_pct: 1.0
+    protected: false
+    profile: business
+    burstiness: 0.08
+    color: "#59a14f"
+  besteffort:
+    priority: 2
+    max_latency_ms: 250
+    max_loss_pct: 3.0
+    protected: false
+    profile: consumer
+    burstiness: 0.20
+    color: "#9c755f"
+  bulk:
+    priority: 1
+    max_latency_ms: 400
+    max_loss_pct: 5.0
+    protected: false
+    profile: night_bulk
+    burstiness: 0.25
+    color: "#f28e2b"
+  critical:
+    priority: 6
+    max_latency_ms: 80
+    max_loss_pct: 0.2
+    protected: true
+    profile: flat
+    burstiness: 0.03
+    color: "#b07aa1"
+
+# Diurnal multiplier curves: control points (hour, multiplier), linearly
+# interpolated, wrapping at 24 h. Multiplier scales the demand's base_mbps.
+profiles:
+  business:      [[0, 0.30], [6, 0.40], [9, 1.00], [12, 0.90], [14, 1.00], [17, 0.85], [20, 0.45], [24, 0.30]]
+  evening_video: [[0, 0.40], [6, 0.20], [12, 0.50], [17, 0.80], [19, 1.00], [22, 0.90], [24, 0.40]]
+  night_bulk:    [[0, 1.00], [5, 0.90], [8, 0.30], [18, 0.30], [22, 0.70], [24, 1.00]]
+  consumer:      [[0, 0.50], [7, 0.40], [9, 0.60], [12, 0.70], [18, 0.90], [21, 1.00], [24, 0.50]]
+  flat:          [[0, 1.00], [24, 1.00]]
+
+# Traffic demand matrix: 17 demands across 4 ingress and 4 egress PEs.
+# base_mbps is the class-profile-peak volume; actual offered volume is
+# base_mbps * profile(hour) * scenario multipliers * AR(1) noise.
+demands:
+  - {id: D1,  src: PE1, dst: PE5, class: voice,      base_mbps: 20}
+  - {id: D2,  src: PE1, dst: PE6, class: video,      base_mbps: 150}
+  - {id: D3,  src: PE1, dst: PE7, class: vpn,        base_mbps: 80}
+  - {id: D4,  src: PE2, dst: PE5, class: video,      base_mbps: 200}
+  - {id: D5,  src: PE2, dst: PE6, class: bulk,       base_mbps: 300}
+  - {id: D6,  src: PE2, dst: PE8, class: besteffort, base_mbps: 250}
+  - {id: D7,  src: PE3, dst: PE6, class: vpn,        base_mbps: 100}
+  - {id: D8,  src: PE3, dst: PE7, class: video,      base_mbps: 180}
+  - {id: D9,  src: PE3, dst: PE5, class: besteffort, base_mbps: 200}
+  - {id: D10, src: PE4, dst: PE8, class: bulk,       base_mbps: 400}
+  - {id: D11, src: PE4, dst: PE7, class: voice,      base_mbps: 15}
+  - {id: D12, src: PE4, dst: PE6, class: besteffort, base_mbps: 150}
+  - {id: D13, src: PE1, dst: PE8, class: bulk,       base_mbps: 200}
+  - {id: D14, src: PE2, dst: PE7, class: voice,      base_mbps: 25}
+  - {id: D15, src: PE3, dst: PE8, class: video,      base_mbps: 120}
+  - {id: D16, src: PE4, dst: PE5, class: vpn,        base_mbps: 90}
+  - {id: D17, src: PE1, dst: PE7, class: critical,   base_mbps: 10}

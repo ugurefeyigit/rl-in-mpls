@@ -1,0 +1,137 @@
+# Scenario definitions. Each scenario fixes the simulated clock window, a
+# global demand multiplier, and a scripted event sequence. Traffic volumes are
+# exogenous (independent of routing), so two algorithms evaluated on the same
+# scenario + seed face byte-identical offered traffic (paired comparison).
+#
+# Event types:
+#   link_down / link_up: {t_min, link}
+#   burst:       {t_min, demands: [ids], factor, duration_min}
+#   flash_crowd: {t_min, dst: PE_x, factor, duration_min}   (scales every demand to dst)
+#   multiplier:  {t_min, factor, duration_min}               (global demand scale)
+#
+# noise_sigma scales AR(1) demand noise (multiplied by per-class burstiness).
+
+scenarios:
+  full_day:
+    description: "24 h diurnal cycle, no incidents. Experiment 1 baseline scenario."
+    start_hour: 0.0
+    duration_min: 1440
+    demand_multiplier: 1.0
+    noise_sigma: 1.0
+    events: []
+
+  morning_ramp:
+    description: "05:00-12:00 rising enterprise demand; tests anticipation without flapping."
+    start_hour: 5.0
+    duration_min: 420
+    demand_multiplier: 1.05
+    noise_sigma: 1.0
+    events: []
+
+  evening_peak:
+    description: "16:00-23:00 heavy video; egress links toward PE6/PE7 stress. Experiment 2."
+    start_hour: 16.0
+    duration_min: 420
+    demand_multiplier: 1.15
+    noise_sigma: 1.0
+    events: []
+
+  night_consolidation:
+    description: "00:00-06:00 low load, bulk backup flows dominate; reward stability."
+    start_hour: 0.0
+    duration_min: 360
+    demand_multiplier: 1.0
+    noise_sigma: 0.8
+    events: []
+
+  flash_crowd:
+    description: "Evening + sudden convergent surge toward PE6 (live event). Experiment 3."
+    start_hour: 18.0
+    duration_min: 300
+    demand_multiplier: 1.1
+    noise_sigma: 1.0
+    events:
+      - {t_min: 90, type: flash_crowd, dst: PE6, factor: 2.5, duration_min: 75}
+
+  link_failure:
+    description: "Backbone L11 (P2-P5, 2 Gbps) fails during busy period, later recovers. Experiment 4."
+    start_hour: 17.0
+    duration_min: 300
+    demand_multiplier: 1.1
+    noise_sigma: 1.0
+    events:
+      - {t_min: 60,  type: link_down, link: L11}
+      - {t_min: 180, type: link_up,   link: L11}
+
+  demand_forecast_error:
+    description: "Forecast says calm evening; actual has an unannounced global surge."
+    start_hour: 18.0
+    duration_min: 300
+    demand_multiplier: 1.0
+    noise_sigma: 1.4
+    events:
+      - {t_min: 75, type: multiplier, factor: 1.5, duration_min: 90}
+
+  deceptive_local_optimum:
+    description: >
+      Bulk/video demands from PE1+PE2 toward PE5/PE6 grow together. Individually
+      shortest paths all funnel into L20 (P5-P8); a globally better allocation
+      shifts some flows via P6-A1 despite longer paths.
+    start_hour: 9.0
+    duration_min: 300
+    demand_multiplier: 1.0
+    noise_sigma: 0.8
+    events:
+      - {t_min: 45, type: burst, demands: [D2, D4, D5], factor: 1.8, duration_min: 180}
+
+  demo_evening:
+    description: >
+      Presentation scenario per README demo script: 17:00 start, video ramps,
+      20:00 flash crowd to PE6, 20:15 failure of L20 (P5-P8), 21:00 recovery.
+    start_hour: 17.0
+    duration_min: 360
+    demand_multiplier: 1.1
+    noise_sigma: 0.9
+    events:
+      - {t_min: 180, type: flash_crowd, dst: PE6, factor: 2.0, duration_min: 120}
+      - {t_min: 195, type: link_down, link: L20}
+      - {t_min: 240, type: link_up,   link: L20}
+
+  random_day:
+    description: >
+      24 h with randomized bursts and one random failure window; parameters drawn
+      from the episode seed. Primary RL training scenario.
+    start_hour: 0.0
+    duration_min: 1440
+    demand_multiplier: 1.0
+    noise_sigma: 1.0
+    randomize:
+      n_bursts: [1, 4]          # uniform int range
+      burst_factor: [1.4, 2.4]  # uniform float range
+      burst_duration_min: [30, 120]
+      failure_prob: 0.5         # chance the day contains one link failure
+      failure_duration_min: [60, 180]
+      failure_candidates: [L11, L20, L22, L13, L9]
+      flash_crowd_prob: 0.3
+      flash_crowd_factor: [1.8, 2.6]
+    events: []
+
+  ood_double_failure:
+    description: "Out-of-distribution: two overlapping failures never seen in training."
+    start_hour: 10.0
+    duration_min: 300
+    demand_multiplier: 1.1
+    noise_sigma: 1.0
+    events:
+      - {t_min: 60,  type: link_down, link: L19}
+      - {t_min: 90,  type: link_down, link: L20}
+      - {t_min: 210, type: link_up,   link: L20}
+      - {t_min: 240, type: link_up,   link: L19}
+
+  overload_stress:
+    description: "Experiment 9 high-load point: global 1.6x demand; loss is unavoidable."
+    start_hour: 18.0
+    duration_min: 240
+    demand_multiplier: 1.6
+    noise_sigma: 1.0
+    events: []

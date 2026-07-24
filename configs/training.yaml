@@ -1,0 +1,33 @@
+# RL training configuration (MaskablePPO, sb3-contrib).
+algorithm: maskable_ppo
+seed: 42
+total_timesteps: 400000
+n_envs: 8                    # DummyVecEnv workers (Windows-safe)
+scenario: random_day         # training scenario (randomized per episode seed)
+eval_scenarios: [full_day, evening_peak, link_failure]
+eval_seeds: [101, 102, 103]
+eval_freq: 16384             # env steps between evaluations
+checkpoint_freq: 50000
+device: cpu
+
+env:
+  control_interval_min: 5    # one agent decision per 5 simulated minutes
+  micro_ticks_per_interval: 5
+  k_paths: 4                 # candidate paths per demand
+  max_hop_factor: 2.5        # candidate path hop cap = ceil(shortest_hops * factor) + 1
+  reroute_cooldown_steps: 3  # demand locked for N control steps after a reroute
+  max_reroutes_per_interval: 1
+
+ppo:
+  learning_rate: 3.0e-4
+  n_steps: 512               # per env -> 4096 per rollout with 8 envs
+  batch_size: 512
+  n_epochs: 8
+  gamma: 0.995
+  gae_lambda: 0.95
+  clip_range: 0.2
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  policy_kwargs:
+    net_arch: [256, 256]

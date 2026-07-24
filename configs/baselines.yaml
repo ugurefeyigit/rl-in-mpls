@@ -1,0 +1,17 @@
+# Baseline controller parameters.
+
+static_shortest_path:
+  # No parameters: each demand pinned to its lowest-admin-weight candidate path.
+  # Reacts only to link failures (fast-reroute to best surviving candidate).
+
+greedy_utilization:
+  trigger_threshold: 0.85     # act only if some link exceeds this utilization
+  improvement_margin: 0.05    # required reduction in bottleneck utilization
+  cooldown_steps: 3           # per-demand cooldown, same units as RL control steps
+  max_reroutes_per_interval: 1
+
+cspf:
+  reopt_period_steps: 6       # full reoptimization every N control intervals (30 min)
+  reservation_headroom: 0.9   # reserve up to 90% of link capacity
+  hysteresis_margin: 0.08     # only move an LSP if bottleneck util improves by this
+  max_reroutes_per_reopt: 3
