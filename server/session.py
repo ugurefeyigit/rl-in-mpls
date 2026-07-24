@@ -192,8 +192,10 @@ class AlgoRunner:
                 f"{pre['volume']:.0f} Mbps) from path {dec['from_path']} to "
                 f"path {dec['path_idx']}. Old-path bottleneck was "
                 f"{pre['old_bottleneck']:.0%}, new-path bottleneck "
-                f"{pre['new_bottleneck']:.0%}. Network max utilization: "
-                f"{before_max_util:.0%} → {mtr['max_util']:.0%}.")
+                f"{pre['new_bottleneck']:.0%}. Network max utilization "
+                f"{before_max_util:.0%} → {mtr['max_util']:.0%} over the "
+                f"interval (includes demand change; see counterfactual for "
+                f"the action's isolated effect).")
 
     def _step_baseline(self) -> dict[str, Any]:
         eng = self.eng

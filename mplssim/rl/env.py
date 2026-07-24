@@ -68,13 +68,15 @@ class MplsTeEnv(gym.Env):
         base_seed: int = 0,
         engine_cfg: EngineConfig | None = None,
         safety_filter: bool = True,
+        reward_overrides: dict[str, float] | None = None,
     ) -> None:
         super().__init__()
         self.scenario = scenario
         self.base_seed = base_seed
         self.engine_cfg = engine_cfg or engine_config_from_training()
         self.safety_filter = safety_filter
-        self.reward_cfg = load_reward_config()
+        from mplssim.rl.reward import with_overrides
+        self.reward_cfg = with_overrides(load_reward_config(), reward_overrides or {})
         self._episode = 0
 
         self.eng: SimulationEngine = make_engine(scenario, seed=base_seed, cfg=self.engine_cfg)

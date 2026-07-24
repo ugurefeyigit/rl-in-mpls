@@ -37,6 +37,18 @@ def load_reward_config() -> RewardConfig:
     )
 
 
+def with_overrides(cfg: RewardConfig, overrides: dict[str, float]) -> RewardConfig:
+    """Copy of ``cfg`` with some weights replaced (used by reward ablations)."""
+    unknown = set(overrides) - set(cfg.weights)
+    if unknown:
+        raise KeyError(f"unknown reward weights: {sorted(unknown)}")
+    w = dict(cfg.weights)
+    w.update(overrides)
+    return RewardConfig(weights=w, util_free_threshold=cfg.util_free_threshold,
+                        delay_norm_ms=cfg.delay_norm_ms, loss_norm=cfg.loss_norm,
+                        flap_window_steps=cfg.flap_window_steps)
+
+
 def clip01(x: float) -> float:
     return min(max(x, 0.0), 1.0)
 

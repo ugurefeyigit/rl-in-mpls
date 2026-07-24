@@ -1,0 +1,11 @@
+# Single-service deployment: simulation, RL inference, API and frontend are one
+# Python process (see docs/ADR-001). Volumes keep models/results on the host.
+services:
+  mpls-te:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./results:/app/results
+      - ./runs:/app/runs

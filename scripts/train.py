@@ -67,9 +67,11 @@ class RewardComponentLogger(BaseCallback):
         return True
 
 
-def make_env(scenario: str, base_seed: int, rank: int):
+def make_env(scenario: str, base_seed: int, rank: int,
+             reward_overrides: dict[str, float] | None = None):
     def _init():
-        env = MplsTeEnv(scenario=scenario, base_seed=base_seed + rank * 10_000)
+        env = MplsTeEnv(scenario=scenario, base_seed=base_seed + rank * 10_000,
+                        reward_overrides=reward_overrides)
         return Monitor(env)
     return _init
 
@@ -80,7 +82,11 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--tag", type=str, default="ppo_te")
     ap.add_argument("--scenario", type=str, default=None)
+    ap.add_argument("--zero-weight", nargs="*", default=[],
+                    help="reward weights forced to 0 during training (ablations), "
+                         "e.g. --zero-weight reroute flap")
     args = ap.parse_args()
+    overrides = {name: 0.0 for name in args.zero_weight}
 
     cfg = get_training_config()
     seed = args.seed if args.seed is not None else int(cfg["seed"])
@@ -91,8 +97,8 @@ def main() -> None:
     model_dir = ROOT / "models" / args.tag
     model_dir.mkdir(parents=True, exist_ok=True)
 
-    train_env = DummyVecEnv([make_env(scenario, seed, i) for i in range(n_envs)])
-    eval_env = DummyVecEnv([make_env(cfg["eval_scenarios"][0], 900_000 + seed, 0)])
+    train_env = DummyVecEnv([make_env(scenario, seed, i, overrides) for i in range(n_envs)])
+    eval_env = DummyVecEnv([make_env(cfg["eval_scenarios"][0], 900_000 + seed, 0, overrides)])
 
     ppo = cfg["ppo"]
     model = MaskablePPO(
