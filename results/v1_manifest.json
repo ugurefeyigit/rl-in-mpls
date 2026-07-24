@@ -1,0 +1,78 @@
+{
+ "version": "v1-original-results",
+ "description": "Frozen Version 1 experiment: MaskablePPO ppo_te (400k steps) with published paired evaluation.",
+ "git_commit": "10e6d59f7f4381309ab8c6382926b831eec39f2e",
+ "git_tag": "v1-original-results",
+ "python_version": "3.13.4 (tags/v3.13.4:8a526ec, Jun  3 2025, 17:46:04) [MSC v.1943 64 bit (AMD64)]",
+ "platform": "Windows-11-10.0.26200-SP0",
+ "packages": {
+  "numpy": "2.3.0",
+  "networkx": "3.6.1",
+  "pyyaml": "6.0.3",
+  "pydantic": "2.11.5",
+  "scipy": "1.18.0",
+  "pandas": "2.3.0",
+  "torch": "2.13.0+cpu",
+  "gymnasium": "1.3.0",
+  "stable_baselines3": "2.9.0",
+  "sb3_contrib": "2.9.0",
+  "tensorboard": "2.21.0",
+  "fastapi": "0.115.12",
+  "uvicorn": "0.34.3",
+  "websockets": "16.1.1",
+  "httpx": "0.28.1",
+  "matplotlib": "3.10.8",
+  "pytest": "9.1.1"
+ },
+ "model": {
+  "tag": "ppo_te",
+  "best_model_sha256": "513dadc1f4c78c57b92adfa07591205ffcf1eed51a3d25201ee2d9e91d0f5f6b",
+  "evaluations_npz_sha256": "167946ace76fc7a25a3f99a13dd1a67766aa5666d4eb38b892e8c1ce4b73837e",
+  "algorithm": "MaskablePPO (sb3-contrib)",
+  "total_timesteps": 400000,
+  "training_seed": 42,
+  "training_scenario": "random_day",
+  "observation_dim": 586,
+  "action_dim": 69,
+  "k_paths": 4,
+  "n_demands": 17
+ },
+ "evaluation": {
+  "seeds": [
+   101,
+   102,
+   103,
+   104,
+   105
+  ],
+  "scenarios": [
+   "full_day",
+   "evening_peak",
+   "flash_crowd",
+   "link_failure",
+   "deceptive_local_optimum",
+   "ood_double_failure",
+   "overload_stress"
+  ],
+  "algorithms": [
+   "static",
+   "greedy",
+   "cspf",
+   "random",
+   "rl"
+  ],
+  "artifacts": {
+   "eval_summary.csv": "cebbde5b17c4b7e3570189087206fdbabb25986919280026216bf2341b1693e3",
+   "eval_stats.csv": "618726ecef5ad24caf5e202d1727f395d5b92c85f457780fa950a3fbcebd8996",
+   "eval_summary.json": "4846b4d174e755bed53b6d04f886aa7a1282fb4973b9d4fe6494043ecc8822b2"
+  }
+ },
+ "configs": {
+  "configs\\baselines.yaml": "1f6042ffbabbc6e59da75b618869901b0dcea2ed8690f6f587e3f4aa5001eee8",
+  "configs\\reward.yaml": "a67bde79b684cb5020f5a191aaf26ad009fcc9b075b14e0b5403b2e6db5da2c6",
+  "configs\\scenarios.yaml": "da1b65d306af76a6da9d8efadfc70a8fdec3199f9522946b600f7b3e3d75f67f",
+  "configs\\topology.yaml": "6e1b266da5a7c017d7c2259fa43b937587ac19f7252a7e03259e6182bed2386a",
+  "configs\\traffic_classes.yaml": "0a4857b1a2065640cde1782a528fd093bde628f063547718a2f66ce757bd242d",
+  "configs\\training.yaml": "76248fd761c4cc3fe0d30dd239b1b6d6cd26f972353b6c4b1e40b0689044cfbd"
+ }
+}
