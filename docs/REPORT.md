@@ -1,5 +1,7 @@
 # Technical report — RL-based traffic engineering on a simulated MPLS backbone
 
+**Author:** Uğur Efe Yiğit · Copyright (c) 2026, all rights reserved (see LICENSE).
+
 *Generated with the repository at the commit that ships the pretrained
 `ppo_te` model. All numbers reproduce with the listed commands and seeds.*
 

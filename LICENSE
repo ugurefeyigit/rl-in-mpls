@@ -1,0 +1,50 @@
+Copyright (c) 2026 Uğur Efe Yiğit. All rights reserved.
+
+PROPRIETARY — ALL RIGHTS RESERVED
+
+This software and its associated documentation, configuration files,
+trained model weights, experimental results and figures (collectively,
+"the Work") are the exclusive property of the copyright holder.
+
+No permission is granted to any person or organization to use, copy,
+modify, merge, publish, distribute, sublicense, sell, or create
+derivative works from the Work, in whole or in part, by any means or in
+any form, without the prior written permission of the copyright holder.
+
+Viewing the Work is permitted. Making the Work publicly readable does
+not place it in the public domain, does not grant any license to it, and
+does not waive any right of the copyright holder. Forking within the
+GitHub platform is permitted only to the extent required by the GitHub
+Terms of Service and confers no license to use the Work outside that
+platform.
+
+Permission requests: efeyigit@ug.bilkent.edu.tr
+
+THIRD-PARTY COMPONENTS
+
+This repository redistributes third-party components that are licensed
+separately and are NOT covered by the terms above. Those components
+remain governed by their own licenses, which are reproduced in
+THIRD_PARTY_NOTICES.md:
+
+  frontend/vendor/cytoscape.min.js  — MIT License,
+      Copyright (c) 2016-2024 The Cytoscape Consortium
+  frontend/vendor/echarts.min.js    — Apache License 2.0,
+      Copyright The Apache Software Foundation
+
+Third-party libraries listed in requirements.txt are dependencies only;
+they are not redistributed here and remain under their own licenses.
+
+NO WARRANTY
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS
+IN THE WORK.
+
+The Work is a simulation study and research prototype. It is not
+production software and must not be deployed to control any live
+network.

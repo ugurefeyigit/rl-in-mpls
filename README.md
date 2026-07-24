@@ -1,5 +1,10 @@
 # RL-in-MPLS — Reinforcement-Learning Traffic Engineering on a Simulated MPLS Backbone
 
+> **Author:** Uğur Efe Yiğit · **License:** Proprietary — all rights reserved.
+> This repository is publicly readable but **not** open source. No permission is
+> granted to use, copy, modify or redistribute it without written permission.
+> See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 An interactive engineering experiment answering one question honestly:
 
 > **Can an RL controller make better MPLS traffic-engineering decisions than
