@@ -5,6 +5,11 @@ services:
     build: .
     ports:
       - "8000:8000"
+    environment:
+      # A container is the most likely "someone else runs the demo" path, so the
+      # training endpoint is off by default here. Override to "true" if you
+      # genuinely intend to train inside the container.
+      ALLOW_TRAINING: "false"
     volumes:
       - ./models:/app/models
       - ./results:/app/results
