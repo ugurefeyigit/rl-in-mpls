@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>National Backbone — Live Traffic Operations</title>
+<link rel="stylesheet" href="/static/css/present.css">
+</head>
+<body>
+
+<header id="pheader">
+  <div>
+    <div class="scenario-name" id="scenario-name">National Backbone</div>
+    <div class="scenario-sub" id="scenario-sub">Choose a scenario and press Start Guided Story</div>
+  </div>
+  <div id="phase-chip" class="p-normal">Not started</div>
+  <div style="margin-left:auto;text-align:right">
+    <div class="clock-label">Network time</div>
+    <div id="present-clock">--:--</div>
+  </div>
+  <span id="state-dot" class="state-dot" title="Simulation state">● idle</span>
+  <span id="conn-dot" class="conn" title="Live connection">●</span>
+  <button id="btn-print" class="hdr-btn">Print / Save as PDF</button>
+  <button id="btn-fullscreen" class="hdr-btn" title="Fullscreen (Esc to exit)">⛶ Fullscreen</button>
+  <a class="hdr-btn" href="/advanced">Engineering view ▸</a>
+</header>
+
+<!-- signature element: the incident spine -->
+<div id="spine" title="The evening so far — one block per five-minute interval, coloured by the peak link utilization during it. Notches mark scheduled events.">
+  <div id="spine-track"></div>
+  <div id="spine-caption"></div>
+</div>
+
+<main id="playout">
+  <section id="mapcol">
+    <div id="present-map"></div>
+    <div id="map-legend">
+      <span class="lg"><i class="sw" style="background:#2ea043"></i>quiet</span>
+      <span class="lg"><i class="sw" style="background:#d29922"></i>busy</span>
+      <span class="lg"><i class="sw" style="background:#f0883e"></i>very busy</span>
+      <span class="lg"><i class="sw" style="background:#f85149"></i>at capacity</span>
+      <span class="lg"><i class="sw" style="background:#db61a2"></i>over capacity</span>
+      <span class="lg"><i class="sw sw-dash"></i>failed link ✕</span>
+      <span class="lg"><i class="sw sw-prop"></i>recommended route</span>
+      <span id="map-disclaimer"></span>
+    </div>
+
+    <div id="presenter-bar">
+      <button id="btn-story-start" class="primary">Start Guided 5-Minute Story</button>
+      <div class="bar-sep"></div>
+      <button id="btn-playpause">Pause<span class="kbd">Space</span></button>
+      <button id="btn-next-event">Next event<span class="kbd">→</span></button>
+      <button id="btn-approve-bar">Approve<span class="kbd">A</span></button>
+      <button id="btn-reject-bar">Reject<span class="kbd">R</span></button>
+      <div class="bar-sep"></div>
+      <button id="btn-fail-bar" class="danger">Fail backbone link<span class="kbd">F</span></button>
+      <button id="btn-recover-bar">Recover link</button>
+      <select id="sel-present-link" aria-label="Link to fail or recover"></select>
+      <div class="bar-sep"></div>
+      <button id="btn-reset-story">Reset story</button>
+      <span class="bar-label">Compare against</span>
+      <select id="sel-comparator" aria-label="Comparison controller">
+        <option value="greedy">Traditional controller</option>
+        <option value="static">Fixed routing</option>
+      </select>
+      <label class="bar-label" for="chk-scale">
+        <input id="chk-scale" type="checkbox"> Scaled national view (10×)
+      </label>
+    </div>
+  </section>
+
+  <aside id="rail">
+    <div id="scale-banner" class="scale-banner hidden"></div>
+
+    <div id="kpis">
+      <div class="kpi wide info" id="kpi-score">
+        <span class="kpi-label">Overall network score</span>
+        <span class="kpi-value">—</span>
+        <span class="kpi-note">Waiting for the run to start.</span>
+      </div>
+      <div class="kpi wide" id="kpi-busiest">
+        <span class="kpi-label">Busiest link right now</span>
+        <span class="kpi-value">—</span>
+        <span class="kpi-note"></span>
+      </div>
+      <div class="kpi" id="kpi-sla">
+        <span class="kpi-label">Services with SLA problems</span>
+        <span class="kpi-value">—</span>
+        <span class="kpi-note"></span>
+      </div>
+      <div class="kpi" id="kpi-delivered">
+        <span class="kpi-label">Traffic delivered</span>
+        <span class="kpi-value">—</span>
+        <span class="kpi-note"></span>
+      </div>
+      <div class="kpi wide" id="kpi-changes">
+        <span class="kpi-label">Route changes</span>
+        <span class="kpi-value">—</span>
+        <span class="kpi-note"></span>
+      </div>
+    </div>
+
+    <div class="card hidden" id="recommendation">
+      <span class="eyebrow">Recommendation</span>
+      <div id="rec-body"></div>
+    </div>
+
+    <div class="card" id="comparison">
+      <span class="eyebrow">AI Advisor vs the traditional controller</span>
+      <div id="cmp-body"><p class="note">Start a run to compare the two controllers side by side.</p></div>
+    </div>
+
+    <div class="card">
+      <span class="eyebrow">What happened, minute by minute</span>
+      <div id="story-timeline"><p class="note">The story log fills in as the evening plays out.</p></div>
+    </div>
+
+    <div class="card" id="benchmark-story">
+      <span class="eyebrow">Published results across every scenario</span>
+      <div id="bm-body"><p class="note">Loading published results…</p></div>
+    </div>
+  </aside>
+</main>
+
+<div id="gloss-tip" class="hidden"></div>
+
+<!-- story intro / summary modal -->
+<div id="story-card" class="hidden">
+  <div class="story-modal" role="dialog" aria-modal="true" aria-labelledby="story-title">
+    <h2 id="story-title"></h2>
+    <div id="story-text"></div>
+    <div class="dismiss">
+      <button id="btn-story-continue">Continue</button>
+      <button id="btn-story-close" class="ghost">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- error screen -->
+<div id="error-overlay" class="hidden">
+  <div class="err-card" role="alert">
+    <h2>The simulation stopped</h2>
+    <p>The backend reported an error and is no longer advancing. Nothing on screen
+       is stale data — the run is halted at the interval shown below.</p>
+    <pre id="error-detail"></pre>
+    <p>Press <strong>Reset story</strong> to rebuild the same run from the beginning,
+       or open the engineering view for the full event log.</p>
+  </div>
+</div>
+
+<!-- print-only summary, rendered from live state -->
+<div id="print-summary"></div>
+
+<script src="/static/vendor/cytoscape.min.js"></script>
+<script type="module" src="/static/js/present.js"></script>
+</body>
+</html>
