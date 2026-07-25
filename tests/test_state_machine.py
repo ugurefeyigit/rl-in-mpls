@@ -39,11 +39,16 @@ def status(client):
 
 # ------------------------------------------------------------ state machine
 def test_pause_freezes_step_counter(client):
-    start(client, autostart=True)
+    # Paced, not "fast": at zero delay the 84-interval scenario can run to
+    # completion inside the sleep below, and the session would legitimately be
+    # "completed" rather than "paused" — which made this test flaky. At 20x
+    # (0.1 s per interval) the pause always lands mid-run.
+    start(client, autostart=True, speed="20x")
     time.sleep(0.4)
     client.post("/api/simulation/pause")
     s1 = status(client)
     assert s1["state"] == "paused"
+    assert 0 < s1["step"] < 84, "pause must land mid-scenario for this assertion"
     time.sleep(0.4)
     s2 = status(client)
     assert s2["step"] == s1["step"], "step advanced after pause"
