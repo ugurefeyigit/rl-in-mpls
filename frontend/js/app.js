@@ -1,11 +1,22 @@
-// App bootstrap: state, WebSocket, control wiring, render loop.
+// Advanced console bootstrap: state, WebSocket, control wiring, render loop.
+//
+// Every user-facing string routes through display.js (city names) and fmt.js
+// (number formatting). Internal IDs stay visible only in the dimmed technical
+// lines and hover cards, because tests, configs and the pretrained model
+// depend on them.
 
 import { api, toast } from "./api.js";
 import { TopoView } from "./topo.js";
 import { Charts } from "./charts.js";
 import {
-  renderCheckpoints, renderDecision, renderLspTable, renderLinkTableHtml,
-  renderRuns, tapeAppend,
+  loadDisplay, scenarioLabel, algoLabel, city, linkFull, demandFull,
+  disclaimer, pathLabel, demandLabel,
+} from "./display.js";
+import { simTime, rate, util, esc } from "./fmt.js";
+import {
+  renderBenchmark, renderCheckpoints, renderDecision, renderEvents,
+  renderLspTable, renderLinkTableHtml, renderRuns, renderScoreboard,
+  tapeAppend,
 } from "./panels.js";
 
 const $ = (id) => document.getElementById(id);
@@ -14,9 +25,12 @@ const state = {
   topology: null,
   scenarios: {},
   demands: [],
+  benchmark: null,
   lastPayload: null,
+  status: { state: "idle", running: false },
+  advisor: null,          // pending proposal, or null
   selectedDemand: null,
-  activeTab: "agent",
+  activeTab: "score",
   compare: false,
 };
 
@@ -33,44 +47,108 @@ function phaseFor(hour) {
   return "night";
 }
 
-// ------------------------------------------------------------------ render
-function onTick(payload) {
-  state.lastPayload = payload;
-  const st = payload.status;
-  const hour = st.hour;
-  $("sim-clock").textContent =
-    `${String(Math.floor(hour)).padStart(2, "0")}:${String(Math.round((hour % 1) * 60)).padStart(2, "0")}`;
-  $("sim-day-phase").textContent =
-    `${phaseFor(hour)} · step ${st.step}/${Math.floor(st.duration_min / 5)}` +
-    (st.done ? " · END" : st.running ? "" : " · paused");
-  $("run-desc").textContent =
-    `${st.scenario} · seed ${st.seed} · ${st.algorithms.join(" vs ")}`;
+// ------------------------------------------------------------ state machine
+const STATE_TEXT = {
+  idle: "idle", running: "running", paused: "paused",
+  completed: "completed", error: "error",
+};
 
-  const runs = payload.runs;
+function applyStatus(st) {
+  state.status = st;
+  const s = st.state || (st.running ? "running" : "idle");
+  const chip = $("state-chip");
+  chip.className = `state-chip state-${s}`;
+  chip.textContent = STATE_TEXT[s] || s;
+  const errBox = $("state-error");
+  errBox.classList.toggle("hidden", !st.error);
+  errBox.textContent = st.error || "";
+
+  const hasSession = st.scenario !== undefined && st.scenario !== null;
+  const pending = Boolean(st.awaiting_decision);
+  const done = Boolean(st.done) || s === "completed";
+  const err = s === "error";
+
+  const dis = (id, off) => { $(id).disabled = off; };
+  dis("btn-pause", !hasSession || s !== "running" || err);
+  dis("btn-resume", !hasSession || err || done || pending || s === "running");
+  dis("btn-step", !hasSession || err || done || pending || s === "running");
+  dis("btn-reset", !hasSession);
+  dis("btn-propose", !hasSession || err || done || pending
+                     || !(st.algorithms || []).includes("rl"));
+  dis("btn-approve", !pending);
+  dis("btn-reject", !pending);
+  for (const id of ["btn-fail", "btn-recover", "btn-burst", "btn-save-run"])
+    dis(id, !hasSession || err);
+
+  if (hasSession) {
+    $("run-desc").textContent =
+      `${scenarioLabel(st.scenario)} · seed ${st.seed} · ` +
+      (st.algorithms || []).map(algoLabel).join(" vs ");
+  }
+  $("sim-clock").textContent = st.hour === undefined ? "--:--" : simTime(st.hour);
+  $("sim-day-phase").textContent = st.hour === undefined
+    ? "no session"
+    : `${phaseFor(st.hour)} · interval ${st.step}/${Math.floor(st.duration_min / 5)}` +
+      (done ? " · complete" : s === "running" ? "" : ` · ${s}`);
+}
+
+// ------------------------------------------------------------------ render
+function onPayload(payload) {
+  const isTick = payload.type === "tick";
+  state.lastPayload = payload;
+  applyStatus(payload.status);
+  const st = payload.status;
+  const runs = payload.runs || [];
+  if (!runs.length) return;
+
   $("pane-title-a").innerHTML =
-    `<span class="algo-a">${runs[0].algorithm}</span> — ${st.scenario}`;
+    `<span class="algo-a">${esc(algoLabel(runs[0].algorithm))}</span> — ` +
+    `${esc(scenarioLabel(st.scenario))}`;
   topoA.update(runs[0].snapshot);
   if (runs[1]) {
     $("pane-title-b").innerHTML =
-      `<span class="algo-b">${runs[1].algorithm}</span> — ${st.scenario}`;
+      `<span class="algo-b">${esc(algoLabel(runs[1].algorithm))}</span> — ` +
+      `${esc(scenarioLabel(st.scenario))}`;
     topoB.update(runs[1].snapshot);
   }
 
-  for (const run of runs) {
-    if (run.snapshot.metrics && run.decision && run.decision.step === run.snapshot.step) {
-      charts.push(run.algorithm, run.snapshot.metrics, run.decision);
-      tapeAppend(run.algorithm, run.decision, hour);
+  // Only genuine ticks advance the series; interventions and resets re-send
+  // the last decision and would otherwise double-count it.
+  if (isTick) {
+    let gap = false;
+    for (const run of runs) {
+      const dec = run.decision;
+      if (!dec || !run.snapshot.metrics) continue;
+      if (dec.step !== run.snapshot.step) continue;
+      if (dec.step <= charts.lastStep(run.algorithm)) continue;
+      // A fast-forward (POST /api/simulation/run-until, or Presentation Mode
+      // driving the same session) steps many intervals server-side but
+      // broadcasts only the last payload. Refill from the authoritative record
+      // rather than charting a series with holes in it.
+      if (dec.step > charts.lastStep(run.algorithm) + 1) gap = true;
+      else charts.push(run.algorithm, run.snapshot.metrics, dec);
+      tapeAppend(run.algorithm, dec, st.hour, run.snapshot);
     }
+    if (gap) { refreshHistories(); return; }
   }
-
   renderActiveTab();
 }
 
 function renderActiveTab() {
   const payload = state.lastPayload;
+  if (state.activeTab === "benchmark") {
+    renderBenchmark($("benchmark-body"), state.benchmark,
+                    state.status.scenario || $("sel-scenario").value);
+    return;
+  }
   if (!payload) return;
-  const runs = payload.runs;
+  const runs = payload.runs || [];
+  if (!runs.length) return;
   switch (state.activeTab) {
+    case "score":
+      renderScoreboard($("scoreboard"), runs, charts.history, state.status);
+      renderAdvisorCard();
+      break;
     case "agent":
       renderDecision($("agent-decision"), runs);
       break;
@@ -81,9 +159,11 @@ function renderActiveTab() {
       charts.renderMatrix(runs[0].snapshot, (src, dst) => {
         const list = runs[0].snapshot.demands
           .filter((d) => d.src === src && d.dst === dst)
-          .map((d) => `${d.id} (${d.class}, ${d.volume_mbps.toFixed(0)} Mbps, ${d.sla_ok ? "SLA ok" : "SLA VIOLATED"})`);
+          .map((d) => `${d.id} (${d.class}, ${rate(d.volume_mbps)}, ` +
+                      `${d.sla_ok ? "SLA ok" : "SLA VIOLATED"})`);
         $("matrix-detail").textContent = list.length
-          ? `${src} → ${dst}: ${list.join(" · ")}` : `${src} → ${dst}: no demands`;
+          ? `${city(src)} → ${city(dst)}: ${list.join(" · ")}`
+          : `${city(src)} → ${city(dst)}: no demands`;
       });
       break;
     case "lsps":
@@ -100,23 +180,112 @@ function renderActiveTab() {
   }
 }
 
+// ------------------------------------------------------------ advisor card
+function renderAdvisorCard() {
+  const box = $("advisor-card");
+  const p = state.advisor;
+  if (!p) { box.innerHTML = ""; return; }
+  const la = p.lookahead || {};
+  const d = p.decoded;
+  let effect = "";
+  if (la.noop && la.action) {
+    effect = `<dl class="kv">
+      <dt>busiest link if no change</dt><dd>${util(la.noop.max_util, 1)}</dd>
+      <dt>busiest link if applied</dt><dd>${util(la.action.max_util, 1)}</dd>
+      <dt>Δ busiest link</dt><dd>${(la.delta_max_util * 100).toFixed(1)} pp</dd>
+    </dl>`;
+  } else if (la.noop) {
+    effect = `<dl class="kv"><dt>busiest link if no change</dt>
+      <dd>${util(la.noop.max_util, 1)}</dd></dl>`;
+  }
+  box.innerHTML = `<div class="advisor-card">
+    <h4>Recommendation pending <span class="badge ${p.safety_ok ? "ok" : "rej"}">
+      ${p.safety_ok ? "safety check passed" : "safety check failed"}</span></h4>
+    <div class="dec-action">${p.is_noop
+      ? "Hold the current routing — no change recommended."
+      : esc(`Move ${demandLabel(d.src, d.dst, d.class)} ` +
+            `(${rate(d.volume_mbps)}) to ${pathLabel(d.to_routers)}`)}</div>
+    ${p.is_noop ? "" : `<dl class="kv route-kv">
+      <dt>current route</dt><dd>${esc(pathLabel(d.from_routers))}</dd>
+      <dt>proposed route</dt><dd>${esc(pathLabel(d.to_routers))}</dd></dl>`}
+    ${effect}
+    <div class="tech-line mono">proposal #${p.id} · interval ${p.step} ·
+      action ${p.action}${d ? ` · ${d.demand}→p${d.path_idx}` : ""} ·
+      ${p.safety_reason}</div>
+    <div class="hint">Use Approve / Reject in the control rail. Approving applies
+      exactly this action; rejecting applies no change. Both advance one interval.</div>
+  </div>`;
+}
+
 // --------------------------------------------------------------- websocket
 let ws = null;
+let wsRetry = 0;
 function connectWs() {
-  ws = new WebSocket(`ws://${location.host}/ws/telemetry`);
-  ws.onopen = () => { $("conn-dot").classList.add("ok"); ws.send("hi"); };
-  ws.onclose = () => { $("conn-dot").classList.remove("ok"); setTimeout(connectWs, 1500); };
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(`${proto}//${location.host}/ws/telemetry`);
+  ws.onopen = () => { wsRetry = 0; $("conn-dot").classList.add("ok"); ws.send("hi"); };
+  ws.onclose = () => {
+    $("conn-dot").classList.remove("ok");
+    wsRetry += 1;
+    setTimeout(connectWs, Math.min(1500 * wsRetry, 10000));
+  };
+  ws.onerror = () => ws.close();
   ws.onmessage = (ev) => {
     const payload = JSON.parse(ev.data);
-    if (payload.type === "tick") onTick(payload);
-    else if (payload.type === "status" && payload.status.done)
-      toast(`Scenario finished: ${payload.status.scenario}`);
+    switch (payload.type) {
+      case "advisor":
+        state.advisor = payload.proposal;
+        applyStatus(payload.status);
+        highlightProposal(payload.proposal);
+        renderActiveTab();
+        toast(payload.proposal.is_noop
+          ? "Recommendation: hold the current routing."
+          : "Recommendation ready — approve or reject.");
+        break;
+      case "reset":
+        state.advisor = null;
+        clearProposalHighlight();
+        onPayload(payload);
+        break;
+      case "status":
+        applyStatus(payload.status);
+        if (payload.status.state === "error")
+          toast(`Session error: ${payload.status.error}`, true);
+        else if (payload.status.done)
+          toast(`Scenario complete: ${scenarioLabel(payload.status.scenario)}`);
+        break;
+      default:              // tick | intervention
+        // The socket replays a "tick" on every (re)connect, so the message type
+        // alone must not clear a still-pending recommendation.
+        if (payload.type === "tick" && !payload.status.awaiting_decision) {
+          state.advisor = null;
+          clearProposalHighlight();
+        }
+        onPayload(payload);
+    }
   };
+}
+
+function highlightProposal(p) {
+  if (p && p.decoded) topoA.showProposedPath(p.decoded.to_routers);
+}
+function clearProposalHighlight() {
+  topoA.showProposedPath(null);
 }
 
 // ---------------------------------------------------------------- controls
 async function guard(fn) {
   try { return await fn(); } catch (e) { toast(e.message, true); }
+}
+
+/** Refresh the accumulated series from the authoritative server-side record. */
+async function refreshHistories() {
+  try {
+    const hist = await api.metricsHistory();
+    charts.setHistories(hist.runs);
+    if (state.activeTab === "metrics") charts.render();
+    renderActiveTab();
+  } catch { /* no session yet */ }
 }
 
 function wireControls() {
@@ -130,32 +299,67 @@ function wireControls() {
   $("sel-scenario").addEventListener("change", () => {
     const s = state.scenarios[$("sel-scenario").value];
     $("scenario-desc").textContent = s ? s.description : "";
+    if (state.activeTab === "benchmark") renderActiveTab();
   });
 
   $("btn-start").addEventListener("click", () => guard(async () => {
     const algorithms = [$("sel-algo-a").value];
     if (state.compare) algorithms.push($("sel-algo-b").value);
+    const advisor = $("chk-advisor").checked;
     charts.reset();
     $("tape-lines").innerHTML = "";
     state.selectedDemand = null;
-    await api.start({
+    state.advisor = null;
+    const st = await api.start({
       scenario: $("sel-scenario").value,
       algorithms,
       seed: parseInt($("inp-seed").value, 10) || 42,
       model_tag: $("sel-model").value || null,
       safety_filter: $("chk-safety").checked,
       speed: document.querySelector(".speed.active")?.dataset.speed || "1x",
-      autostart: true,
+      autostart: !advisor,
+      advisor,
+      interface_mode: "advanced",
     });
-    toast(`Session started: ${$("sel-scenario").value} [${algorithms.join(" vs ")}]`);
+    applyStatus(st);
+    toast(`Session started: ${scenarioLabel(st.scenario)} — ` +
+          `${st.algorithms.map(algoLabel).join(" vs ")}, seed ${st.seed}`);
   }));
 
-  $("btn-pause").addEventListener("click", () => guard(api.pause));
-  $("btn-resume").addEventListener("click", () => guard(api.resume));
-  $("btn-reset").addEventListener("click", () => guard(async () => {
-    charts.reset(); $("tape-lines").innerHTML = ""; await api.reset();
-  }));
+  $("btn-pause").addEventListener("click", () => guard(async () =>
+    applyStatus(await api.pause())));
+  $("btn-resume").addEventListener("click", () => guard(async () =>
+    applyStatus(await api.resume())));
   $("btn-step").addEventListener("click", () => guard(api.step));
+  $("btn-reset").addEventListener("click", () => guard(async () => {
+    charts.reset(); $("tape-lines").innerHTML = ""; state.advisor = null;
+    const st = await api.reset();
+    applyStatus(st);
+    // Reset preserves the FULL configuration — say so explicitly.
+    toast(`Reset to interval 0. Configuration preserved: ` +
+          `${scenarioLabel(st.scenario)}, ${st.algorithms.map(algoLabel).join(" vs ")}, ` +
+          `seed ${st.seed}, model ${st.model_tag || "none"}, ` +
+          `safety filter ${st.safety_filter ? "on" : "off"}, speed ${st.speed}.`);
+  }));
+
+  $("btn-propose").addEventListener("click", () => guard(async () => {
+    const p = await api.advisorPropose();
+    state.advisor = p;
+    highlightProposal(p);
+    renderActiveTab();
+  }));
+  $("btn-approve").addEventListener("click", () => guard(async () => {
+    const rec = await api.advisorApprove();
+    state.advisor = null; clearProposalHighlight();
+    toast(`Approved. Busiest link after the change: ` +
+          `${util(rec.actual.max_util, 1)} ` +
+          `(predicted ${rec.lookahead.action ? util(rec.lookahead.action.max_util, 1) : "n/a"}).`);
+  }));
+  $("btn-reject").addEventListener("click", () => guard(async () => {
+    const rec = await api.advisorReject();
+    state.advisor = null; clearProposalHighlight();
+    toast(`Rejected — no change applied. Busiest link: ${util(rec.actual.max_util, 1)}.`);
+  }));
 
   $("speed-row").addEventListener("click", (ev) => {
     const b = ev.target.closest(".speed");
@@ -165,18 +369,36 @@ function wireControls() {
     guard(() => api.speed(b.dataset.speed));
   });
 
-  $("btn-fail").addEventListener("click", () =>
-    guard(() => api.failLink($("sel-fail-link").value)));
-  $("btn-recover").addEventListener("click", () =>
-    guard(() => api.recoverLink($("sel-fail-link").value)));
-  $("btn-burst").addEventListener("click", () =>
-    guard(() => api.burst($("sel-burst-demand").value,
-                          parseFloat($("inp-burst-factor").value) || 2.0, 60)));
+  $("btn-fail").addEventListener("click", () => guard(async () => {
+    const id = $("sel-fail-link").value;
+    const r = await api.failLink(id);
+    toast(r.changed
+      ? `${linkFull(id)} failed — ${r.frr_reroutes} fast-reroute move(s).`
+      : `${linkFull(id)} was already failed — no change.`, !r.changed);
+  }));
+  $("btn-recover").addEventListener("click", () => guard(async () => {
+    const id = $("sel-fail-link").value;
+    const r = await api.recoverLink(id);
+    toast(r.changed
+      ? `${linkFull(id)} recovered. Failed links remaining: ${r.failed_links.length}.`
+      : `${linkFull(id)} was already up — no change.`, !r.changed);
+  }));
+  $("btn-burst").addEventListener("click", () => guard(async () => {
+    const id = $("sel-burst-demand").value;
+    const f = parseFloat($("inp-burst-factor").value) || 2.0;
+    await api.burst(id, f, 60);
+    const d = state.demands.find((x) => x.id === id);
+    toast(`60-minute ×${f.toFixed(1)} burst injected on ` +
+          `${d ? `${city(d.src)} → ${city(d.dst)} ${d.class} traffic` : id}.`);
+  }));
   $("inp-mult").addEventListener("input", () => {
     $("mult-val").textContent = " " + parseFloat($("inp-mult").value).toFixed(2);
   });
-  $("inp-mult").addEventListener("change", () =>
-    guard(() => api.multiplier(parseFloat($("inp-mult").value))));
+  $("inp-mult").addEventListener("change", () => guard(async () => {
+    const f = parseFloat($("inp-mult").value);
+    await api.multiplier(f);
+    toast(`Global demand multiplier set to ×${f.toFixed(2)}.`);
+  }));
 
   $("btn-save-run").addEventListener("click", () => guard(async () => {
     const r = await api.saveRun();
@@ -192,6 +414,7 @@ function wireControls() {
       state.activeTab = b.dataset.tab;
       if (state.activeTab === "training") refreshTraining();
       if (state.activeTab === "runs") refreshRuns();
+      if (state.activeTab === "events") refreshEvents();
       renderActiveTab();
       setTimeout(() => charts.render(), 30);
     }));
@@ -202,20 +425,31 @@ function wireControls() {
   });
 
   $("btn-train").addEventListener("click", () => guard(async () => {
-    await api.trainStart({
-      timesteps: parseInt($("inp-train-steps").value, 10) || 100000,
-      tag: $("inp-train-tag").value || "ppo_custom",
-      seed: parseInt($("inp-seed").value, 10) || 42,
-    });
-    toast("Training job started");
+    const steps = parseInt($("inp-train-steps").value, 10) || 100000;
+    const tag = $("inp-train-tag").value || "ppo_custom";
+    const ok = window.confirm(
+      `Start a NEW training job?\n\n` +
+      `  timesteps: ${steps.toLocaleString()}\n  tag: ${tag}\n\n` +
+      `This spawns a long-running background process on the server and writes ` +
+      `to models/${tag}/. It does not touch the pretrained ppo_te model or any ` +
+      `published results. Do not run this during a presentation.`);
+    if (!ok) return;
+    await api.trainStart({ timesteps: steps, tag,
+                           seed: parseInt($("inp-seed").value, 10) || 42,
+                           confirm: true });
+    toast(`Training job started: ${tag}, ${steps.toLocaleString()} timesteps.`);
     refreshTraining();
   }));
   $("btn-refresh-runs").addEventListener("click", refreshRuns);
+  $("btn-refresh-events").addEventListener("click", refreshEvents);
 }
 
 async function refreshTraining() {
   try {
     const p = await api.trainProgress();
+    const blocked = p.allowed === false;
+    $("train-disabled").classList.toggle("hidden", !blocked);
+    $("btn-train").disabled = blocked;
     $("train-log").textContent = p.log.length
       ? p.log.join("\n")
       : (p.active ? "training starting…" : "no training job in this server session");
@@ -228,17 +462,25 @@ async function refreshRuns() {
   try { renderRuns($("tbl-runs"), await api.runs()); } catch { /* no db yet */ }
 }
 
+async function refreshEvents() {
+  try { renderEvents($("events-body"), await api.events(80)); } catch { /* ignore */ }
+}
+let eventsTimer = null;
+
 // --------------------------------------------------------------- bootstrap
 async function boot() {
+  await loadDisplay();
   state.topology = await api.topology();
   state.scenarios = await api.scenarios();
   const tc = await api.trafficClasses();
   state.demands = tc.demands;
+  $("legend-disclaimer").textContent = disclaimer();
 
   const selScen = $("sel-scenario");
-  for (const name of Object.keys(state.scenarios)) {
+  for (const [name, s] of Object.entries(state.scenarios)) {
     const o = document.createElement("option");
-    o.value = name; o.textContent = name;
+    o.value = name;
+    o.textContent = s.display_name || scenarioLabel(name);
     if (name === "demo_evening") o.selected = true;
     selScen.appendChild(o);
   }
@@ -247,14 +489,16 @@ async function boot() {
   const selLink = $("sel-fail-link");
   for (const l of state.topology.links) {
     const o = document.createElement("option");
-    o.value = l.id; o.textContent = `${l.id} ${l.a}–${l.z} (${l.capacity_mbps} Mbps)`;
+    o.value = l.id;
+    o.textContent = `${linkFull(l.id)} — ${rate(l.capacity_mbps)}`;
     if (l.id === "L20") o.selected = true;
     selLink.appendChild(o);
   }
   const selDemand = $("sel-burst-demand");
   for (const d of state.demands) {
     const o = document.createElement("option");
-    o.value = d.id; o.textContent = `${d.id} ${d.src}→${d.dst} (${d.class})`;
+    o.value = d.id;
+    o.textContent = demandFull(d);
     selDemand.appendChild(o);
   }
   const selModel = $("sel-model");
@@ -271,13 +515,24 @@ async function boot() {
   topoA.onDemandSelect = (id) => { state.selectedDemand = id; };
 
   wireControls();
+  applyStatus(await api.status());
   connectWs();
 
-  // if a session already exists (page reload), repopulate history
+  try { state.benchmark = await api.benchmark(); } catch { /* results absent */ }
+  renderBenchmark($("benchmark-body"), state.benchmark,
+                  state.status.scenario || $("sel-scenario").value);
+
+  // if a session already exists (page reload), repopulate history + advisor
+  await refreshHistories();
   try {
-    const hist = await api.metricsHistory();
-    charts.setHistories(hist.runs);
-  } catch { /* no session yet */ }
+    const a = await api.advisorStatus();
+    if (a.pending) { state.advisor = a.pending; highlightProposal(a.pending); }
+  } catch { /* no session */ }
+  renderActiveTab();
+
+  eventsTimer = setInterval(() => {
+    if (state.activeTab === "events") refreshEvents();
+  }, 4000);
 }
 
-boot();
+boot().catch((e) => toast(`Startup failed: ${e.message}`, true));

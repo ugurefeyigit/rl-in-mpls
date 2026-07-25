@@ -13,12 +13,17 @@
     <span class="brand-name">RL-in-MPLS</span>
     <span class="brand-sub">traffic-engineering console</span>
   </div>
+  <div class="statebox">
+    <span id="state-chip" class="state-chip state-idle">idle</span>
+    <span id="state-error" class="state-error hidden"></span>
+  </div>
   <div class="clockbox">
     <span id="sim-clock" class="mono">--:--</span>
-    <span id="sim-day-phase" class="phase-chip">idle</span>
+    <span id="sim-day-phase" class="phase-chip">no session</span>
   </div>
   <div class="runbox">
-    <span id="run-desc" class="mono muted">no session</span>
+    <span id="run-desc" class="muted">no session</span>
+    <a id="btn-present" class="btn-link present-link" href="/present">Presentation Mode ▸</a>
     <span id="conn-dot" class="conn-dot" title="WebSocket status">●</span>
   </div>
 </header>
@@ -27,54 +32,61 @@
   <!-- ====================== control rail ====================== -->
   <aside id="controls">
     <h2>Session</h2>
-    <label>Scenario
+    <label for="sel-scenario">Scenario
       <select id="sel-scenario"></select>
     </label>
     <div id="scenario-desc" class="hint"></div>
-    <label>Mode
+    <label for="sel-mode">Mode
       <select id="sel-mode">
-        <option value="single">Single algorithm</option>
+        <option value="single">Single controller</option>
         <option value="compare">Compare A vs B</option>
       </select>
     </label>
     <div class="row2">
-      <label>Algorithm A
+      <label for="sel-algo-a">Controller A
         <select id="sel-algo-a">
-          <option value="rl">RL (MaskablePPO)</option>
-          <option value="static">Static shortest path</option>
-          <option value="greedy">Greedy (util-aware)</option>
+          <option value="rl">AI Advisor (MaskablePPO)</option>
+          <option value="static">Fixed routing (shortest path)</option>
+          <option value="greedy">Traditional controller (greedy)</option>
           <option value="cspf">CSPF periodic reopt</option>
           <option value="random">Random (floor)</option>
         </select>
       </label>
-      <label id="algo-b-wrap" class="hidden">Algorithm B
+      <label id="algo-b-wrap" class="hidden" for="sel-algo-b">Controller B
         <select id="sel-algo-b">
-          <option value="static">Static shortest path</option>
-          <option value="rl">RL (MaskablePPO)</option>
-          <option value="greedy">Greedy (util-aware)</option>
+          <option value="greedy">Traditional controller (greedy)</option>
+          <option value="static">Fixed routing (shortest path)</option>
+          <option value="rl">AI Advisor (MaskablePPO)</option>
           <option value="cspf">CSPF periodic reopt</option>
         </select>
       </label>
     </div>
     <div class="row2">
-      <label>Model tag
+      <label for="sel-model">Model tag
         <select id="sel-model"></select>
       </label>
-      <label>Seed
+      <label for="inp-seed">Seed
         <input id="inp-seed" class="mono" type="number" value="42">
       </label>
     </div>
     <label class="check"><input id="chk-safety" type="checkbox" checked>
       Safety filter (constraint checker on RL actions)</label>
+    <label class="check"><input id="chk-advisor" type="checkbox">
+      Operator Advisor (recommend, wait for approval)</label>
 
     <div class="btnrow">
       <button id="btn-start" class="primary">Start session</button>
-      <button id="btn-reset" title="Rebuild the session at t=0">Reset</button>
+      <button id="btn-reset" title="Rebuild the session at t=0 with the same configuration">Reset</button>
     </div>
     <div class="btnrow">
       <button id="btn-pause">Pause</button>
       <button id="btn-resume">Resume</button>
       <button id="btn-step" title="Advance one 5-minute control interval">Step ▸</button>
+    </div>
+    <div class="btnrow" id="advisor-row">
+      <button id="btn-propose" title="Ask the policy for a recommendation without applying it">Recommend</button>
+      <button id="btn-approve" class="primary">Approve</button>
+      <button id="btn-reject" class="danger">Reject</button>
     </div>
     <label>Speed</label>
     <div class="btnrow" id="speed-row">
@@ -86,7 +98,7 @@
 
     <h2>Interventions</h2>
     <div class="row2">
-      <label>Link
+      <label for="sel-fail-link">Link
         <select id="sel-fail-link"></select>
       </label>
       <div class="btncol">
@@ -95,15 +107,15 @@
       </div>
     </div>
     <div class="row2">
-      <label>Demand
+      <label for="sel-burst-demand">Traffic demand
         <select id="sel-burst-demand"></select>
       </label>
-      <label>Burst ×
+      <label for="inp-burst-factor">Burst ×
         <input id="inp-burst-factor" class="mono" type="number" value="2.0" step="0.1" min="0.1">
       </label>
     </div>
     <button id="btn-burst">Inject 60-min burst</button>
-    <label>Global demand ×<span id="mult-val" class="mono"> 1.00</span>
+    <label for="inp-mult">Global demand ×<span id="mult-val" class="mono"> 1.00</span>
       <input id="inp-mult" type="range" min="0.5" max="2.0" step="0.05" value="1.0">
     </label>
 
@@ -119,11 +131,11 @@
   <section id="stage">
     <div id="topo-wrap">
       <div class="topo-pane" id="topo-pane-a">
-        <div class="pane-title mono" id="pane-title-a">—</div>
+        <div class="pane-title" id="pane-title-a">—</div>
         <div class="cy" id="cy-a"></div>
       </div>
       <div class="topo-pane hidden" id="topo-pane-b">
-        <div class="pane-title mono" id="pane-title-b">—</div>
+        <div class="pane-title" id="pane-title-b">—</div>
         <div class="cy" id="cy-b"></div>
       </div>
     </div>
@@ -134,30 +146,41 @@
       <span class="lg"><i class="sw" style="background:#f85149"></i>90–100%</span>
       <span class="lg"><i class="sw" style="background:#db61a2"></i>&gt;100%</span>
       <span class="lg"><i class="sw sw-dash"></i>failed</span>
-      <span class="lg"><i class="sw sw-path"></i>selected LSP</span>
-      <span class="lg">□ PE &nbsp; ○ P &nbsp; ◇ AGG</span>
+      <span class="lg"><i class="sw sw-path"></i>selected route</span>
+      <span class="lg">□ edge &nbsp; ○ core &nbsp; ◇ aggregation</span>
+      <span class="lg disclaimer" id="legend-disclaimer"></span>
     </div>
     <div id="hovercard" class="hidden mono"></div>
     <!-- signature element: the decision tape -->
     <div id="tape">
       <div class="tape-head mono">DECISION TAPE</div>
-      <div id="tape-lines" class="mono"></div>
+      <div id="tape-lines"></div>
     </div>
   </section>
 
   <!-- ====================== analysis rail ====================== -->
   <aside id="panels">
     <nav id="tabs">
-      <button data-tab="agent" class="active">Agent</button>
+      <button data-tab="score" class="active">Scoreboard</button>
+      <button data-tab="agent">Decision</button>
       <button data-tab="metrics">Metrics</button>
+      <button data-tab="benchmark">Benchmark</button>
       <button data-tab="matrix">Matrix</button>
-      <button data-tab="lsps">LSPs</button>
+      <button data-tab="lsps">Demands</button>
       <button data-tab="links">Links</button>
+      <button data-tab="events">Events</button>
       <button data-tab="training">Training</button>
       <button data-tab="runs">Runs</button>
     </nav>
 
-    <div class="tab-body" id="tab-agent">
+    <div class="tab-body" id="tab-score">
+      <div id="advisor-card"></div>
+      <div id="scoreboard">
+        <div class="placeholder">Start a session to see the live scoreboard.</div>
+      </div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-agent">
       <div id="agent-decision">
         <div class="placeholder">Start a session to see controller decisions.</div>
       </div>
@@ -166,22 +189,29 @@
     <div class="tab-body hidden" id="tab-metrics">
       <label class="inline">Metric
         <select id="sel-metric">
-          <option value="max_util">Max link utilization</option>
+          <option value="max_util">Busiest-link utilization</option>
           <option value="mean_util">Mean link utilization</option>
           <option value="util_std">Utilization std dev</option>
           <option value="mean_delay_ms">Mean end-to-end delay (ms)</option>
           <option value="p95_delay_ms">p95 delay (ms)</option>
           <option value="loss_ratio">Loss ratio</option>
           <option value="delivered_ratio">Delivered traffic ratio</option>
-          <option value="sla_violations">SLA violations</option>
+          <option value="sla_violations">Demand-interval SLA violations</option>
           <option value="congested_links">Congested links</option>
-          <option value="reroutes">Reroutes / interval</option>
+          <option value="reroutes">Route changes / interval</option>
           <option value="jain_fairness">Jain fairness</option>
         </select>
       </label>
       <div id="chart-metric" class="chart tall"></div>
       <div id="chart-reward" class="chart"></div>
       <div id="chart-components" class="chart"></div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-benchmark">
+      <h2>Published benchmark results</h2>
+      <div id="benchmark-body">
+        <div class="placeholder">Loading published results…</div>
+      </div>
     </div>
 
     <div class="tab-body hidden" id="tab-matrix">
@@ -197,10 +227,17 @@
       <div class="table-wrap"><table id="tbl-links"></table></div>
     </div>
 
+    <div class="tab-body hidden" id="tab-events">
+      <div class="btnrow"><button id="btn-refresh-events">Refresh</button></div>
+      <div id="events-body"><div class="placeholder">No backend events yet.</div></div>
+    </div>
+
     <div class="tab-body hidden" id="tab-training">
+      <div id="train-disabled" class="warn-badge hidden">
+        Training is disabled during presentation mode.</div>
       <div class="row2">
-        <label>Timesteps <input id="inp-train-steps" class="mono" type="number" value="100000"></label>
-        <label>Tag <input id="inp-train-tag" class="mono" value="ppo_custom"></label>
+        <label for="inp-train-steps">Timesteps <input id="inp-train-steps" class="mono" type="number" value="100000"></label>
+        <label for="inp-train-tag">Tag <input id="inp-train-tag" class="mono" value="ppo_custom"></label>
       </div>
       <button id="btn-train" class="primary">Start training job</button>
       <div class="hint">Training runs as a separate process on the backend; this view only monitors it. TensorBoard: <span class="mono">tensorboard --logdir runs</span></div>

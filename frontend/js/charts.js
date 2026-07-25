@@ -1,5 +1,10 @@
 // ECharts: metric time series (per algorithm), cumulative reward,
 // reward-component breakdown, and the traffic matrix heatmap.
+// Series are named with the audience-facing controller label; colours stay
+// keyed by the internal algorithm id.
+
+import { algoLabel, city } from "./display.js";
+import { rate } from "./fmt.js";
 
 const ALGO_COLORS = { rl: "#58a6ff", static: "#8494a7", greedy: "#3fb950",
                       cspf: "#e3b341", random: "#db61a2" };
@@ -41,15 +46,35 @@ export class Charts {
     }
   }
 
+  /**
+   * Replace the accumulated series from GET /api/metrics/history — the
+   * authoritative per-interval record (AlgoRunner.history). Used on page
+   * reload and after a fast-forward, where intermediate intervals are stepped
+   * on the server but only the final payload is broadcast.
+   */
   setHistories(runs) {
     this.history = {};
-    for (const r of runs) this.history[r.algorithm] = r.history;
+    this.rewardSeries = {};
+    for (const r of runs) {
+      this.history[r.algorithm] = r.history;
+      let cum = 0;
+      this.rewardSeries[r.algorithm] = r.history.map((h) => {
+        cum += h.reward || 0;
+        return [h.t_min, cum];
+      });
+    }
+  }
+
+  /** Highest interval index seen per algorithm — used to de-duplicate ticks. */
+  lastStep(algo) {
+    const h = this.history[algo];
+    return h && h.length ? (h[h.length - 1].step ?? h.length) : 0;
   }
 
   render() {
     const key = this.metricKey;
     const series = Object.entries(this.history).map(([algo, hist]) => ({
-      name: algo, type: "line", showSymbol: false, smooth: 0.15,
+      name: algoLabel(algo), type: "line", showSymbol: false, smooth: 0.15,
       lineStyle: { width: 1.6, color: ALGO_COLORS[algo] },
       itemStyle: { color: ALGO_COLORS[algo] },
       data: hist.map((h) => [h.t_min / 60, h[key]]),
@@ -82,7 +107,7 @@ export class Charts {
       xAxis: { type: "value", ...DARK, axisLabel: { color: "#8494a7" } },
       yAxis: { type: "value", ...DARK, axisLabel: { color: "#8494a7" }, scale: true },
       series: Object.entries(this.rewardSeries).map(([algo, data]) => ({
-        name: algo, type: "line", showSymbol: false,
+        name: algoLabel(algo), type: "line", showSymbol: false,
         lineStyle: { width: 1.6, color: ALGO_COLORS[algo] },
         itemStyle: { color: ALGO_COLORS[algo] },
         data: data.map(([t, v]) => [t / 60, v]),
@@ -102,7 +127,7 @@ export class Charts {
       yAxis: { type: "category", data: compKeys,
                axisLabel: { color: "#8494a7", fontSize: 9 } },
       series: algos.map((algo) => ({
-        name: algo, type: "bar", barGap: "10%",
+        name: algoLabel(algo), type: "bar", barGap: "10%",
         itemStyle: { color: ALGO_COLORS[algo] },
         data: compKeys.map((k) => this.compSeries[algo][k]),
       })),
@@ -127,14 +152,16 @@ export class Charts {
     }));
     this.matrix.setOption({
       animation: false,
-      tooltip: { formatter: (p) => `${srcs[p.value[1]]} → ${dsts[p.value[0]]}: ${p.value[2]} Mbps`,
+      tooltip: { formatter: (p) =>
+                   `${city(srcs[p.value[1]])} → ${city(dsts[p.value[0]])}: ${rate(p.value[2])}`,
                  backgroundColor: "#0b0f14", borderColor: "#2c3644",
                  textStyle: { color: "#dbe4ee", fontSize: 11 } },
-      grid: { left: 46, right: 60, top: 24, bottom: 30 },
-      xAxis: { type: "category", data: dsts, axisLabel: { color: "#8494a7" },
-               name: "egress", nameTextStyle: { color: "#8494a7" } },
-      yAxis: { type: "category", data: srcs, axisLabel: { color: "#8494a7" },
-               name: "ingress", nameTextStyle: { color: "#8494a7" } },
+      grid: { left: 76, right: 60, top: 24, bottom: 46 },
+      xAxis: { type: "category", data: dsts.map(city),
+               axisLabel: { color: "#8494a7", rotate: 40 },
+               name: "destination city", nameGap: 32, nameTextStyle: { color: "#8494a7" } },
+      yAxis: { type: "category", data: srcs.map(city), axisLabel: { color: "#8494a7" },
+               name: "source city", nameTextStyle: { color: "#8494a7" } },
       visualMap: {
         min: 0, max: vmax, calculable: false, orient: "vertical", right: 0, top: "center",
         inRange: { color: ["#10161f", "#1f4e8c", "#d29922", "#f85149"] },
