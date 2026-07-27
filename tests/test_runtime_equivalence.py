@@ -1366,6 +1366,34 @@ def test_projected_metrics_match_naive_projection():
                              f"step {step}: projected_link_loads_after_move({d_idx},{p_idx})")
 
 
+def test_candidate_row_matches_candidate_matrices():
+    """The single-demand fast path must equal the all-demands matrix, row for row."""
+    for step, env in _states_across_episode():
+        eng = env.eng
+        mats = eng.candidate_matrices()
+        for d_idx in range(eng.n_demands):
+            row = eng.candidate_row(d_idx)
+            for key in mats:
+                assert np.array_equal(row[key], mats[key][d_idx]), (
+                    f"step {step}: candidate_row({d_idx})['{key}'] != candidate_matrices row")
+
+
+def test_candidate_matrices_match_scalar_path_methods():
+    """Both vectorized forms must equal the per-path scalar accessors."""
+    for step, env in _states_across_episode():
+        eng = env.eng
+        mats = eng.candidate_matrices()
+        for d_idx in range(eng.n_demands):
+            for p_idx in range(len(eng.demands[d_idx].candidate_paths)):
+                assert bool(mats["available"][d_idx, p_idx]) == eng.path_available(d_idx, p_idx)
+                assert float(mats["bottleneck_util"][d_idx, p_idx]) == \
+                    eng.path_bottleneck_util(d_idx, p_idx)
+                assert float(mats["available_bandwidth_mbps"][d_idx, p_idx]) == \
+                    eng.path_available_bandwidth(d_idx, p_idx)
+                assert float(mats["projected_bottleneck_util"][d_idx, p_idx]) == \
+                    eng.projected_bottleneck_after_move(d_idx, p_idx)
+
+
 def test_demand_delay_and_loss_match_reference():
     for step, env in _states_across_episode():
         eng = env.eng

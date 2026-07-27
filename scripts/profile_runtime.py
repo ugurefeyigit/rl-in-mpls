@@ -40,6 +40,7 @@ from mplssim.baselines import make_baseline
 from mplssim.experiments.runner import run_episode
 from mplssim.factory import engine_config_from_training, make_engine
 from mplssim.rl.env import MplsTeEnv
+from mplssim.sim.engine import SimulationEngine
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "results"
@@ -68,8 +69,8 @@ class Bench:
         *,
         unit_per_call: float = 1.0,
         unit_name: str = "calls",
-        reps: int = 7,
-        warmup: int = 2,
+        reps: int = 11,
+        warmup: int = 3,
         inner: int = 1,
     ) -> None:
         """Time ``body(state)`` where ``state`` comes from a fresh ``setup()``.
@@ -107,7 +108,10 @@ class Bench:
             "unit_per_call": unit_per_call,
             "throughput_per_s": (unit_per_call / med) if med > 0 else float("inf"),
         }
-        print(f"  {name:38s} median={_fmt(med)}  p95={_fmt(p95)}  "
+        # min is reported alongside median because on a loaded desktop the
+        # median still absorbs background interference, while the minimum is
+        # the most reproducible estimate of the code's own cost
+        print(f"  {name:38s} median={_fmt(med)}  p95={_fmt(p95)}  min={_fmt(min(samples))}  "
               f"{self.results[name]['throughput_per_s']:12,.1f} {unit_name}/s")
 
     def derive(self, name: str, source: str, unit_per_call: float, unit_name: str) -> None:
@@ -288,18 +292,25 @@ def bench_engine(b: Bench) -> None:
     b.run("engine.clone", advanced_engine,
           lambda e: e.clone(),
           unit_name="clones", inner=5)
-    b.run("engine.fast_clone", advanced_engine,
-          lambda e: e.fast_clone(),
-          unit_name="clones", inner=50)
     b.run("engine.clone_and_step", advanced_engine,
           lambda e: e.clone().step_interval(),
           unit_name="counterfactuals", inner=5)
-    b.run("engine.fast_clone_and_step", advanced_engine,
-          lambda e: e.fast_clone().step_interval(),
-          unit_name="counterfactuals", inner=20)
-    b.run("engine._lsp_counts", advanced_engine,
-          lambda e: e._lsp_counts(),
-          unit_name="counts", inner=200)
+    b.run("engine.candidate_info_one", advanced_engine,
+          lambda e: e.candidate_info(0),
+          unit_name="queries", inner=200)
+    # Present only after the optimization branch; guarded so this script can be
+    # run unchanged against an older revision for a like-for-like A/B.
+    if hasattr(SimulationEngine, "fast_clone"):
+        b.run("engine.fast_clone", advanced_engine,
+              lambda e: e.fast_clone(),
+              unit_name="clones", inner=50)
+        b.run("engine.fast_clone_and_step", advanced_engine,
+              lambda e: e.fast_clone().step_interval(),
+              unit_name="counterfactuals", inner=20)
+    if hasattr(SimulationEngine, "_lsp_counts"):
+        b.run("engine._lsp_counts", advanced_engine,
+              lambda e: e._lsp_counts(),
+              unit_name="counts", inner=200)
     b.run("engine.construct", lambda: None,
           lambda _: fresh_engine(),
           unit_name="engines", inner=5)
@@ -385,7 +396,8 @@ def bench_memory(b: Bench) -> None:
     b.memory("mem.engine.step_interval", advanced_engine, lambda e: e.step_interval())
     b.memory("mem.engine.snapshot", advanced_engine, lambda e: e.snapshot())
     b.memory("mem.engine.clone", advanced_engine, lambda e: e.clone())
-    b.memory("mem.engine.fast_clone", advanced_engine, lambda e: e.fast_clone())
+    if hasattr(SimulationEngine, "fast_clone"):
+        b.memory("mem.engine.fast_clone", advanced_engine, lambda e: e.fast_clone())
     b.memory("mem.env.action_masks", advanced_env, lambda e: e.action_masks())
     b.memory("mem.env.step", advanced_env, lambda e: e.step(0))
     b.memory("mem.episode.demo_evening", lambda: fresh_engine("demo_evening"), _drain_engine)

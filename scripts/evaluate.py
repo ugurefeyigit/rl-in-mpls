@@ -41,6 +41,13 @@ DEFAULT_ALGOS = ["static", "greedy", "cspf", "random", "rl"]
 
 
 def ci95(x: np.ndarray) -> float:
+    """Half-width of the 95% t-interval.
+
+    Returns 0.0 for fewer than two samples, where the interval is undefined
+    rather than zero-width; the companion ``<metric>_n`` column records the
+    sample size so a 0.0 here can be told apart from a genuinely tight
+    interval.
+    """
     if len(x) < 2:
         return 0.0
     return float(sps.t.ppf(0.975, len(x) - 1) * np.std(x, ddof=1) / np.sqrt(len(x)))
@@ -66,6 +73,14 @@ def main() -> None:
         from server.session import load_model
         model = load_model(args.model)
         print(f"loaded model {args.model}")
+
+    # A repeated seed would put duplicate (scenario, seed) keys in the summary
+    # frame, which makes the paired-delta .loc lookups expand instead of
+    # aligning one-to-one. Reject it rather than silently produce wrong deltas.
+    if len(set(args.seeds)) != len(args.seeds):
+        dupes = sorted({s for s in args.seeds if args.seeds.count(s) > 1})
+        ap.error(f"--seeds contains duplicates {dupes}; paired deltas require "
+                 f"one row per (scenario, seed)")
 
     keep_seed = args.keep_steps_seed if args.keep_steps_seed is not None else args.seeds[0]
     summaries: list[dict] = []
@@ -99,12 +114,20 @@ def main() -> None:
     for (scen, algo), g in sdf.groupby(["scenario", "algorithm"]):
         row = {"scenario": scen, "algorithm": algo, "n_seeds": len(g)}
         for mkey in metrics:
+            if mkey not in g.columns:
+                continue
             vals = g[mkey].dropna().to_numpy(dtype=float)
             if len(vals) == 0:
                 continue
             row[f"{mkey}_mean"] = float(np.mean(vals))
             row[f"{mkey}_std"] = float(np.std(vals, ddof=1)) if len(vals) > 1 else 0.0
             row[f"{mkey}_ci95"] = ci95(vals)
+            # Per-metric sample count. `n_seeds` counts the rows in the group,
+            # but a metric that is None for some seeds (recovery_steps is None
+            # whenever a scenario has no failure) is averaged over fewer.
+            # Recording the real n stops a mean being read as if it used every
+            # seed, and marks where ci95 returned 0.0 for want of a sample.
+            row[f"{mkey}_n"] = int(len(vals))
         rows.append(row)
     stats_df = pd.DataFrame(rows)
     stats_df.to_csv(RESULTS / f"{args.prefix}_stats.csv", index=False)
@@ -131,7 +154,17 @@ def main() -> None:
     view = stats_df[stats_df.columns[stats_df.columns.str.contains(
         "scenario|algorithm|reward_sum_mean|max_util_mean_mean|sla_violations_total_mean|reroutes_total_mean")]]
     print(view.to_string(index=False))
-    print(f"\nwrote {RESULTS/'eval_summary.csv'}, eval_stats.csv, eval_summary.json")
+    # name the files actually written (the prefix is configurable)
+    print(f"\nwrote {RESULTS / f'{args.prefix}_summary.csv'}, "
+          f"{args.prefix}_stats.csv, {args.prefix}_summary.json")
+    stale = sorted(p.name for p in RESULTS.glob(f"{args.prefix}_steps_*.csv")
+                   if not any(f"_{scen}_seed{keep_seed}_" in p.name
+                              for scen in args.scenarios))
+    if stale:
+        print(f"note: {len(stale)} older {args.prefix}_steps_*.csv file(s) in "
+              f"results/ were NOT part of this run and were left untouched;\n"
+              f"      figures built from the prefix will still pick them up: "
+              f"{', '.join(stale[:4])}{' ...' if len(stale) > 4 else ''}")
 
 
 if __name__ == "__main__":

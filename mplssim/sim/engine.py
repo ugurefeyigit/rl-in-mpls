@@ -207,10 +207,23 @@ class SimulationEngine:
 
     # ------------------------------------------------------------------ paths
     def dlink_up(self, dlink_index: int) -> bool:
-        return bool(self._dlink_up[dlink_index])
+        return self.link_up[self.topo.dlinks[dlink_index].undirected_id]
 
     def path_available(self, d_idx: int, p_idx: int) -> bool:
-        return bool(self._dlink_up[self._path_links[d_idx][p_idx]].all())
+        """Availability of one candidate path.
+
+        Deliberately uses dict lookups rather than the ``_dlink_up`` array:
+        measured over 68 candidates, dict lookups take 43us against 57us for
+        per-path NumPy indexing, because a path is only 4-6 hops and two ufunc
+        calls cost more than the lookups they replace. The array pays off only
+        when every candidate is reduced at once - see
+        :meth:`candidate_available_matrix`, which does all 68 in 1.9us. The two
+        representations are asserted to agree across a full episode in
+        tests/test_runtime_equivalence.py.
+        """
+        link_up, dlinks = self.link_up, self.topo.dlinks
+        return all(link_up[dlinks[int(li)].undirected_id]
+                   for li in self._path_links[d_idx][p_idx])
 
     def candidate_available_matrix(self) -> np.ndarray:
         """(n_demands, k_paths) availability for every candidate at once.
@@ -319,15 +332,32 @@ class SimulationEngine:
             "available_bandwidth_mbps": (self.capacity - self.link_load)[pad].min(axis=2),
         }
 
-    def _candidate_info_from(self, mats: dict[str, np.ndarray], d_idx: int
-                             ) -> list[dict[str, Any]]:
+    def candidate_row(self, d_idx: int) -> dict[str, np.ndarray]:
+        """:meth:`candidate_matrices` restricted to one demand, as (k,) arrays.
+
+        Same values, but it reduces over that demand's rows only - so a
+        single-demand query does not pay for all the others.
+        """
+        pad = self._cand_pad[d_idx]
+        vol = float(self.demand_volumes[d_idx])
+        base = self._projected_base_loads(d_idx, self._sweep_buf)
+        return {
+            "available": self._dlink_up[pad].all(axis=1) & self._cand_exists[d_idx],
+            "bottleneck_util": self.link_util[pad].max(axis=1),
+            "projected_bottleneck_util": ((base[pad] + vol) / self.capacity[pad]).max(axis=1),
+            "available_bandwidth_mbps": (self.capacity - self.link_load)[pad].min(axis=1),
+        }
+
+    def _candidate_info_from(self, mats: dict[str, np.ndarray], d_idx: int,
+                             row: bool = False) -> list[dict[str, Any]]:
         d = self.demands[d_idx]
         cur = int(self.current_path[d_idx])
         costs = self._path_costs[d_idx]
-        avail = mats["available"][d_idx]
-        bott = mats["bottleneck_util"][d_idx]
-        proj = mats["projected_bottleneck_util"][d_idx]
-        bw = mats["available_bandwidth_mbps"][d_idx]
+        sel = (lambda key: mats[key]) if row else (lambda key: mats[key][d_idx])
+        avail = sel("available")
+        bott = sel("bottleneck_util")
+        proj = sel("projected_bottleneck_util")
+        bw = sel("available_bandwidth_mbps")
         return [
             {
                 "path_idx": p,
@@ -344,7 +374,7 @@ class SimulationEngine:
         ]
 
     def candidate_info(self, d_idx: int) -> list[dict[str, Any]]:
-        return self._candidate_info_from(self.candidate_matrices(), d_idx)
+        return self._candidate_info_from(self.candidate_row(d_idx), d_idx, row=True)
 
     # ---------------------------------------------------------------- actions
     def validate_action(self, d_idx: int, p_idx: int, source: str = "rl") -> tuple[bool, str]:
@@ -730,6 +760,8 @@ class SimulationEngine:
         qdelay, loss = self.link_qdelay, self.link_loss
         avail = self.capacity - load
         congested = util >= m.CONGESTION_UTIL
+        # one conversion to Python bools beats 64 numpy scalar extractions
+        ups = self._dlink_up.tolist()
         links = []
         # key order is preserved exactly as the frontend has always seen it
         for i, (lid, uid, src, dst, cap, prop_ms, weight) in enumerate(link_consts):
@@ -742,7 +774,7 @@ class SimulationEngine:
                 "queue_delay_ms": round(float(qdelay[i]), 3),
                 "loss_fraction": round(float(loss[i]), 5),
                 "weight": weight,
-                "up": bool(self._dlink_up[i]),
+                "up": ups[i],
                 "congested": bool(congested[i]),
                 "available_mbps": round(float(avail[i]), 2),
                 "n_lsps": int(n_lsps[i]),

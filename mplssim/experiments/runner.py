@@ -83,10 +83,20 @@ def _run_rl(scenario: str, seed: int, model: Any, safety_filter: bool,
     obs, _ = env.reset(options={"episode_seed": seed})
     records: list[dict] = []
     decision_times: list[float] = []
+    mask_times: list[float] = []
     invalid_count = 0
     done = False
+    terminated = False
     while not done:
+        # Mask generation is timed separately: `mean_decision_time_ms` has
+        # always meant "policy inference only" and is kept that way so
+        # historical numbers stay comparable, but the safety filter's mask is
+        # a real part of an RL decision, so its cost is reported alongside
+        # rather than left invisible. Baseline controllers do the equivalent
+        # feasibility scanning inside their own timed `decide()` call.
+        t_mask = time.perf_counter()
         mask = env.action_masks()
+        mask_times.append(time.perf_counter() - t_mask)
         t0 = time.perf_counter()
         action, _ = model.predict(obs, deterministic=deterministic, action_masks=mask)
         decision_times.append(time.perf_counter() - t0)
@@ -102,8 +112,26 @@ def _run_rl(scenario: str, seed: int, model: Any, safety_filter: bool,
     df = pd.DataFrame(records)
     summary = summarize_records(df, algorithm="rl", scenario=scenario, seed=seed, engine=env.eng)
     summary["mean_decision_time_ms"] = 1000.0 * float(np.mean(decision_times))
+    summary["mean_mask_time_ms"] = 1000.0 * float(np.mean(mask_times))
     summary["invalid_actions"] = invalid_count
+    # `terminated` means every demand was disconnected, which ends the RL loop
+    # early while a paired baseline would run to the scenario duration. It has
+    # never fired in the evaluated scenarios; recording it makes any future
+    # occurrence visible instead of silently shortening the episode.
+    summary["terminated_early"] = bool(terminated)
     return df, summary
+
+
+def _interval_seconds(df: pd.DataFrame) -> float:
+    """Length of one control interval in seconds, taken from the trace itself.
+
+    ``t_min`` is the simulated clock after each interval, so the first row's
+    value is exactly one control interval. Falls back to the 5-minute default
+    for an empty frame.
+    """
+    if len(df) == 0 or "t_min" not in df.columns:
+        return 5 * 60.0
+    return float(df["t_min"].iloc[0]) * 60.0
 
 
 def summarize_records(df: pd.DataFrame, algorithm: str, scenario: str,
@@ -130,8 +158,12 @@ def summarize_records(df: pd.DataFrame, algorithm: str, scenario: str,
         # Mbps * seconds = megabits; /1000 converts to gigabits exactly once.
         # (V1 published files divided twice — values there are Gbit/1000; the
         # column name is unchanged so corrected re-runs are comparable.)
+        # The interval length is read from the trace (t_min after the first
+        # interval IS the control interval) rather than hardcoded, so this
+        # metric cannot silently mis-scale if control_interval_min changes.
+        # With the current 5-minute interval the value is unchanged.
         "dropped_gbit_total": float(
-            ((df["offered_mbps"] - df["carried_mbps"]) * 5 * 60 / 1000).sum()
+            ((df["offered_mbps"] - df["carried_mbps"]) * _interval_seconds(df) / 1000).sum()
         ),
         "sla_violation_steps": int((df["sla_violations"] > 0).sum()),
         "sla_violations_total": int(df["sla_violations"].sum()),
