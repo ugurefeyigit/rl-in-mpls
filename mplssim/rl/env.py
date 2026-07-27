@@ -93,6 +93,24 @@ class MplsTeEnv(gym.Env):
         self.observation_space = spaces.Box(0.0, 1.0, shape=(obs_dim,), dtype=np.float32)
         self.action_space = spaces.Discrete(1 + self.n_demands * self.k)
         self._steps_total = self.eng.scenario.duration_min // self.engine_cfg.control_interval_min
+        self._precompute_demand_constants()
+
+    def _precompute_demand_constants(self) -> None:
+        """Per-demand observation constants that never change during an episode.
+
+        Values and normalizations are identical to the original per-demand
+        loop; they are simply computed once instead of on every observation.
+        """
+        demands = self.eng.demands
+        self._two_base_mbps = np.array([2.0 * d.base_mbps for d in demands])
+        self._obs_priority = np.array([d.cls.priority / 6.0 for d in demands])
+        self._obs_max_latency = np.array(
+            [min(d.cls.max_latency_ms / 400.0, 1.0) for d in demands])
+        self._obs_max_loss = np.array([min(d.cls.max_loss_pct / 5.0, 1.0) for d in demands])
+        self._obs_protected = np.array(
+            [1.0 if d.cls.protected else 0.0 for d in demands])
+        self._protected_idx = np.flatnonzero([d.cls.protected for d in demands])
+        self._demand_arange = np.arange(self.n_demands)
 
     # ------------------------------------------------------------------- gym
     def reset(self, *, seed: int | None = None, options: dict | None = None):
@@ -146,14 +164,42 @@ class MplsTeEnv(gym.Env):
 
     # ------------------------------------------------------------------ masks
     def action_masks(self) -> np.ndarray:
-        """Boolean mask over the discrete action space (True = allowed)."""
+        """Boolean mask over the discrete action space (True = allowed).
+
+        Semantically identical to calling ``validate_action(d, p, "rl")`` for
+        every action - and verified as such against a per-action sweep in
+        tests/test_runtime_equivalence.py - but the three constraints that can
+        be evaluated for all candidates at once (candidate exists, path is up,
+        demand is not on that path already, demand is not cooling down) are
+        applied as array operations. Only the protected-class bandwidth check,
+        which needs a projected-load computation, still runs per candidate, and
+        only for candidates that survived the cheap checks.
+        """
+        eng = self.eng
         mask = np.zeros(self.action_space.n, dtype=bool)
         mask[0] = True  # no-op is always legal
-        for d_idx in range(self.n_demands):
-            n_cands = len(self.eng.demands[d_idx].candidate_paths)
-            for p_idx in range(min(self.k, n_cands)):
-                ok, _ = self.eng.validate_action(d_idx, p_idx, source="rl")
-                mask[1 + d_idx * self.k + p_idx] = ok
+
+        # candidate exists AND every hop is operational
+        allowed = eng.candidate_available_matrix()
+
+        # "already on this path" (a disconnected demand may re-select its path)
+        live = ~eng.disconnected
+        allowed[self._demand_arange[live], eng.current_path[live]] = False
+
+        # per-demand reroute cooldown (applies to source "rl")
+        allowed[eng.step_count < eng.cooldown_until] = False
+
+        # protected classes must keep non-negative projected headroom
+        for d_idx in self._protected_idx:
+            cands = np.flatnonzero(allowed[d_idx])
+            if cands.size == 0:
+                continue
+            base = eng._projected_base_loads(int(d_idx), eng._sweep_buf)
+            for p_idx in cands:
+                if eng._headroom_from_base(base, int(d_idx), int(p_idx)) < 0.0:
+                    allowed[d_idx, p_idx] = False
+
+        mask[1:1 + self.n_demands * self.k] = allowed.ravel()
         return mask
 
     # -------------------------------------------------------------- observation
@@ -163,27 +209,33 @@ class MplsTeEnv(gym.Env):
         link[0] = np.clip(eng.link_util / 2.0, 0, 1)
         link[1] = np.clip(eng.link_qdelay / m.Q_MAX_MS, 0, 1)
         link[2] = np.clip(eng.link_loss, 0, 1)
-        link[3] = [1.0 if eng.dlink_up(i) else 0.0 for i in range(self.n_dlinks)]
+        link[3] = eng._dlink_up
         link[4] = np.clip(eng.util_ewma / 2.0, 0, 1)
 
+        # Same feature ordering and normalizations as the original per-demand
+        # loop, written as whole-row assignments. dm is (features, demands) and
+        # is raveled feature-major, so row order defines the layout the
+        # pretrained model expects - do not reorder these rows.
+        k = self.k
         dm = np.zeros((self.demand_features, self.n_demands), dtype=np.float32)
-        for d_idx, d in enumerate(eng.demands):
-            dm[0, d_idx] = min(float(eng.demand_volumes[d_idx]) / (2.0 * d.base_mbps), 1.0)
-            dm[1, d_idx] = d.cls.priority / 6.0
-            dm[2, d_idx] = min(d.cls.max_latency_ms / 400.0, 1.0)
-            dm[3, d_idx] = min(d.cls.max_loss_pct / 5.0, 1.0)
-            dm[4, d_idx] = 1.0 if d.cls.protected else 0.0
-            cur = int(eng.current_path[d_idx])
-            if cur < self.k:
-                dm[5 + cur, d_idx] = 1.0
-            for p in range(self.k):
-                if p < len(d.candidate_paths):
-                    dm[5 + self.k + p, d_idx] = min(eng.path_bottleneck_util(d_idx, p) / 2.0, 1.0)
-                else:
-                    dm[5 + self.k + p, d_idx] = 1.0
-            cd = max(0, int(eng.cooldown_until[d_idx]) - eng.step_count)
-            dm[5 + 2 * self.k, d_idx] = min(cd / max(1, self.engine_cfg.reroute_cooldown_steps), 1.0)
-            dm[6 + 2 * self.k, d_idx] = 1.0 if eng.disconnected[d_idx] else 0.0
+        dm[0] = np.minimum(eng.demand_volumes / self._two_base_mbps, 1.0)
+        dm[1] = self._obs_priority
+        dm[2] = self._obs_max_latency
+        dm[3] = self._obs_max_loss
+        dm[4] = self._obs_protected
+
+        cur = eng.current_path
+        in_range = cur < k
+        dm[5 + cur[in_range], self._demand_arange[in_range]] = 1.0
+
+        # per-candidate bottleneck utilization; absent candidates read as 1.0
+        bottleneck = np.minimum(eng.candidate_bottleneck_matrix() / 2.0, 1.0)
+        dm[5 + k:5 + 2 * k] = np.where(eng._cand_exists, bottleneck, 1.0).T
+
+        cd = np.maximum(0, eng.cooldown_until - eng.step_count)
+        dm[5 + 2 * k] = np.minimum(
+            cd / max(1, self.engine_cfg.reroute_cooldown_steps), 1.0)
+        dm[6 + 2 * k] = eng.disconnected
 
         mtr = eng.metrics_history[-1] if eng.metrics_history else None
         hour = (eng.scenario.start_hour + eng.t_min / 60.0) % 24.0

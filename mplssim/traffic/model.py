@@ -153,14 +153,48 @@ class TrafficModel:
         self.scenario = self.scenario.materialize(
             np.random.default_rng(self.seed + 7919), demand_ids, egress_ids)
         self._noise = np.zeros(len(self.config.demands))
+        self._precompute()
+
+    def _precompute(self) -> None:
+        """Cache the per-demand constants that ``volumes`` would otherwise
+        rebuild on every micro-tick.
+
+        Everything here is derived from the (already materialized) scenario and
+        the traffic configuration, both of which are fixed for the lifetime of
+        the model, so caching cannot change any produced value.
+        """
+        demands = self.config.demands
+        self._base_mbps = np.array([d.base_mbps for d in demands], dtype=float)
+        self._sigmas = np.array(
+            [self.scenario.noise_sigma * d.cls.burstiness for d in demands], dtype=float)
+
+        # distinct diurnal profiles: 17 demands share a handful of curves, so
+        # interpolate once per curve per tick instead of once per demand
+        names: list[str] = []
+        for d in demands:
+            if d.cls.profile not in names:
+                names.append(d.cls.profile)
+        self._profile_points = [self.config.profiles[n] for n in names]
+        self._profile_index = np.array([names.index(d.cls.profile) for d in demands])
+
+        # per-event demand masks, in scenario event order (order matters: the
+        # factors are multiplied in sequence, exactly as the scalar loop did)
+        self._volume_events: list[tuple[dict, np.ndarray]] = []
+        for ev in self.scenario.events:
+            if ev["type"] not in ("burst", "flash_crowd", "multiplier"):
+                continue
+            if ev["type"] == "burst":
+                sel = np.array([d.id in ev["demands"] for d in demands])
+            elif ev["type"] == "flash_crowd":
+                sel = np.array([d.dst == ev["dst"] for d in demands])
+            else:
+                sel = np.ones(len(demands), dtype=bool)
+            self._volume_events.append((ev, sel))
 
     def advance_noise(self) -> None:
         """One AR(1) step for every demand (call once per micro-tick)."""
-        sigmas = np.array([
-            self.scenario.noise_sigma * d.cls.burstiness for d in self.config.demands
-        ])
         eps = self._rng.standard_normal(len(self.config.demands))
-        self._noise = self.phi * self._noise + sigmas * eps
+        self._noise = self.phi * self._noise + self._sigmas * eps
 
     def event_factor(self, demand: Demand, t_min: float) -> float:
         f = 1.0
@@ -176,16 +210,30 @@ class TrafficModel:
                     f *= ev["factor"]
         return f
 
-    def volumes(self, t_min: float) -> np.ndarray:
-        """Offered Mbps per demand at simulated minute t (uses current noise state)."""
-        hour = self.scenario.start_hour + t_min / 60.0
-        out = np.empty(len(self.config.demands))
-        for i, d in enumerate(self.config.demands):
-            prof = profile_value(self.config.profiles[d.cls.profile], hour)
-            noise_mult = float(np.clip(1.0 + self._noise[i], 0.4, 2.0))
-            out[i] = d.base_mbps * prof * self.scenario.demand_multiplier \
-                * self.event_factor(d, t_min) * noise_mult
+    def event_factors(self, t_min: float) -> np.ndarray:
+        """Vectorized :meth:`event_factor` for every demand at once.
+
+        Factors are applied in scenario event order, so each demand sees the
+        same product in the same sequence as the per-demand scalar version.
+        """
+        out = np.ones(len(self.config.demands))
+        for ev, sel in self._volume_events:
+            if ev["t_min"] <= t_min < ev["t_min"] + ev["duration_min"]:
+                out[sel] *= ev["factor"]
         return out
+
+    def volumes(self, t_min: float) -> np.ndarray:
+        """Offered Mbps per demand at simulated minute t (uses current noise state).
+
+        Same arithmetic, same operand order as the original per-demand loop:
+        ((((base * profile) * demand_multiplier) * event) * noise).
+        """
+        hour = self.scenario.start_hour + t_min / 60.0
+        profs = np.array([profile_value(pts, hour) for pts in self._profile_points]
+                         )[self._profile_index]
+        noise_mult = np.clip(1.0 + self._noise, 0.4, 2.0)
+        return (self._base_mbps * profs * self.scenario.demand_multiplier
+                * self.event_factors(t_min) * noise_mult)
 
     def link_events_at(self, t_min_from: float, t_min_to: float) -> list[dict[str, Any]]:
         """Scripted link_down/link_up events with t in [from, to)."""

@@ -288,6 +288,18 @@ def bench_engine(b: Bench) -> None:
     b.run("engine.clone", advanced_engine,
           lambda e: e.clone(),
           unit_name="clones", inner=5)
+    b.run("engine.fast_clone", advanced_engine,
+          lambda e: e.fast_clone(),
+          unit_name="clones", inner=50)
+    b.run("engine.clone_and_step", advanced_engine,
+          lambda e: e.clone().step_interval(),
+          unit_name="counterfactuals", inner=5)
+    b.run("engine.fast_clone_and_step", advanced_engine,
+          lambda e: e.fast_clone().step_interval(),
+          unit_name="counterfactuals", inner=20)
+    b.run("engine._lsp_counts", advanced_engine,
+          lambda e: e._lsp_counts(),
+          unit_name="counts", inner=200)
     b.run("engine.construct", lambda: None,
           lambda _: fresh_engine(),
           unit_name="engines", inner=5)
@@ -373,6 +385,7 @@ def bench_memory(b: Bench) -> None:
     b.memory("mem.engine.step_interval", advanced_engine, lambda e: e.step_interval())
     b.memory("mem.engine.snapshot", advanced_engine, lambda e: e.snapshot())
     b.memory("mem.engine.clone", advanced_engine, lambda e: e.clone())
+    b.memory("mem.engine.fast_clone", advanced_engine, lambda e: e.fast_clone())
     b.memory("mem.env.action_masks", advanced_env, lambda e: e.action_masks())
     b.memory("mem.env.step", advanced_env, lambda e: e.step(0))
     b.memory("mem.episode.demo_evening", lambda: fresh_engine("demo_evening"), _drain_engine)
