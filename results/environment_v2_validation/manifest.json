@@ -634,7 +634,7 @@
    "root_seed": null,
    "worker_rank": null
   },
-  "git_commit": "b2df1df4a0e381c43c8715558fd83a062cd941a7",
+  "git_commit": "f10480407c7cc1875e7bf7e37eabd0365bbacdc3",
   "git_branch": "feat/rl-environment-v2",
   "git_dirty": true
  },
