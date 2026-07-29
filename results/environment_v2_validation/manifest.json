@@ -1,0 +1,826 @@
+{
+ "environment": {
+  "environment": "mpls-te-v2.0.0",
+  "observation": "obs-v2.0-notime-604",
+  "action": "action-v2.0-discrete69",
+  "reward": "reward-v2.0-operational",
+  "transition": "transition-v2.0-boundary-right-closed",
+  "config": "config-v2.0",
+  "seed_protocol": "seed-v2.0-stride1024",
+  "environment_class": "mplssim.rl.env_v2.MplsTeEnvV2",
+  "engine_class": "mplssim.sim.engine_v2.SimulationEngineV2",
+  "observation_dim": 604,
+  "action_dim": 69,
+  "n_demands": 17,
+  "k_paths": 4,
+  "n_dlinks": 64,
+  "demand_ids": [
+   "D1",
+   "D2",
+   "D3",
+   "D4",
+   "D5",
+   "D6",
+   "D7",
+   "D8",
+   "D9",
+   "D10",
+   "D11",
+   "D12",
+   "D13",
+   "D14",
+   "D15",
+   "D16",
+   "D17"
+  ],
+  "candidate_paths": {
+   "D1": [
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE1",
+     "P2",
+     "P5",
+     "P8",
+     "PE5"
+    ]
+   ],
+   "D2": [
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P5",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P8",
+     "A1",
+     "PE6"
+    ]
+   ],
+   "D3": [
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P8",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P5",
+     "A1",
+     "PE7"
+    ]
+   ],
+   "D4": [
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE2",
+     "P1",
+     "P4",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE2",
+     "P1",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P4",
+     "P8",
+     "PE5"
+    ]
+   ],
+   "D5": [
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE2",
+     "P1",
+     "P4",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE2",
+     "P1",
+     "P5",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "A1",
+     "PE6"
+    ]
+   ],
+   "D6": [
+    [
+     "PE2",
+     "P2",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P6",
+     "P7",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P6",
+     "P7",
+     "A2",
+     "PE8"
+    ]
+   ],
+   "D7": [
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "A1",
+     "PE6"
+    ],
+    [
+     "PE3",
+     "P3",
+     "P6",
+     "A1",
+     "PE6"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P6",
+     "A1",
+     "PE6"
+    ]
+   ],
+   "D8": [
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE3",
+     "P3",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "P6",
+     "A1",
+     "PE7"
+    ]
+   ],
+   "D9": [
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "P4",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE3",
+     "P3",
+     "P6",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P6",
+     "P5",
+     "P8",
+     "PE5"
+    ]
+   ],
+   "D10": [
+    [
+     "PE4",
+     "P3",
+     "P7",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "P7",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P7",
+     "P6",
+     "A2",
+     "PE8"
+    ]
+   ],
+   "D11": [
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P7",
+     "A2",
+     "PE7"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "A2",
+     "PE7"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "P7",
+     "A2",
+     "PE7"
+    ]
+   ],
+   "D12": [
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "A1",
+     "PE6"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "P5",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "A1",
+     "P8",
+     "PE6"
+    ],
+    [
+     "PE4",
+     "P2",
+     "P5",
+     "P8",
+     "PE6"
+    ]
+   ],
+   "D13": [
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "P6",
+     "P7",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P5",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P5",
+     "P6",
+     "P7",
+     "A2",
+     "PE8"
+    ]
+   ],
+   "D14": [
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE2",
+     "P2",
+     "P5",
+     "P8",
+     "A1",
+     "PE7"
+    ]
+   ],
+   "D15": [
+    [
+     "PE3",
+     "P3",
+     "P7",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE3",
+     "P3",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P6",
+     "A2",
+     "PE8"
+    ],
+    [
+     "PE3",
+     "P2",
+     "P5",
+     "P6",
+     "A2",
+     "PE8"
+    ]
+   ],
+   "D16": [
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "A1",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE4",
+     "P2",
+     "P5",
+     "P8",
+     "PE5"
+    ],
+    [
+     "PE4",
+     "P3",
+     "P6",
+     "P2",
+     "P5",
+     "P8",
+     "PE5"
+    ]
+   ],
+   "D17": [
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P8",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P5",
+     "P6",
+     "A1",
+     "PE7"
+    ],
+    [
+     "PE1",
+     "P1",
+     "P4",
+     "P5",
+     "A1",
+     "PE7"
+    ]
+   ]
+  },
+  "config_hashes": {
+   "configs/topology.yaml": "e79c67ac4e13891b2c9b9c59a62b63df56b5f519edfa5fc72b5093b795a1e682",
+   "configs/traffic_classes.yaml": "0a4857b1a2065640cde1782a528fd093bde628f063547718a2f66ce757bd242d",
+   "configs/scenarios.yaml": "da1b65d306af76a6da9d8efadfc70a8fdec3199f9522946b600f7b3e3d75f67f",
+   "configs/experiments/rl_env_v2.yaml": "11b91e64a5899cb40d541e007d95a36ff698b8a5b13562d36de4b4ae49c9b7d0",
+   "configs/experiments/rl_observation_v2.yaml": "ac3f43403fa2f7dd3885f16fd62d233091c3b1d6441ac9d7aad0408d930537fe",
+   "configs/experiments/rl_reward_v2.yaml": "0d1f7a09dda3c3baef0918c408f6fd73353253eec34863ccd309b6fa58bb9b32"
+  },
+  "engine_config": {
+   "control_interval_min": 5,
+   "micro_ticks_per_interval": 5,
+   "k_paths": 4,
+   "max_hop_factor": 2.5,
+   "minimum_te_dwell_steps": 3,
+   "reversal_window_steps": 6,
+   "max_te_changes_per_interval": 1,
+   "candidate_delay_factor": 1.75,
+   "candidate_delay_additive_ms": 10.0,
+   "protected_projected_max_util": 1.0,
+   "flow_solver": {
+    "damping": 0.5,
+    "tolerance": 1e-10,
+    "max_iterations": 64
+   },
+   "worker_stride": 1024
+  },
+  "reward_config": {
+   "delivered": 2.0,
+   "protected_disconnect": 30.0,
+   "unprotected_disconnect": 8.0,
+   "sla_severity": 6.0,
+   "max_util": 2.0,
+   "overload": 6.0,
+   "util_free_threshold": 0.7,
+   "util_span": 0.3,
+   "potential_coefficient": 0.2,
+   "potential_gamma": 0.995,
+   "potential_scale": 10.0,
+   "move_fixed": 0.08,
+   "move_volume_share": 0.3,
+   "move_edge_divergence": 0.12,
+   "move_reversal": 0.3,
+   "invalid": 0.05
+  },
+  "seed": {
+   "protocol": "root_seed + worker_rank + worker_stride*episode_index",
+   "worker_stride": 1024,
+   "max_worker_rank": 1023,
+   "root_seed": null,
+   "worker_rank": null
+  },
+  "git_commit": "b2df1df4a0e381c43c8715558fd83a062cd941a7",
+  "git_branch": "feat/rl-environment-v2",
+  "git_dirty": true
+ },
+ "candidates": {
+  "total": 68,
+  "demand_change_classes": {
+   "identical": 9,
+   "reorder_only": 3,
+   "pe_transit_removed": 2,
+   "tie_break_substitution": 3
+  },
+  "pe_transit_present": false,
+  "exactly_four_per_demand": true
+ },
+ "reward_calibration": {
+  "ordering_all_match": true,
+  "route_cost_table_exact": true,
+  "published_rewards_reproduced": [
+   "healthy_no_action",
+   "healthy_unnecessary_move",
+   "route_cost:share_0.01_div_0.2",
+   "route_cost:share_0.25_div_0.2",
+   "route_cost:share_0.01_div_1.0",
+   "route_cost:share_0.01_div_0.2_reversal",
+   "route_cost:rejected_request"
+  ],
+  "published_rewards_not_reproduced": [
+   "mild_congestion_improved",
+   "severe_overload_improved",
+   "utilization_gain_sla_worsens",
+   "gain_by_disconnecting_critical"
+  ],
+  "note": "Rows marked state_provenance=constructed have no published input state in the V2 spec, so only the mandated preference ordering can be reproduced; the states used are recorded here."
+ },
+ "fixed_traces": [
+  {
+   "scenario": "full_day",
+   "seed": 101,
+   "v1_boundaries": 1152,
+   "v2_boundaries": 1152,
+   "equal_horizon": true,
+   "boundaries_with_route_difference": 6,
+   "boundaries_with_mask_difference": 773,
+   "boundaries_with_load_difference": 1152,
+   "boundaries_with_reward_difference": 1152,
+   "v1_terminated_early": false,
+   "v2_terminated_early": false,
+   "reset_offered_identical": true,
+   "negative_flow": false,
+   "failed_link_carries_traffic": false,
+   "v2_event_never_early": true,
+   "link_events": []
+  },
+  {
+   "scenario": "link_failure",
+   "seed": 101,
+   "v1_boundaries": 240,
+   "v2_boundaries": 240,
+   "equal_horizon": true,
+   "boundaries_with_route_difference": 196,
+   "boundaries_with_mask_difference": 228,
+   "boundaries_with_load_difference": 240,
+   "boundaries_with_reward_difference": 240,
+   "v1_terminated_early": false,
+   "v2_terminated_early": false,
+   "reset_offered_identical": true,
+   "negative_flow": false,
+   "failed_link_carries_traffic": false,
+   "v2_event_never_early": true,
+   "link_events": [
+    {
+     "link": "L11",
+     "type": "link_down",
+     "configured_t_min": 60.0,
+     "v2_first_observed_t_min": 60.0,
+     "v1_first_observed_t_min": 65.0
+    },
+    {
+     "link": "L11",
+     "type": "link_up",
+     "configured_t_min": 180.0,
+     "v2_first_observed_t_min": 180.0,
+     "v1_first_observed_t_min": 185.0
+    }
+   ]
+  },
+  {
+   "scenario": "ood_double_failure",
+   "seed": 101,
+   "v1_boundaries": 240,
+   "v2_boundaries": 240,
+   "equal_horizon": true,
+   "boundaries_with_route_difference": 179,
+   "boundaries_with_mask_difference": 193,
+   "boundaries_with_load_difference": 240,
+   "boundaries_with_reward_difference": 240,
+   "v1_terminated_early": false,
+   "v2_terminated_early": false,
+   "reset_offered_identical": true,
+   "negative_flow": false,
+   "failed_link_carries_traffic": false,
+   "v2_event_never_early": true,
+   "link_events": [
+    {
+     "link": "L19",
+     "type": "link_down",
+     "configured_t_min": 60.0,
+     "v2_first_observed_t_min": 60.0,
+     "v1_first_observed_t_min": 65.0
+    },
+    {
+     "link": "L20",
+     "type": "link_down",
+     "configured_t_min": 90.0,
+     "v2_first_observed_t_min": 90.0,
+     "v1_first_observed_t_min": 95.0
+    },
+    {
+     "link": "L20",
+     "type": "link_up",
+     "configured_t_min": 210.0,
+     "v2_first_observed_t_min": 210.0,
+     "v1_first_observed_t_min": 215.0
+    },
+    {
+     "link": "L19",
+     "type": "link_up",
+     "configured_t_min": 240.0,
+     "v2_first_observed_t_min": 240.0,
+     "v1_first_observed_t_min": 245.0
+    }
+   ]
+  },
+  {
+   "scenario": "overload_stress",
+   "seed": 103,
+   "v1_boundaries": 192,
+   "v2_boundaries": 192,
+   "equal_horizon": true,
+   "boundaries_with_route_difference": 9,
+   "boundaries_with_mask_difference": 165,
+   "boundaries_with_load_difference": 192,
+   "boundaries_with_reward_difference": 192,
+   "v1_terminated_early": false,
+   "v2_terminated_early": false,
+   "reset_offered_identical": true,
+   "negative_flow": false,
+   "failed_link_carries_traffic": false,
+   "v2_event_never_early": true,
+   "link_events": []
+  }
+ ],
+ "flow_solver": {
+  "ticks_recorded": 1824,
+  "worst_iterations": 38,
+  "max_iterations_configured": 64,
+  "damping": 0.5,
+  "tolerance": 1e-10,
+  "all_converged": true,
+  "headroom": 26
+ },
+ "gates": {
+  "no_pe_transit_candidates": true,
+  "exactly_four_candidates_per_demand": true,
+  "reward_ordering_matches": true,
+  "route_cost_table_exact": true,
+  "solver_converged_everywhere": true,
+  "equal_horizons": true,
+  "no_negative_flow": true,
+  "no_traffic_on_failed_links": true,
+  "v2_never_terminates_early": true,
+  "v2_event_never_before_configured_time": true
+ },
+ "no_model_trained": true,
+ "artifacts": [
+  "candidate_paths_v2.csv",
+  "fixed_trace_full_day_101_v1.csv",
+  "fixed_trace_full_day_101_v2.csv",
+  "fixed_trace_link_failure_101_v1.csv",
+  "fixed_trace_link_failure_101_v2.csv",
+  "fixed_trace_ood_double_failure_101_v1.csv",
+  "fixed_trace_ood_double_failure_101_v2.csv",
+  "fixed_trace_overload_stress_103_v1.csv",
+  "fixed_trace_overload_stress_103_v2.csv",
+  "flow_solver_convergence.csv",
+  "reward_calibration.csv",
+  "trace_difference_explanations.md"
+ ]
+}

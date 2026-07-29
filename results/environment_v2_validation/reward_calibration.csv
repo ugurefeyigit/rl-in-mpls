@@ -1,0 +1,12 @@
+case,state_provenance,published_noop_reward,published_action_reward,computed_noop_reward,computed_action_reward,published_preferred,computed_preferred,ordering_matches,reward_matches_published
+healthy_no_action,published,1.9998,,1.999803,,no-op,no-op,1,1
+healthy_unnecessary_move,published,1.9998,1.8448,1.999803,1.844803,no-op,no-op,1,1
+mild_congestion_improved,constructed,-0.1446,0.6565,0.467682,1.584698,reroute,reroute,1,0
+severe_overload_improved,constructed,-5.2275,-1.6162,-7.247333,-0.830647,reroute,reroute,1,0
+utilization_gain_sla_worsens,constructed,0.3416,0.0944,0.667662,-0.527165,no-op,no-op,1,0
+gain_by_disconnecting_critical,constructed,-4.3405,-8.9621,-2.796952,-6.746720,no-op,no-op,1,0
+route_cost:share_0.01_div_0.2,published,,0.1070,,0.107000,,,1,1
+route_cost:share_0.25_div_0.2,published,,0.1790,,0.179000,,,1,1
+route_cost:share_0.01_div_1.0,published,,0.2030,,0.203000,,,1,1
+route_cost:share_0.01_div_0.2_reversal,published,,0.4070,,0.407000,,,1,1
+route_cost:rejected_request,published,,0.0500,,0.050000,,,1,1
