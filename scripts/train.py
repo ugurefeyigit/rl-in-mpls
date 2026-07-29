@@ -76,6 +76,22 @@ def make_env(scenario: str, base_seed: int, rank: int,
     return _init
 
 
+def make_env_v2_worker(scenario: str, root_seed: int, rank: int):
+    """V2 worker factory using the collision-free stride-1024 seed protocol.
+
+    V1's ``base_seed + rank*10_000`` combined with its ``+1_000*episode`` stride
+    is not injective — with root 42, worker 0 episode 10 and worker 1 episode 0
+    both draw seed 10042. V2 passes the rank to the environment, which derives
+    ``root_seed + worker_rank + 1024*episode_index``.
+    """
+    from mplssim.experiments.v2_factory import make_env_v2
+
+    def _init():
+        return Monitor(make_env_v2(scenario=scenario, root_seed=root_seed,
+                                   worker_rank=rank))
+    return _init
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--timesteps", type=int, default=None)
@@ -85,8 +101,15 @@ def main() -> None:
     ap.add_argument("--zero-weight", nargs="*", default=[],
                     help="reward weights forced to 0 during training (ablations), "
                          "e.g. --zero-weight reroute flap")
+    ap.add_argument("--env-version", choices=["v1", "v2"], default="v1",
+                    help="environment version (default v1). v2 selects "
+                         "MplsTeEnvV2 and the stride-1024 seed protocol, and "
+                         "writes the V2 environment metadata next to the model.")
     args = ap.parse_args()
     overrides = {name: 0.0 for name in args.zero_weight}
+    if args.env_version == "v2" and args.zero_weight:
+        ap.error("--zero-weight applies to the V1 reward only; V2 reward "
+                 "ablations carry their own reward/config identity")
 
     cfg = get_training_config()
     seed = args.seed if args.seed is not None else int(cfg["seed"])
@@ -97,8 +120,24 @@ def main() -> None:
     model_dir = ROOT / "models" / args.tag
     model_dir.mkdir(parents=True, exist_ok=True)
 
-    train_env = DummyVecEnv([make_env(scenario, seed, i, overrides) for i in range(n_envs)])
-    eval_env = DummyVecEnv([make_env(cfg["eval_scenarios"][0], 900_000 + seed, 0, overrides)])
+    if args.env_version == "v2":
+        # Fail closed before any training work: the V2 identity record is
+        # written first so a checkpoint can never exist without one.
+        import json
+
+        from mplssim.experiments.v2_factory import build_environment_metadata
+        meta = build_environment_metadata(root_seed=seed, worker_rank=0)
+        (model_dir / "environment_v2.json").write_text(
+            json.dumps(meta, indent=1), encoding="utf-8")
+        train_env = DummyVecEnv([make_env_v2_worker(scenario, seed, i)
+                                 for i in range(n_envs)])
+        eval_env = DummyVecEnv([make_env_v2_worker(cfg["eval_scenarios"][0],
+                                                   900_000 + seed, 0)])
+    else:
+        train_env = DummyVecEnv([make_env(scenario, seed, i, overrides)
+                                 for i in range(n_envs)])
+        eval_env = DummyVecEnv([make_env(cfg["eval_scenarios"][0],
+                                         900_000 + seed, 0, overrides)])
 
     ppo = cfg["ppo"]
     model = MaskablePPO(

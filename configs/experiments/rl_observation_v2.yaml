@@ -1,0 +1,86 @@
+# MPLS-TE Environment V2 observation schema (obs-v2.0-notime-604).
+#
+# Governing document: docs/RL_ENVIRONMENT_V2_SPEC.md, "Exact default
+# observation schema". This file is the machine-readable copy of that table;
+# mplssim/rl/env_v2.py asserts its own layout against it at construction, so a
+# silent drift between code and schema fails closed.
+#
+# Layout is FEATURE-MAJOR: within a block starting at offset `b`, element b+i
+# is directed link i (topology.yaml order) or demand i (traffic_classes.yaml
+# order).
+#
+#   dim = 2*n_dlinks + (8 + 5*k_paths)*n_demands
+#       = 2*64 + 28*17 = 604
+#
+# Transforms:
+#   sat(x)   = x/(1+x)          monotone, bounded, non-clipping, 0.5 at x == 1
+#   ratio(x) = x/limit          plain division
+#   min1(x)  = min(x, 1)
+#
+# A disconnected demand reports delay/loss health 0 and disconnected 1;
+# connectivity owns that penalty (it is never double-counted as SLA severity).
+
+version: obs-v2.0-notime-604
+dtype: float32
+low: 0.0
+high: 1.0
+dim: 604
+feature_major: true
+
+# Optional ablations. NOT the default; each needs its own checkpoints/results.
+ablations:
+  time_of_day:
+    version: obs-v2.0-time-606
+    dim: 606
+    appends: [time_of_day_sin_shifted, time_of_day_cos_shifted]
+
+# Sentinel values used for a candidate slot that does not exist. The shipped
+# topology yields exactly 4 role-valid candidates for all 17 demands, so these
+# are exercised only by synthetic tests.
+absent_candidate:
+  live: 0.0
+  propagation: 1.0
+  projected_gross_bottleneck: 1.0
+
+blocks:
+  - {start: 0,   end: 64,  axis: dlink,  feature: link_input_utilization,       transform: sat}
+  - {start: 64,  end: 128, axis: dlink,  feature: link_up,                      transform: identity}
+  - {start: 128, end: 145, axis: demand, feature: offered_over_base,            transform: sat}
+  - {start: 145, end: 162, axis: demand, feature: priority,                     transform: "divide:6"}
+  - {start: 162, end: 179, axis: demand, feature: protected,                    transform: identity}
+  - {start: 179, end: 196, axis: demand, feature: measured_delay_over_sla,      transform: sat}
+  - {start: 196, end: 213, axis: demand, feature: measured_loss_over_sla,       transform: sat}
+  - {start: 213, end: 230, axis: demand, feature: current_path_age_steps,       transform: "min1_divide:12"}
+  - {start: 230, end: 247, axis: demand, feature: te_dwell_remaining,           transform: "divide:3"}
+  - {start: 247, end: 264, axis: demand, feature: disconnected,                 transform: identity}
+  - {start: 264, end: 281, axis: demand, feature: current_path_0,               transform: identity}
+  - {start: 281, end: 298, axis: demand, feature: current_path_1,               transform: identity}
+  - {start: 298, end: 315, axis: demand, feature: current_path_2,               transform: identity}
+  - {start: 315, end: 332, axis: demand, feature: current_path_3,               transform: identity}
+  - {start: 332, end: 349, axis: demand, feature: previous_te_path_0,           transform: identity}
+  - {start: 349, end: 366, axis: demand, feature: previous_te_path_1,           transform: identity}
+  - {start: 366, end: 383, axis: demand, feature: previous_te_path_2,           transform: identity}
+  - {start: 383, end: 400, axis: demand, feature: previous_te_path_3,           transform: identity}
+  - {start: 400, end: 417, axis: demand, feature: candidate_0_live,             transform: identity}
+  - {start: 417, end: 434, axis: demand, feature: candidate_1_live,             transform: identity}
+  - {start: 434, end: 451, axis: demand, feature: candidate_2_live,             transform: identity}
+  - {start: 451, end: 468, axis: demand, feature: candidate_3_live,             transform: identity}
+  - {start: 468, end: 485, axis: demand, feature: candidate_0_propagation_ms,   transform: "min1_divide:100"}
+  - {start: 485, end: 502, axis: demand, feature: candidate_1_propagation_ms,   transform: "min1_divide:100"}
+  - {start: 502, end: 519, axis: demand, feature: candidate_2_propagation_ms,   transform: "min1_divide:100"}
+  - {start: 519, end: 536, axis: demand, feature: candidate_3_propagation_ms,   transform: "min1_divide:100"}
+  - {start: 536, end: 553, axis: demand, feature: candidate_0_projected_gross,  transform: sat}
+  - {start: 553, end: 570, axis: demand, feature: candidate_1_projected_gross,  transform: sat}
+  - {start: 570, end: 587, axis: demand, feature: candidate_2_projected_gross,  transform: sat}
+  - {start: 587, end: 604, axis: demand, feature: candidate_3_projected_gross,  transform: sat}
+
+# Deliberately excluded (see spec, "Rejected observation features").
+rejected:
+  - episode_progress            # leaks fixed-scenario event positions
+  - time_of_day                 # default-off; available as the 606 ablation
+  - link_queue_delay            # deterministic function of link utilization
+  - link_loss                   # deterministic function of link utilization
+  - global_max_mean_std_util    # derivable duplicates
+  - global_sla_delivery_summary # derivable from per-demand health
+  - telemetry_age_noise         # outside minimal V2
+  - future_events_or_forecast   # future information

@@ -1,0 +1,81 @@
+# MPLS-TE Environment V2 reward (reward-v2.0-operational).
+#
+# Governing document: docs/RL_ENVIRONMENT_V2_SPEC.md, "V2 reward".
+# These coefficients are the PRIMARY reward and are immutable. Any change is a
+# separately named ablation with its own reward/config identity and its own
+# result/model directory; it never replaces the primary result.
+#
+# Interval metrics (q_d = priority_d/6, h(x) = x/(1+x)):
+#
+#   protected_disconnect   = worst_tick( sum(q*I) over protected / sum(q) over protected )
+#   unprotected_disconnect = worst_tick( sum(q*I) over unprotected / sum(q) over unprotected )
+#   sla_severity           = sum_{ticks,demands}( q*connected*(h(delay_excess)+2*h(loss_excess))/3 )
+#                            / (micro_ticks * sum(q over all demands))
+#   delivered_ratio        = sum(delivered) / sum(offered)          [ratio of sums]
+#   max_util               = worst tick/link input utilization
+#   overload_ratio         = mean_tick( sum(max(input-capacity,0)) / sum(capacity) )
+#   g(u)                   = log(1 + max(0, (u - 0.70)/0.30))
+#
+#   U = 2.0*delivered_ratio - 30.0*protected_disconnect - 8.0*unprotected_disconnect
+#       - 6.0*sla_severity - 2.0*g(max_util) - 6.0*overload_ratio
+#
+#   Phi(s) = tanh(U_state(s)/10)
+#   F      = 0.20 * (0.995*Phi(s_next) - Phi(s_current))
+#   C_TE   = 0.08 + 0.30*volume_share + 0.12*edge_divergence + 0.30*reversal
+#   reward = U_interval + F - C_TE - C_invalid
+#
+# There is no no-op bonus. FRR and recovery restoration always cost zero.
+
+version: reward-v2.0-operational
+
+utility:
+  delivered: 2.0
+  protected_disconnect: 30.0
+  unprotected_disconnect: 8.0
+  sla_severity: 6.0
+  max_util: 2.0
+  overload: 6.0
+
+# g(u) = log(1 + max(0, (u - free_threshold)/span)); zero at/below 0.70,
+# continuous, monotone and unsaturated above it.
+max_util_curve:
+  free_threshold: 0.70
+  span: 0.30
+
+# Potential-based shaping, bounded in roughly [-0.399, 0.399].
+potential:
+  coefficient: 0.20
+  gamma: 0.995
+  scale: 10.0        # Phi(s) = tanh(U_state(s)/scale)
+
+# Operational cost of one accepted TE change (applied at most once per interval).
+move:
+  fixed: 0.08
+  volume_share: 0.30
+  edge_divergence: 0.12
+  reversal: 0.30
+
+# Cost of a rejected (unmasked) TE request. A rejected request is not a reroute
+# and changes no route, history, age, dwell or RNG state.
+invalid: 0.05
+
+# Signed component order. Their left-to-right sum in exactly this order equals
+# the scalar reward bit-for-bit.
+component_order:
+  - delivery
+  - protected_disconnect
+  - unprotected_disconnect
+  - sla_severity
+  - max_util
+  - overload
+  - potential
+  - move_fixed
+  - move_volume
+  - move_divergence
+  - reversal
+  - invalid
+
+# Labelled P2 ablations only. Not part of the primary reward.
+ablations:
+  potential_zero:
+    potential: {coefficient: 0.0}

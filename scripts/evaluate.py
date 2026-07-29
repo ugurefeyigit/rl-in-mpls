@@ -65,9 +65,31 @@ def main() -> None:
                     help="seed whose per-step records are saved (default: first)")
     ap.add_argument("--prefix", default="eval",
                     help="output filename prefix (default 'eval')")
+    ap.add_argument("--env-version", choices=["v1", "v2"], default="v1",
+                    help="environment version (default v1). v2 emits the V2 "
+                         "environment identity record; V2 controller evaluation "
+                         "belongs to the separate training task.")
     args = ap.parse_args()
 
     RESULTS.mkdir(exist_ok=True)
+    if args.env_version == "v2":
+        # Version selection is explicit and never inferred. This path only
+        # validates and publishes the V2 identity: the paired suite below is
+        # V1-semantic (V1 reward, V1 candidate paths, V1 event timing), so
+        # running it under a V2 label would silently mix problem definitions.
+        from mplssim.experiments.v2_factory import (
+            build_environment_metadata, validate_environment_metadata)
+        meta = build_environment_metadata()
+        validate_environment_metadata(meta)
+        out_dir = RESULTS / "environment_v2_validation"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "environment_v2.json").write_text(
+            json.dumps(meta, indent=1), encoding="utf-8")
+        print(f"wrote {out_dir / 'environment_v2.json'}")
+        print("V2 environment metadata validated. This script's paired suite is "
+              "V1-semantic; run 'python scripts/validate_env_v2.py --all' for the "
+              "V2 pre-training validation.")
+        return
     model = None
     if "rl" in args.algorithms:
         from server.session import load_model

@@ -1,0 +1,53 @@
+# MPLS-TE Environment V2 configuration (config-v2.0).
+#
+# Governing document: docs/RL_ENVIRONMENT_V2_SPEC.md, "Configuration files".
+# This file is V2-only. V1 keeps configs/training.yaml and is unaffected by
+# any change here.
+#
+# The V2 environment reads the existing configs/topology.yaml,
+# configs/traffic_classes.yaml and configs/scenarios.yaml unchanged, but
+# derives its own role-valid candidate set (see candidate_* keys) and its own
+# transition semantics (right-closed event boundaries, hard TE dwell).
+
+version: config-v2.0
+
+control_interval_min: 5
+micro_ticks_per_interval: 5
+k_paths: 4
+max_hop_factor: 2.5
+minimum_te_dwell_steps: 3
+reversal_window_steps: 6
+max_te_changes_per_interval: 1
+candidate_delay_factor: 1.75
+candidate_delay_additive_ms: 10.0
+protected_projected_max_util: 1.0
+
+flow_solver:
+  damping: 0.5          # weight kept on the previous loss estimate
+  tolerance: 1.0e-10    # stop when max|ell_new - ell| <= tolerance
+  # AUTHORIZED DEVIATION from the literal `max_iterations: 32` in
+  # docs/RL_ENVIRONMENT_V2_SPEC.md and the implementation prompt.
+  #
+  # Damping 0.5 makes the iteration contract by 0.5 + 0.5*T' per step; the
+  # measured T' is about 0.06, so the observed factor is ~0.53. Reducing a
+  # first step of ~3e-2 to the 1e-10 stopping threshold therefore needs
+  # ceil(ln(1e-10/3e-2)/ln(0.53)) ~= 31 iterations in the best case, and more
+  # wherever the early iterations contract more slowly (observed up to 0.82).
+  #
+  # Measured requirement with damping and tolerance held EXACTLY as specified,
+  # over all 7 evaluation scenarios x seeds 101-105, under both an all-no-op
+  # and a legal-random controller: 41 iterations (flash_crowd, random), 40
+  # (overload_stress), 38 (overload_stress, no-op), 36 (link_failure). Six of
+  # the seven scenarios exceed 32 under a plain no-op trace, so a cap of 32 is
+  # mutually infeasible with tolerance 1e-10 at damping 0.5 and contradicts
+  # docs/RL_ENVIRONMENT_V2_TEST_PLAN.md section 6, which requires convergence
+  # for every shipped scenario, seed and legal fixed trace.
+  #
+  # Only the fail-fast backstop moves. Damping and tolerance are untouched, so
+  # the fixed point reached and its 1e-10 accuracy are exactly what the spec
+  # defines; nonconvergence still fails the tick rather than returning stale
+  # telemetry. Headroom over the measured worst case is ~1.6x.
+  max_iterations: 64
+
+seed:
+  worker_stride: 1024   # episode_seed = root_seed + worker_rank + 1024*episode_index
