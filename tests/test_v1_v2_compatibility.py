@@ -51,6 +51,17 @@ ALLOWED_MODIFIED_FILES = {
     "scripts/evaluate.py",
 }
 
+#: The single directory the implementation prompt designates for validation
+#: output ("Validation output may be written only to:
+#: results/environment_v2_validation/"). Every other path under results/ and
+#: models/ stays protected.
+ALLOWED_OUTPUT_PREFIX = "results/environment_v2_validation/"
+
+
+def _is_allowed(path: str) -> bool:
+    return (path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES
+            or path.startswith(ALLOWED_OUTPUT_PREFIX))
+
 #: The two V1 candidates that transit a PE. They must still be present in V1.
 V1_PE_TRANSIT = {
     "D10": ("PE4", "P3", "P6", "A1", "PE7", "A2", "PE8"),
@@ -114,7 +125,7 @@ def test_v1_engine_still_terminates_on_full_disconnection():
 def test_no_v1_tracked_file_changed_relative_to_the_audited_base():
     changed = {line.split("\t", 1)[1].strip() for line in
                _git("diff", "--name-status", AUDITED_BASE_COMMIT).splitlines() if line}
-    illegal = changed - ALLOWED_MODIFIED_FILES - ALLOWED_NEW_FILES
+    illegal = {p for p in changed if not _is_allowed(p)}
     assert not illegal, f"files changed outside the allowed list: {sorted(illegal)}"
 
 
@@ -123,9 +134,7 @@ def test_only_allowed_files_are_new_or_modified():
     # directory cannot hide its contents behind a single entry.
     status = _git("status", "--porcelain", "-uall").splitlines()
     touched = {line[3:].strip().strip('"') for line in status if line.strip()}
-    illegal = touched - ALLOWED_MODIFIED_FILES - ALLOWED_NEW_FILES
-    illegal = {p for p in illegal
-               if not p.startswith("results/environment_v2_validation/")}
+    illegal = {p for p in touched if not _is_allowed(p)}
     assert not illegal, f"untracked/modified files outside the allowed list: {sorted(illegal)}"
 
 
@@ -144,8 +153,33 @@ def test_models_results_figures_and_v1_configs_are_byte_identical_to_the_base():
     changed = {line.split("\t", 1)[1].strip() for line in
                _git("diff", "--name-status", AUDITED_BASE_COMMIT).splitlines() if line}
     for path in changed:
+        # The designated validation-output directory is the one carve-out; the
+        # rest of results/ (v1_manifest.json, eval_*, figures/) and all of
+        # models/ stay protected.
+        if path.startswith(ALLOWED_OUTPUT_PREFIX):
+            continue
         assert path not in protected_exact, path
         assert not path.startswith(protected_prefixes), path
+
+
+def test_the_validation_output_carve_out_touches_nothing_v1_owns():
+    """Explicitly: every frozen V1 path is byte-identical to the audited base.
+
+    Stated separately from the prefix rule above so the
+    results/environment_v2_validation/ carve-out cannot quietly widen into the
+    frozen V1 results or models.
+    """
+    changed = {line.split("\t", 1)[1].strip() for line in
+               _git("diff", "--name-status", AUDITED_BASE_COMMIT).splitlines() if line}
+    v1_owned = {p for p in changed
+                if (p.startswith("models/")
+                    or (p.startswith("results/")
+                        and not p.startswith(ALLOWED_OUTPUT_PREFIX)))}
+    assert not v1_owned, f"frozen V1 artifacts changed: {sorted(v1_owned)}"
+    assert not _git("diff", "--name-only", AUDITED_BASE_COMMIT, "--",
+                    "results/v1_manifest.json").strip()
+    assert not _git("diff", "--name-only", AUDITED_BASE_COMMIT, "--",
+                    "results/figures").strip()
 
 
 def test_v1_manifest_referenced_artifacts_still_match_their_recorded_hashes():
