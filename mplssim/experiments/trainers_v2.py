@@ -296,6 +296,21 @@ def _save_checkpoint(
     return payload
 
 
+def should_continue_ppo_rollout(
+    *,
+    num_timesteps: int,
+    target_transitions: int,
+    rollout_transitions: int,
+) -> bool:
+    """Let SB3 train a complete final rollout; stop an exact partial budget."""
+    if int(num_timesteps) < int(target_transitions):
+        return True
+    return (
+        int(num_timesteps) == int(target_transitions)
+        and int(num_timesteps) % int(rollout_transitions) == 0
+    )
+
+
 class PpoExperimentCallback(BaseCallback):
     """Exact-budget, masked rollout audit and periodic checkpoint callback."""
 
@@ -347,7 +362,11 @@ class PpoExperimentCallback(BaseCallback):
                 self.num_timesteps, self.environment_record, self.run_config,
                 self.device_record)
             self.saved.append(str(path))
-        return self.num_timesteps < self.target_transitions
+        return should_continue_ppo_rollout(
+            num_timesteps=self.num_timesteps,
+            target_transitions=self.target_transitions,
+            rollout_transitions=int(self.model.n_steps * self.model.n_envs),
+        )
 
 
 def _write_json(path: Path, value: Any) -> None:

@@ -79,6 +79,27 @@ def test_vector_transition_accounting_is_aggregate_and_exact() -> None:
         require_exact_vector_budget(400_000, 12)
 
 
+def test_ppo_exact_rollout_boundary_allows_the_gradient_update() -> None:
+    """Stopping at the final rollout callback must not skip SB3's train phase."""
+    from mplssim.experiments.trainers_v2 import should_continue_ppo_rollout
+
+    assert should_continue_ppo_rollout(
+        num_timesteps=8_192,
+        target_transitions=8_192,
+        rollout_transitions=8_192,
+    )
+    assert not should_continue_ppo_rollout(
+        num_timesteps=400_000,
+        target_transitions=400_000,
+        rollout_transitions=8_192,
+    )
+    assert should_continue_ppo_rollout(
+        num_timesteps=391_216,
+        target_transitions=400_000,
+        rollout_transitions=8_192,
+    )
+
+
 def test_device_selection_is_truthful() -> None:
     """Resolved metadata must never claim CUDA for CPU tensors."""
     from mplssim.experiments.learning_common import resolve_device
