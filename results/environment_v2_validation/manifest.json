@@ -583,6 +583,7 @@
     ]
    ]
   },
+  "config_hash_algorithm": "sha256/lf-canonical",
   "config_hashes": {
    "configs/topology.yaml": "e79c67ac4e13891b2c9b9c59a62b63df56b5f519edfa5fc72b5093b795a1e682",
    "configs/traffic_classes.yaml": "0a4857b1a2065640cde1782a528fd093bde628f063547718a2f66ce757bd242d",
@@ -634,7 +635,7 @@
    "root_seed": null,
    "worker_rank": null
   },
-  "git_commit": "2f637ef910793cefaaf123d649f50739e7cf1a6d",
+  "git_commit": "2bc3e5bd122e9eafa935cb6777eb77891d0baa6d",
   "git_branch": "feat/rl-environment-v2",
   "git_dirty": true
  },

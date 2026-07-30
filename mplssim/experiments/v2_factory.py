@@ -100,14 +100,50 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+#: Identifier for how the V2 configuration hashes are computed. Stored in the
+#: metadata so the meaning of a hash can never be silently reinterpreted: a
+#: record written under a different scheme fails closed on this field rather
+#: than producing a confusing hash mismatch.
+CONFIG_HASH_ALGORITHM = "sha256/lf-canonical"
+
+
+def canonical_text_bytes(raw: bytes) -> bytes:
+    """Text content with every line ending canonicalized to a single LF.
+
+    Handles CRLF and lone CR so the result is identical on every platform.
+    Nothing else is touched: no whitespace stripping, no BOM removal, no
+    trailing-newline fixup. Only the newline *representation* is normalized,
+    so any real content change still alters the bytes.
+    """
+    return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def canonical_text_sha256(path: Path) -> str:
+    """SHA-256 over LF-canonicalized text content.
+
+    The V2 configuration identity must not depend on how a checkout rendered
+    line endings. This repository sets ``core.autocrlf=true``, so a Windows
+    clone materializes the configs with CRLF while a Linux clone materializes
+    the same commit with LF. Hashing the raw bytes made those two checkouts
+    disagree on all six configuration hashes, which would fail-close a
+    perfectly valid checkpoint purely because it crossed platforms.
+
+    Canonicalizing first removes that difference at the source, so exactly one
+    hash is ever stored or compared. Validation is not relaxed anywhere: a
+    changed value, a dropped line or added whitespace all change the
+    canonical bytes and therefore the hash.
+    """
+    return hashlib.sha256(canonical_text_bytes(path.read_bytes())).hexdigest()
+
+
 def config_hashes() -> dict[str, str]:
-    """SHA-256 of every configuration file in the V2 identity, by posix key."""
+    """Canonical (LF-normalized) SHA-256 of every config in the V2 identity."""
     out: dict[str, str] = {}
     for rel in HASHED_CONFIGS:
         path = CONFIG_DIR / rel
         if not path.exists():
             raise FileNotFoundError(f"config {path} required for V2 metadata")
-        out[f"configs/{rel}"] = sha256_file(path)
+        out[f"configs/{rel}"] = canonical_text_sha256(path)
     return out
 
 
@@ -181,6 +217,7 @@ def build_environment_metadata(
         "n_dlinks": topo.n_dlinks,
         "demand_ids": demand_ids,
         "candidate_paths": {d: [list(p) for p in table[d]] for d in demand_ids},
+        "config_hash_algorithm": CONFIG_HASH_ALGORITHM,
         "config_hashes": config_hashes(),
         "engine_config": {
             "control_interval_min": cfg.control_interval_min,
@@ -239,7 +276,8 @@ IDENTITY_FIELDS: tuple[str, ...] = (
     "environment", "observation", "action", "reward", "transition", "config",
     "seed_protocol", "environment_class", "engine_class", "observation_dim",
     "action_dim", "n_demands", "k_paths", "n_dlinks", "demand_ids",
-    "candidate_paths", "config_hashes", "engine_config", "reward_config",
+    "candidate_paths", "config_hash_algorithm", "config_hashes",
+    "engine_config", "reward_config",
 )
 
 
@@ -298,6 +336,9 @@ __all__ = [
     "make_engine_v2",
     "make_env_v2",
     "episode_seed_for",
+    "CONFIG_HASH_ALGORITHM",
+    "canonical_text_bytes",
+    "canonical_text_sha256",
     "config_hashes",
     "git_metadata",
     "build_environment_metadata",

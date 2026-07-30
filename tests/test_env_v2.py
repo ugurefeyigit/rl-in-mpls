@@ -15,12 +15,15 @@ import numpy as np
 import pytest
 
 from mplssim.experiments.v2_factory import (
+    CONFIG_HASH_ALGORITHM,
     IDENTITY_FIELDS,
     MetadataMismatchError,
     build_environment_metadata,
+    canonical_text_sha256,
     config_hashes,
     make_engine_v2,
     make_env_v2,
+    sha256_file,
     validate_environment_metadata,
 )
 from mplssim.factory import get_topology, get_traffic_config
@@ -334,6 +337,121 @@ def test_candidate_path_mismatch_message_names_the_demand_and_index(env):
 def test_config_hashes_are_stable_and_content_addressed():
     assert config_hashes() == config_hashes()
     assert all(len(h) == 64 for h in config_hashes().values())
+
+
+# ============================== 2c. configuration identity portability (LF/CRLF)
+CONFIG_RELATIVE_PATHS = [
+    "topology.yaml", "traffic_classes.yaml", "scenarios.yaml",
+    "experiments/rl_env_v2.yaml", "experiments/rl_observation_v2.yaml",
+    "experiments/rl_reward_v2.yaml",
+]
+
+
+def _render(raw: bytes, ending: bytes) -> bytes:
+    """The same content re-rendered with a chosen line ending."""
+    lf = raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return lf if ending == b"\n" else lf.replace(b"\n", ending)
+
+
+@pytest.mark.parametrize("rel", CONFIG_RELATIVE_PATHS)
+def test_lf_and_crlf_renderings_of_a_config_hash_identically(rel, tmp_path):
+    """The core portability guarantee, on the six real configuration files."""
+    from mplssim.core.topology import CONFIG_DIR
+    raw = (CONFIG_DIR / rel).read_bytes()
+
+    lf_file = tmp_path / "lf.yaml"
+    crlf_file = tmp_path / "crlf.yaml"
+    cr_file = tmp_path / "cr.yaml"
+    lf_file.write_bytes(_render(raw, b"\n"))
+    crlf_file.write_bytes(_render(raw, b"\r\n"))
+    cr_file.write_bytes(_render(raw, b"\r"))
+
+    canonical = canonical_text_sha256(lf_file)
+    assert canonical_text_sha256(crlf_file) == canonical
+    assert canonical_text_sha256(cr_file) == canonical
+
+    # The test is only meaningful if the raw bytes genuinely differ, i.e. the
+    # file actually contains line breaks.
+    assert lf_file.read_bytes() != crlf_file.read_bytes()
+    assert sha256_file(lf_file) != sha256_file(crlf_file)
+
+
+def test_the_whole_config_identity_is_line_ending_independent(tmp_path):
+    """All six hashes together, as a single identity, survive re-rendering."""
+    from mplssim.core.topology import CONFIG_DIR
+    identities = {}
+    for ending, name in ((b"\n", "lf"), (b"\r\n", "crlf"), (b"\r", "cr")):
+        digest = {}
+        for rel in CONFIG_RELATIVE_PATHS:
+            target = tmp_path / name / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(_render((CONFIG_DIR / rel).read_bytes(), ending))
+            digest[f"configs/{rel}"] = canonical_text_sha256(target)
+        identities[name] = digest
+    assert identities["lf"] == identities["crlf"] == identities["cr"]
+    # and that identity is exactly what the live environment publishes
+    assert identities["lf"] == config_hashes()
+
+
+@pytest.mark.parametrize("mutate,label", [
+    (lambda s: s.replace("micro_ticks_per_interval: 5",
+                         "micro_ticks_per_interval: 6"), "changed value"),
+    (lambda s: s.replace("k_paths: 4\n", ""), "dropped line"),
+    (lambda s: s + "\nextra_key: 1\n", "added line"),
+    (lambda s: s.replace("k_paths: 4", "k_paths:  4"), "added whitespace"),
+    (lambda s: s.replace("control_interval_min: 5",
+                         "control_interval_min: 5 "), "trailing space"),
+    (lambda s: "\n" + s, "leading blank line"),
+])
+def test_any_real_content_change_still_changes_the_canonical_hash(
+        mutate, label, tmp_path):
+    """Canonicalization must not mask an actual edit, in any newline form."""
+    from mplssim.core.topology import CONFIG_DIR
+    original = (CONFIG_DIR / "experiments/rl_env_v2.yaml").read_text(encoding="utf-8")
+    baseline = tmp_path / "base.yaml"
+    baseline.write_text(original, encoding="utf-8", newline="\n")
+    expected = canonical_text_sha256(baseline)
+
+    changed = mutate(original)
+    assert changed != original, f"mutation {label!r} did not alter the file"
+    for ending, name in (("\n", "lf"), ("\r\n", "crlf")):
+        target = tmp_path / f"{name}.yaml"
+        target.write_bytes(_render(changed.encode("utf-8"), ending.encode()))
+        assert canonical_text_sha256(target) != expected, f"{label} / {name}"
+
+
+def test_metadata_uses_the_canonical_hash_and_records_the_algorithm(env):
+    from mplssim.core.topology import CONFIG_DIR
+    meta = build_environment_metadata(env)
+    assert meta["config_hash_algorithm"] == CONFIG_HASH_ALGORITHM == "sha256/lf-canonical"
+    for rel in CONFIG_RELATIVE_PATHS:
+        assert meta["config_hashes"][f"configs/{rel}"] == \
+            canonical_text_sha256(CONFIG_DIR / rel)
+
+
+def test_validation_compares_exactly_one_stored_hash_per_config(env):
+    """Fail-closed strictness: a single canonical hash, never a set of accepted ones."""
+    meta = build_environment_metadata(env)
+    assert "config_hash_algorithm" in IDENTITY_FIELDS
+    assert "config_hashes" in IDENTITY_FIELDS
+    for value in meta["config_hashes"].values():
+        assert isinstance(value, str) and len(value) == 64
+    tampered = copy.deepcopy(meta)
+    tampered["config_hashes"]["configs/topology.yaml"] = "0" * 64
+    with pytest.raises(MetadataMismatchError, match="config_hashes"):
+        validate_environment_metadata(tampered)
+
+
+def test_a_record_written_under_a_different_hash_scheme_fails_closed(env):
+    """Raw-byte hashes from the previous scheme must not silently validate."""
+    from mplssim.core.topology import CONFIG_DIR
+    meta = build_environment_metadata(env)
+    legacy = copy.deepcopy(meta)
+    legacy["config_hash_algorithm"] = "sha256/raw"
+    legacy["config_hashes"] = {f"configs/{rel}": sha256_file(CONFIG_DIR / rel)
+                               for rel in CONFIG_RELATIVE_PATHS}
+    with pytest.raises(MetadataMismatchError, match="config_hash_algorithm"):
+        validate_environment_metadata(legacy)
 
 
 # ============================================================== 3. candidates
