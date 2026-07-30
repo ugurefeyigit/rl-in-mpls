@@ -78,6 +78,42 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _newline_renderings(raw: bytes) -> dict[str, bytes]:
+    """The same content rendered with LF and with CRLF line endings."""
+    lf = raw.replace(b"\r\n", b"\n")
+    return {"raw": raw, "lf": lf, "crlf": lf.replace(b"\n", b"\r\n")}
+
+
+def content_hash_matches(path: Path, expected: str) -> tuple[bool, str]:
+    """Does this text file's *content* hash to ``expected`` in any newline form?
+
+    ``results/v1_manifest.json`` was frozen from one particular working tree:
+    its config hashes were taken over LF content while its evaluation-artifact
+    hashes were taken over CRLF content. This repository sets
+    ``core.autocrlf=true``, so a fresh clone renders every tracked text file
+    with CRLF and half of those recorded hashes stop matching -- a checkout
+    artefact, not a content change.
+
+    Comparing every newline rendering keeps the check line-ending independent
+    without weakening it: two files can only agree here if one is exactly the
+    newline transform of the other, which is precisely the difference being
+    excused. Any real edit -- a changed digit, a dropped row -- alters the
+    normalized bytes and breaks all three forms. Binary artifacts (model
+    archives) never go through this helper and stay strictly raw-hashed.
+    """
+    raw = path.read_bytes()
+    for name, candidate in _newline_renderings(raw).items():
+        if hashlib.sha256(candidate).hexdigest() == expected:
+            return True, name
+    return False, "none"
+
+
+def assert_unchanged_since_base(rel: str) -> None:
+    """Git's own normalization-aware check that a tracked file matches the base."""
+    diff = _git("diff", "--name-only", AUDITED_BASE_COMMIT, "--", rel).strip()
+    assert not diff, f"{rel} differs from the audited base commit"
+
+
 # ================================================================ 1. V1 shapes
 def test_v1_observation_and_action_shapes_are_unchanged():
     env = MplsTeEnv(scenario="evening_peak", base_seed=1)
@@ -182,36 +218,85 @@ def test_the_validation_output_carve_out_touches_nothing_v1_owns():
                     "results/figures").strip()
 
 
-def test_v1_manifest_referenced_artifacts_still_match_their_recorded_hashes():
-    """One documented pre-existing exception, verified to predate this work.
+def test_v1_manifest_referenced_configs_still_match_their_recorded_hashes():
+    """Frozen V1 config content is unchanged, independent of checkout newlines.
 
-    configs/topology.yaml already diverged from the frozen v1-original-results
-    manifest between commit 10e6d59 and the audited base 5e429bc. It is
-    byte-identical to the audited base here, so this task did not move it, and
-    correcting the manifest would mean editing a frozen V1 artifact.
+    One documented pre-existing exception: configs/topology.yaml already
+    diverged from the frozen v1-original-results manifest between commit
+    10e6d59 and the audited base 5e429bc. It is byte-identical to the audited
+    base here, so this task did not move it, and correcting the manifest would
+    mean editing a frozen V1 artifact.
     """
     manifest = json.loads((REPO_ROOT / "results/v1_manifest.json")
                           .read_text(encoding="utf-8"))
     known_pre_existing = {"configs/topology.yaml"}
+    checked = 0
     for key, want in manifest["configs"].items():
         rel = key.replace("\\", "/")
-        got = sha256(REPO_ROOT / rel)
+        # Layer 1: git's own normalization-aware comparison against the base.
+        assert_unchanged_since_base(rel)
+        matched, form = content_hash_matches(REPO_ROOT / rel, want)
         if rel in known_pre_existing:
-            assert got != want, (
-                f"{rel} now matches the manifest; the documented pre-existing "
-                f"divergence is gone, so this test needs updating")
-            assert not _git("diff", "--name-only", AUDITED_BASE_COMMIT, "--",
-                            rel).strip(), f"{rel} was modified by this task"
+            assert not matched, (
+                f"{rel} now matches the manifest in the {form} newline form; the "
+                f"documented pre-existing divergence is gone, so this test needs "
+                f"updating")
             continue
-        assert got == want, rel
-    for key, want in manifest["evaluation"]["artifacts"].items():
-        assert sha256(REPO_ROOT / "results" / key) == want, key
-    assert sha256(REPO_ROOT / "models/ppo_te/best_model.zip") == \
-        manifest["model"]["best_model_sha256"]
-    assert sha256(REPO_ROOT / "models/ppo_te/evaluations.npz") == \
-        manifest["model"]["evaluations_npz_sha256"]
+        # Layer 2: content matches the frozen manifest in some newline form.
+        assert matched, rel
+        checked += 1
+    assert checked == 5, f"expected 5 verifiable config hashes, checked {checked}"
+
+
+def test_v1_manifest_referenced_evaluation_artifacts_still_match():
+    """The three published evaluation artifacts, line-ending independent."""
+    manifest = json.loads((REPO_ROOT / "results/v1_manifest.json")
+                          .read_text(encoding="utf-8"))
+    artifacts = manifest["evaluation"]["artifacts"]
+    assert set(artifacts) == {"eval_summary.csv", "eval_stats.csv",
+                              "eval_summary.json"}
+    for key, want in artifacts.items():
+        rel = f"results/{key}"
+        assert_unchanged_since_base(rel)
+        matched, _form = content_hash_matches(REPO_ROOT / rel, want)
+        assert matched, rel
+
+
+def test_v1_model_artifacts_are_strictly_raw_hashed():
+    """Binaries are never newline-normalized; any byte change is fatal."""
+    manifest = json.loads((REPO_ROOT / "results/v1_manifest.json")
+                          .read_text(encoding="utf-8"))
+    for rel, want in (("models/ppo_te/best_model.zip",
+                       manifest["model"]["best_model_sha256"]),
+                      ("models/ppo_te/evaluations.npz",
+                       manifest["model"]["evaluations_npz_sha256"])):
+        assert_unchanged_since_base(rel)
+        assert sha256(REPO_ROOT / rel) == want, rel
     assert manifest["model"]["observation_dim"] == 586
     assert manifest["model"]["action_dim"] == 69
+
+
+def test_newline_agnostic_hash_helper_still_rejects_real_content_changes(tmp_path):
+    """Guards the helper itself: only newline form may vary, never content."""
+    original = b"alpha,1\nbeta,2\n"
+    expected = hashlib.sha256(original).hexdigest()
+
+    same_lf = tmp_path / "lf.csv"
+    same_lf.write_bytes(original)
+    assert content_hash_matches(same_lf, expected)[0]
+
+    same_crlf = tmp_path / "crlf.csv"
+    same_crlf.write_bytes(b"alpha,1\r\nbeta,2\r\n")
+    assert content_hash_matches(same_crlf, expected) == (True, "lf")
+
+    for corrupted in (b"alpha,1\nbeta,3\n",        # a changed digit
+                      b"alpha,1\n",                 # a dropped row
+                      b"alpha,1\nbeta,2\ngamma,3\n",  # an added row
+                      b"alpha,1\nbeta,2\n\n",       # an extra blank line
+                      b" alpha,1\nbeta,2\n"):       # leading whitespace
+        bad = tmp_path / "bad.csv"
+        bad.write_bytes(corrupted)
+        assert not content_hash_matches(bad, expected)[0], corrupted
 
 
 def test_importing_v2_does_not_populate_or_mutate_v1_caches():

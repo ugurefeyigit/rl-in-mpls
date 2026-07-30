@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -33,6 +34,7 @@ import numpy as np
 
 from mplssim.experiments.v2_factory import (
     build_environment_metadata,
+    make_engine_v2,
     make_env_v2,
     validate_environment_metadata,
 )
@@ -442,6 +444,87 @@ def emit_convergence(all_rows: list[dict], findings: dict) -> Path:
     return path
 
 
+def verify_event_exactness(scenario: str, seed: int) -> list[dict]:
+    """Every scripted link event must fire exactly once, at its configured tick.
+
+    Stronger than "never early": a missing event, a duplicated event, or one
+    applied a tick or an interval late all fail here. The engine's own
+    ``_selected_link_events`` is wrapped rather than reimplemented, so this
+    exercises the shipped right-closed selection instead of a copy of it.
+
+    Three separate things are checked per event:
+      * it is selected exactly once across the whole episode;
+      * the selecting window satisfies ``t_from < t_event <= t_to`` and closes
+        exactly on the configured minute (the tick that owns the event);
+      * the resulting link state is observable at the control boundary
+        ``ceil(t_event / control_interval) * control_interval``.
+    """
+    cfg = load_engine_config_v2()
+    interval = cfg.control_interval_min
+    eng = make_engine_v2(scenario, episode_seed=seed)
+    events = [ev for ev in eng.scenario.events
+              if ev["type"] in ("link_down", "link_up")]
+
+    fired: dict[int, list[tuple[float, float]]] = {i: [] for i in range(len(events))}
+    # Events at t <= 0 are applied during construction by the reset path, which
+    # has its own selection and never goes through _selected_link_events.
+    for i, ev in enumerate(events):
+        if float(ev["t_min"]) <= 0.0:
+            fired[i].append((float("-inf"), 0.0))
+
+    original = eng._selected_link_events
+
+    def traced(t_from: float, t_to: float):
+        selected = original(t_from, t_to)
+        for chosen in selected:
+            for i, ev in enumerate(events):
+                if ev is chosen:
+                    fired[i].append((t_from, t_to))
+        return selected
+
+    eng._selected_link_events = traced
+
+    observed_boundary: dict[int, float] = {}
+    seen_down: dict[str, bool] = {}
+    while not eng.done:
+        eng.step_interval()
+        for i, ev in enumerate(events):
+            if i in observed_boundary:
+                continue
+            is_down = not eng.link_up[ev["link"]]
+            if ev["type"] == "link_down" and is_down:
+                observed_boundary[i] = eng.t_min
+                seen_down[ev["link"]] = True
+            elif (ev["type"] == "link_up" and not is_down
+                  and seen_down.get(ev["link"], False)):
+                observed_boundary[i] = eng.t_min
+
+    report = []
+    for i, ev in enumerate(events):
+        t_event = float(ev["t_min"])
+        windows = fired[i]
+        expected_boundary = math.ceil(t_event / interval) * interval
+        got_boundary = observed_boundary.get(i)
+        # The owning tick is the one whose right edge closes on the configured
+        # minute: t_from < t_event <= t_to with t_to == t_event.
+        window_ok = len(windows) == 1 and (
+            windows[0][0] < t_event <= windows[0][1]
+            and abs(windows[0][1] - t_event) < 1e-9)
+        report.append({
+            "link": ev["link"], "type": ev["type"], "configured_t_min": t_event,
+            "fired_count": len(windows),
+            "fired_exactly_once": len(windows) == 1,
+            "selecting_window": (list(windows[0]) if len(windows) == 1 else None),
+            "fired_in_configured_tick": bool(window_ok),
+            "expected_observable_boundary": float(expected_boundary),
+            "observed_observable_boundary": got_boundary,
+            "observable_at_expected_boundary": (
+                got_boundary is not None
+                and abs(got_boundary - expected_boundary) < 1e-9),
+        })
+    return report
+
+
 def emit_traces(findings: dict) -> tuple[list[Path], list[dict]]:
     paths, all_rows, diffs = [], [], []
     for scenario, seed in FIXED_PAIRS:
@@ -455,7 +538,13 @@ def emit_traces(findings: dict) -> tuple[list[Path], list[dict]]:
         write_csv(p1, v1_rows, TRACE_COLUMNS)
         write_csv(p2, v2_rows, TRACE_COLUMNS)
         paths += [p1, p2]
-        diffs.append(classify_pair(scenario, seed, v1_rows, v2_rows))
+        pair = classify_pair(scenario, seed, v1_rows, v2_rows)
+        pair["event_exactness"] = verify_event_exactness(scenario, seed)
+        pair["events_exact"] = all(
+            e["fired_exactly_once"] and e["fired_in_configured_tick"]
+            and e["observable_at_expected_boundary"]
+            for e in pair["event_exactness"])
+        diffs.append(pair)
     findings["fixed_traces"] = diffs
     return paths, all_rows
 
@@ -645,6 +734,32 @@ def emit_explanations(findings: dict) -> Path:
                 f"| {ev['v1_first_observed_t_min']} |")
     lines += [
         "",
+        "### Exactly-once verification",
+        "",
+        "Each scripted event must be selected exactly once, by the tick whose "
+        "right edge closes on its configured minute, and become observable at "
+        "`ceil(t/interval)*interval`. A missing, duplicated or late event fails "
+        "the `v2_events_fire_exactly_once_at_configured_boundary` gate.",
+        "",
+        "| Scenario | Link | Event | Configured | Fired | Selecting window | "
+        "Observable boundary | Exact |",
+        "|---|---|---|---:|---:|---|---:|---|",
+    ]
+    for d in findings["fixed_traces"]:
+        for ev in d.get("event_exactness", []):
+            ok = (ev["fired_exactly_once"] and ev["fired_in_configured_tick"]
+                  and ev["observable_at_expected_boundary"])
+            window = ev["selecting_window"]
+            window_s = ("reset (t<=0)" if window and window[0] == float("-inf")
+                        else (f"({window[0]:.0f}, {window[1]:.0f}]" if window
+                              else "NONE"))
+            lines.append(
+                f"| {d['scenario']} | {ev['link']} | {ev['type']} "
+                f"| {ev['configured_t_min']:.0f} | {ev['fired_count']}x "
+                f"| {window_s} | {ev['observed_observable_boundary']} "
+                f"| {'yes' if ok else 'NO'} |")
+    lines += [
+        "",
         "## Per-pair difference counts",
         "",
         "| Scenario | Seed | Boundaries | Route differs | Mask differs | "
@@ -761,6 +876,9 @@ def main() -> int:
             if "fixed_traces" in findings else None),
         "v2_event_never_before_configured_time": (
             all(d["v2_event_never_early"] for d in findings["fixed_traces"])
+            if "fixed_traces" in findings else None),
+        "v2_events_fire_exactly_once_at_configured_boundary": (
+            all(d["events_exact"] for d in findings["fixed_traces"])
             if "fixed_traces" in findings else None),
     }
     findings["gates"] = gates

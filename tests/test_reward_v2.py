@@ -15,6 +15,7 @@ compare them against whatever states produced the published numbers.
 
 from __future__ import annotations
 
+import copy
 import math
 
 import numpy as np
@@ -457,6 +458,120 @@ def test_disconnection_is_never_free():
         shed.disconnected[d_idx] = True
         tick = shed.tick_metrics()
         assert (tick["protected_disconnect"] + tick["unprotected_disconnect"]) > 0.0
+
+
+def _branch(env):
+    """A paired fork of the environment sharing its exact AR/RNG state.
+
+    Every branch therefore faces byte-identical offered traffic over the next
+    interval, so a reward difference is attributable to the action alone.
+    """
+    clone = copy.copy(env)
+    clone.eng = env.eng.fast_clone()
+    return clone
+
+
+def _probe_state(env, action):
+    """Step one interval on a fork; return the outcome summary."""
+    branch = _branch(env)
+    _, reward, _, _, info = branch.step(action)
+    metrics = info["metrics"]
+    return {
+        "action": action,
+        "reward": reward,
+        "unprotected_disconnect": metrics["unprotected_disconnect"],
+        "protected_disconnect": metrics["protected_disconnect"],
+        "delivered_mbps": metrics["delivered_mbps"],
+        "accepted": info["accepted_te_changes"],
+        "branch": branch,
+    }
+
+
+def _shedding_exploits(baseline, candidate, tol=1e-12):
+    """Does `candidate` out-score the no-op by shedding unprotected traffic?
+
+    Two shedding channels are covered: outright disconnection of unprotected
+    demands, and a net reduction in delivered traffic (dumping load so the loss
+    curve drops it). Either one counts only if the reward strictly improves.
+    """
+    sheds = (
+        candidate["unprotected_disconnect"] > baseline["unprotected_disconnect"] + tol
+        or candidate["delivered_mbps"] < baseline["delivered_mbps"] - tol
+    )
+    return sheds and candidate["reward"] > baseline["reward"] + tol
+
+
+@pytest.mark.parametrize("scenario,seed,warmup", [
+    ("overload_stress", 103, 20),
+    ("overload_stress", 103, 30),
+    ("link_failure", 101, 14),
+])
+def test_bounded_action_search_finds_no_shedding_exploit(scenario, seed, warmup):
+    """Exhaustive depth-1 search over every legal action, plus a depth-2 ply.
+
+    The reward must never pay an agent for shedding unprotected traffic. No
+    action *directly* disconnects a demand, so this looks for the indirect
+    route: a legal reroute whose consequence is lost traffic, rewarded because
+    the congestion relief outweighs the loss.
+
+    All branches fork from one state with a copied RNG, so they see identical
+    offered traffic and the comparison is paired.
+    """
+    env = make_env_v2(scenario=scenario, root_seed=seed)
+    env.reset(options={"episode_seed": seed})
+    for _ in range(warmup):
+        env.step(0)
+
+    legal = [int(a) for a in np.flatnonzero(env.action_masks())]
+    assert len(legal) > 1, "state has no legal reroutes to search"
+
+    baseline = _probe_state(env, 0)
+    depth1 = [_probe_state(env, a) for a in legal if a != 0]
+    exploits = [c for c in depth1 if _shedding_exploits(baseline, c)]
+
+    # Depth 2: continue from the most promising branches, since a one-step
+    # search could miss an exploit that needs a setup move first.
+    for parent in sorted(depth1, key=lambda c: -c["reward"])[:5]:
+        child_env = parent["branch"]
+        child_legal = [int(a) for a in np.flatnonzero(child_env.action_masks())]
+        child_baseline = _probe_state(child_env, 0)
+        for a in child_legal:
+            if a == 0:
+                continue
+            child = _probe_state(child_env, a)
+            if _shedding_exploits(child_baseline, child):
+                exploits.append(child)
+
+    if exploits:
+        worst = max(exploits, key=lambda c: c["reward"] - baseline["reward"])
+        pytest.fail(
+            "SHEDDING EXPLOIT FOUND -- stop and report before touching the "
+            f"approved reward. scenario={scenario} seed={seed} warmup={warmup} "
+            f"action={worst['action']} "
+            f"reward {baseline['reward']:.6f} -> {worst['reward']:.6f} "
+            f"unprotected_disconnect {baseline['unprotected_disconnect']:.6f} -> "
+            f"{worst['unprotected_disconnect']:.6f} "
+            f"delivered_mbps {baseline['delivered_mbps']:.3f} -> "
+            f"{worst['delivered_mbps']:.3f} "
+            f"({len(exploits)} exploit(s) total)")
+
+
+def test_the_shedding_exploit_detector_would_fire_on_a_real_exploit():
+    """Guards the detector: a hand-built exploiting outcome must be caught."""
+    baseline = {"reward": -4.0, "unprotected_disconnect": 0.0,
+                "delivered_mbps": 1000.0}
+    disconnect_exploit = {"reward": -3.0, "unprotected_disconnect": 0.06,
+                          "delivered_mbps": 1000.0}
+    drop_exploit = {"reward": -3.0, "unprotected_disconnect": 0.0,
+                    "delivered_mbps": 900.0}
+    benign_better = {"reward": -3.0, "unprotected_disconnect": 0.0,
+                     "delivered_mbps": 1100.0}
+    costly_shed = {"reward": -5.0, "unprotected_disconnect": 0.06,
+                   "delivered_mbps": 900.0}
+    assert _shedding_exploits(baseline, disconnect_exploit)
+    assert _shedding_exploits(baseline, drop_exploit)
+    assert not _shedding_exploits(baseline, benign_better)
+    assert not _shedding_exploits(baseline, costly_shed)
 
 
 def test_no_agent_action_can_disconnect_a_demand():

@@ -41,6 +41,19 @@ All-no-op script. V2 must never be early; V1 is consistently one control interva
 | ood_double_failure | 101 | L20 | link_up | 210 | 210.0 | 215.0 |
 | ood_double_failure | 101 | L19 | link_up | 240 | 240.0 | 245.0 |
 
+### Exactly-once verification
+
+Each scripted event must be selected exactly once, by the tick whose right edge closes on its configured minute, and become observable at `ceil(t/interval)*interval`. A missing, duplicated or late event fails the `v2_events_fire_exactly_once_at_configured_boundary` gate.
+
+| Scenario | Link | Event | Configured | Fired | Selecting window | Observable boundary | Exact |
+|---|---|---|---:|---:|---|---:|---|
+| link_failure | L11 | link_down | 60 | 1x | (59, 60] | 60.0 | yes |
+| link_failure | L11 | link_up | 180 | 1x | (179, 180] | 180.0 | yes |
+| ood_double_failure | L19 | link_down | 60 | 1x | (59, 60] | 60.0 | yes |
+| ood_double_failure | L20 | link_down | 90 | 1x | (89, 90] | 90.0 | yes |
+| ood_double_failure | L20 | link_up | 210 | 1x | (209, 210] | 210.0 | yes |
+| ood_double_failure | L19 | link_up | 240 | 1x | (239, 240] | 240.0 | yes |
+
 ## Per-pair difference counts
 
 | Scenario | Seed | Boundaries | Route differs | Mask differs | Carried load differs |

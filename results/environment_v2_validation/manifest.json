@@ -634,7 +634,7 @@
    "root_seed": null,
    "worker_rank": null
   },
-  "git_commit": "f10480407c7cc1875e7bf7e37eabd0365bbacdc3",
+  "git_commit": "2f637ef910793cefaaf123d649f50739e7cf1a6d",
   "git_branch": "feat/rl-environment-v2",
   "git_dirty": true
  },
@@ -686,7 +686,9 @@
    "negative_flow": false,
    "failed_link_carries_traffic": false,
    "v2_event_never_early": true,
-   "link_events": []
+   "link_events": [],
+   "event_exactness": [],
+   "events_exact": true
   },
   {
    "scenario": "link_failure",
@@ -719,7 +721,40 @@
      "v2_first_observed_t_min": 180.0,
      "v1_first_observed_t_min": 185.0
     }
-   ]
+   ],
+   "event_exactness": [
+    {
+     "link": "L11",
+     "type": "link_down",
+     "configured_t_min": 60.0,
+     "fired_count": 1,
+     "fired_exactly_once": true,
+     "selecting_window": [
+      59.0,
+      60.0
+     ],
+     "fired_in_configured_tick": true,
+     "expected_observable_boundary": 60.0,
+     "observed_observable_boundary": 60.0,
+     "observable_at_expected_boundary": true
+    },
+    {
+     "link": "L11",
+     "type": "link_up",
+     "configured_t_min": 180.0,
+     "fired_count": 1,
+     "fired_exactly_once": true,
+     "selecting_window": [
+      179.0,
+      180.0
+     ],
+     "fired_in_configured_tick": true,
+     "expected_observable_boundary": 180.0,
+     "observed_observable_boundary": 180.0,
+     "observable_at_expected_boundary": true
+    }
+   ],
+   "events_exact": true
   },
   {
    "scenario": "ood_double_failure",
@@ -766,7 +801,70 @@
      "v2_first_observed_t_min": 240.0,
      "v1_first_observed_t_min": 245.0
     }
-   ]
+   ],
+   "event_exactness": [
+    {
+     "link": "L19",
+     "type": "link_down",
+     "configured_t_min": 60.0,
+     "fired_count": 1,
+     "fired_exactly_once": true,
+     "selecting_window": [
+      59.0,
+      60.0
+     ],
+     "fired_in_configured_tick": true,
+     "expected_observable_boundary": 60.0,
+     "observed_observable_boundary": 60.0,
+     "observable_at_expected_boundary": true
+    },
+    {
+     "link": "L20",
+     "type": "link_down",
+     "configured_t_min": 90.0,
+     "fired_count": 1,
+     "fired_exactly_once": true,
+     "selecting_window": [
+      89.0,
+      90.0
+     ],
+     "fired_in_configured_tick": true,
+     "expected_observable_boundary": 90.0,
+     "observed_observable_boundary": 90.0,
+     "observable_at_expected_boundary": true
+    },
+    {
+     "link": "L20",
+     "type": "link_up",
+     "configured_t_min": 210.0,
+     "fired_count": 1,
+     "fired_exactly_once": true,
+     "selecting_window": [
+      209.0,
+      210.0
+     ],
+     "fired_in_configured_tick": true,
+     "expected_observable_boundary": 210.0,
+     "observed_observable_boundary": 210.0,
+     "observable_at_expected_boundary": true
+    },
+    {
+     "link": "L19",
+     "type": "link_up",
+     "configured_t_min": 240.0,
+     "fired_count": 1,
+     "fired_exactly_once": true,
+     "selecting_window": [
+      239.0,
+      240.0
+     ],
+     "fired_in_configured_tick": true,
+     "expected_observable_boundary": 240.0,
+     "observed_observable_boundary": 240.0,
+     "observable_at_expected_boundary": true
+    }
+   ],
+   "events_exact": true
   },
   {
    "scenario": "overload_stress",
@@ -784,7 +882,9 @@
    "negative_flow": false,
    "failed_link_carries_traffic": false,
    "v2_event_never_early": true,
-   "link_events": []
+   "link_events": [],
+   "event_exactness": [],
+   "events_exact": true
   }
  ],
  "flow_solver": {
@@ -806,7 +906,8 @@
   "no_negative_flow": true,
   "no_traffic_on_failed_links": true,
   "v2_never_terminates_early": true,
-  "v2_event_never_before_configured_time": true
+  "v2_event_never_before_configured_time": true,
+  "v2_events_fire_exactly_once_at_configured_boundary": true
  },
  "no_model_trained": true,
  "artifacts": [

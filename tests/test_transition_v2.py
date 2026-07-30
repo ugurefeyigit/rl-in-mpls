@@ -6,6 +6,7 @@ Covers layers 4, 6, 9 and 11 of docs/RL_ENVIRONMENT_V2_TEST_PLAN.md.
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -107,6 +108,91 @@ def test_the_windows_tile_the_timeline_without_gap_or_overlap():
         old_t, t = t, t + 1.0
         fired += len(eng._selected_link_events(old_t, t))
     assert fired == len(events)
+
+
+def _load_validator():
+    """Import scripts/validate_env_v2.py (not a package) by path."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "validate_env_v2",
+        Path(__file__).resolve().parents[1] / "scripts" / "validate_env_v2.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize("scenario,seed", [("link_failure", 101),
+                                           ("ood_double_failure", 101)])
+def test_every_scripted_event_fires_exactly_once_at_its_configured_boundary(
+        scenario, seed):
+    report = _load_validator().verify_event_exactness(scenario, seed)
+    assert report, "scenario has no scripted link events to verify"
+    for ev in report:
+        assert ev["fired_count"] == 1, ev
+        assert ev["fired_exactly_once"], ev
+        assert ev["fired_in_configured_tick"], ev
+        assert ev["observable_at_expected_boundary"], ev
+        t = ev["configured_t_min"]
+        assert ev["selecting_window"] == [t - 1.0, t], ev
+        assert ev["observed_observable_boundary"] == ev["expected_observable_boundary"]
+
+
+def test_the_exactness_check_detects_a_late_event(monkeypatch):
+    """Negative control: V1's left-closed window must be reported as late."""
+    validator = _load_validator()
+
+    def left_closed(self, t_from, t_to):
+        # V1 semantics: [t_from, t_to) after the clock has advanced.
+        picked = [(ev["t_min"], i, ev) for i, ev in enumerate(self.scenario.events)
+                  if ev["type"] in ("link_down", "link_up")
+                  and t_from <= ev["t_min"] < t_to]
+        picked.sort(key=lambda x: (x[0], x[1]))
+        return [ev for _, _, ev in picked]
+
+    monkeypatch.setattr(SimulationEngineV2, "_selected_link_events", left_closed)
+    report = validator.verify_event_exactness("link_failure", 101)
+    assert report
+    late = [ev for ev in report if not ev["fired_in_configured_tick"]]
+    assert late, "left-closed selection must be flagged as not firing in the tick"
+    for ev in late:
+        # fires one tick late, and is only observable a whole interval later
+        assert ev["selecting_window"] == [ev["configured_t_min"],
+                                          ev["configured_t_min"] + 1.0]
+        assert not ev["observable_at_expected_boundary"]
+        assert (ev["observed_observable_boundary"]
+                > ev["expected_observable_boundary"])
+
+
+def test_the_exactness_check_detects_a_missing_event(monkeypatch):
+    """Negative control: dropping events entirely must fail, not pass silently."""
+    validator = _load_validator()
+    monkeypatch.setattr(SimulationEngineV2, "_selected_link_events",
+                        lambda self, t_from, t_to: [])
+    report = validator.verify_event_exactness("link_failure", 101)
+    assert report
+    for ev in report:
+        assert ev["fired_count"] == 0
+        assert not ev["fired_exactly_once"]
+        assert not ev["fired_in_configured_tick"]
+        assert not ev["observable_at_expected_boundary"]
+        assert ev["observed_observable_boundary"] is None
+
+
+def test_the_exactness_check_detects_a_duplicated_event(monkeypatch):
+    """Negative control: an event applied twice must fail."""
+    validator = _load_validator()
+    original = SimulationEngineV2._selected_link_events
+
+    def doubled(self, t_from, t_to):
+        selected = original(self, t_from, t_to)
+        return selected + selected
+
+    monkeypatch.setattr(SimulationEngineV2, "_selected_link_events", doubled)
+    report = validator.verify_event_exactness("link_failure", 101)
+    assert report
+    assert any(ev["fired_count"] > 1 for ev in report)
+    assert all(not ev["fired_exactly_once"] for ev in report
+               if ev["fired_count"] > 1)
 
 
 def test_recovery_uses_the_same_right_closed_boundary():
