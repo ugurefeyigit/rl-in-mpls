@@ -57,6 +57,7 @@ ALLOWED_NEW_FILES = {
     "tests/test_learning_v2.py",
     "docs/superpowers/specs/2026-07-30-v2-learning-comparison-design.md",
     "docs/superpowers/plans/2026-07-30-v2-learning-comparison.md",
+    "NEXT_STAGE_HANDOFF.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",

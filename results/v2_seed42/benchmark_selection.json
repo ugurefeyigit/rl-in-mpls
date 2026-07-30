@@ -1,0 +1,49 @@
+{
+  "selected": {
+    "n_envs": 16,
+    "device": "cuda",
+    "combined_transitions_per_second": 223.13499271228785,
+    "per_algorithm": {
+      "maskable_ppo": 216.5770896209833,
+      "masked_bandit": 229.6928958035924
+    }
+  },
+  "comparisons": [
+    {
+      "n_envs": 8,
+      "device": "cpu",
+      "maskable_ppo_transitions_per_second": 105.76081318335125,
+      "masked_bandit_transitions_per_second": 103.24757847243866,
+      "combined_transitions_per_second": 104.50419582789496
+    },
+    {
+      "n_envs": 16,
+      "device": "cpu",
+      "maskable_ppo_transitions_per_second": 86.82923986898946,
+      "masked_bandit_transitions_per_second": 106.1879529853753,
+      "combined_transitions_per_second": 96.50859642718238
+    },
+    {
+      "n_envs": 8,
+      "device": "cuda",
+      "maskable_ppo_transitions_per_second": 194.2562542183464,
+      "masked_bandit_transitions_per_second": 206.6084103586622,
+      "combined_transitions_per_second": 200.4323322885043
+    },
+    {
+      "n_envs": 16,
+      "device": "cuda",
+      "maskable_ppo_transitions_per_second": 216.5770896209833,
+      "masked_bandit_transitions_per_second": 229.6928958035924,
+      "combined_transitions_per_second": 223.13499271228785
+    }
+  ],
+  "excluded": {
+    "n_envs_12": "does not divide both 400000 and 50000 exactly"
+  },
+  "torch": "2.11.0+cu128",
+  "cuda_runtime": "12.8",
+  "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "mixed_precision": false,
+  "selection_rule": "highest arithmetic mean aggregate transitions per second across both learners among exact-budget-safe vector counts"
+}

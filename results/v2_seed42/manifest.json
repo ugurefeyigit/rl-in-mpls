@@ -1,0 +1,293 @@
+{
+  "format": "v2-seed42-comparison-manifest-v1",
+  "status": "completed",
+  "branch": "feat/rl-environment-v2",
+  "final_code_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+  "approved_training_tooling_ancestor": "859fdb2e0c5005b4eabd4ac1c3c8e48d2c0e31ac",
+  "signed_off_environment_commit": "dca533b5c6fa9953307d01470c23cac512eb2961",
+  "environment": {
+    "class": "MplsTeEnvV2",
+    "observation_dim": 604,
+    "action_dim": 69,
+    "definitions_frozen": true,
+    "v1_changed": false
+  },
+  "changed_files_since_approved_tooling": [
+    ".gitignore",
+    "configs/experiments/learning_v2.yaml",
+    "docs/superpowers/plans/2026-07-30-v2-learning-comparison.md",
+    "docs/superpowers/specs/2026-07-30-v2-learning-comparison-design.md",
+    "mplssim/experiments/evaluation_v2.py",
+    "mplssim/experiments/learning_common.py",
+    "mplssim/experiments/masked_bandit.py",
+    "mplssim/experiments/trainers_v2.py",
+    "scripts/benchmark_v2.py",
+    "scripts/compare_v2.py",
+    "scripts/evaluate_v2.py",
+    "scripts/train_v2.py",
+    "tests/test_learning_v2.py",
+    "tests/test_state_machine.py",
+    "tests/test_v1_v2_compatibility.py",
+    "results/v2_seed42/PILOT_REPORT.md",
+    "results/v2_seed42/manifest.json",
+    "results/v2_seed42/benchmark_selection.json",
+    "results/v2_seed42/comparison.csv",
+    "results/v2_seed42/comparison.json",
+    "results/v2_seed42/comparison_episode_summary.csv",
+    "results/v2_seed42/comparison_tool_manifest.json",
+    "results/v2_seed42/learning_curve.csv",
+    "results/v2_seed42/ppo_checkpoint_selection.csv",
+    "results/v2_seed42/bandit_checkpoint_selection.csv",
+    "NEXT_STAGE_HANDOFF.md"
+  ],
+  "validation": {
+    "focused_learning_tests": "38 passed",
+    "full_suite": "428 passed",
+    "validate_env_v2_all": "12/12 gates passed",
+    "definition_freeze_recheck": "passed",
+    "reward_component_max_abs_sum_error": 1.7053025658242404e-13,
+    "all_evaluation_episodes_truncated": true,
+    "any_evaluation_episode_terminated": false
+  },
+  "hardware": {
+    "os": "Microsoft Windows 11 Home 10.0.26200 64 bit",
+    "cpu": "Intel Core i7-14700HX",
+    "physical_cores": 20,
+    "logical_processors": 28,
+    "ram_bytes": 34048245760,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "gpu_vram_mib": 8188,
+    "nvidia_driver": "610.62",
+    "python": "3.13.4",
+    "torch": "2.11.0+cu128",
+    "torch_cuda_runtime": "12.8",
+    "numpy": "2.3.0",
+    "gymnasium": "1.3.0",
+    "stable_baselines3": "2.9.0",
+    "sb3_contrib": "2.9.0",
+    "pandas": "2.3.0",
+    "scipy": "1.18.0",
+    "mixed_precision": false
+  },
+  "benchmark": {
+    "selected_n_envs": 16,
+    "selected_device": "cuda",
+    "selected_combined_transitions_per_second": 223.13499271228785,
+    "cpu_8_combined_transitions_per_second": 104.50419582789496,
+    "cpu_16_combined_transitions_per_second": 96.50859642718238,
+    "cuda_8_combined_transitions_per_second": 200.4323322885043,
+    "cuda_16_combined_transitions_per_second": 223.13499271228785,
+    "n_envs_12_excluded_reason": "does not divide both 400000 and 50000 exactly"
+  },
+  "seed_policy": {
+    "frozen_training_roots": [42, 314159, 271828],
+    "active_training_root": 42,
+    "continuity_evaluation_seeds": [101, 102, 103, 104, 105],
+    "holdout_seeds": [1001, 1002, 1003, 1004, 1005],
+    "holdout_accessed": false,
+    "final_training_episode_seed_ledger_sha256": "4928123efccc4324614943935f63b01b57ebde2ef07cc4a2d885ac2a73275668",
+    "episode_seed_ledgers_byte_identical": true,
+    "episode_seed_records_per_learner": 1392,
+    "unique_episode_seeds_per_learner": 1392,
+    "episode_seed_min": 42,
+    "episode_seed_max": 88121,
+    "seed_collisions": 0
+  },
+  "runs": {
+    "maskable_ppo": {
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_maskable_ppo_final",
+      "status": "completed",
+      "root_seed": 42,
+      "aggregate_transitions": 400000,
+      "scenario": "random_day",
+      "n_envs": 16,
+      "checkpoint_interval": 50000,
+      "device": "cuda",
+      "wall_time_seconds": 1608.4342342999298,
+      "aggregate_transitions_per_second": 248.6890613678711,
+      "peak_gpu_memory_bytes": 30024192,
+      "ppo_hyperparameters": {
+        "learning_rate": 0.0003,
+        "n_steps": 512,
+        "batch_size": 512,
+        "n_epochs": 8,
+        "gamma": 0.995,
+        "gae_lambda": 0.95,
+        "clip_range": 0.2,
+        "ent_coef": 0.01,
+        "vf_coef": 0.5,
+        "max_grad_norm": 0.5,
+        "policy_net_arch": [256, 256]
+      },
+      "final_diagnostics": {
+        "entropy_loss": -3.0226504039019346,
+        "policy_gradient_loss": -0.011467546341009438,
+        "value_loss": 74.16844865679741,
+        "approx_kl": 0.010549336671829224,
+        "clip_fraction": 0.1101837158203125,
+        "explained_variance": 0.8654506206512451,
+        "n_updates": 384
+      },
+      "integrity": {
+        "invalid_action_attempts": 0,
+        "mask_disagreements": 0,
+        "reward_mismatches": 0,
+        "nonfinite_values": 0,
+        "solver_failures": 0,
+        "protected_safety_failures": 0
+      }
+    },
+    "masked_bandit": {
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_masked_bandit_final",
+      "status": "completed",
+      "root_seed": 42,
+      "aggregate_transitions": 400000,
+      "scenario": "random_day",
+      "n_envs": 16,
+      "checkpoint_interval": 50000,
+      "device": "cuda",
+      "wall_time_seconds": 1810.3241118000587,
+      "aggregate_transitions_per_second": 220.95490934066396,
+      "peak_gpu_memory_bytes": 24719360,
+      "hyperparameters": {
+        "network": [256, 256],
+        "optimizer": "adam",
+        "learning_rate": 0.0003,
+        "batch_size": 512,
+        "replay_capacity": 100000,
+        "warmup_transitions": 4096,
+        "update_every_vector_steps": 4,
+        "exploration_rule": "masked_epsilon_greedy",
+        "initial_epsilon": 0.2,
+        "final_epsilon": 0.02,
+        "decay_transitions": 200000,
+        "target": "immediate_observed_reward",
+        "loss": "huber",
+        "reward_scaling": "none",
+        "gradient_clip_norm": 1.0
+      },
+      "final_diagnostics": {
+        "loss": 0.10753051936626434,
+        "gradient_norm": 0.7349768877029419,
+        "updates": 6187,
+        "final_epsilon": 0.02,
+        "replay_size": 100000
+      },
+      "integrity": {
+        "invalid_action_attempts": 0,
+        "mask_disagreements": 0,
+        "reward_mismatches": 0,
+        "nonfinite_values": 0,
+        "solver_failures": 0,
+        "protected_safety_failures": 0
+      }
+    },
+    "comparison": {
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_comparison_final",
+      "status": "completed",
+      "wall_time_seconds": 392.3791081,
+      "scenarios": [
+        "full_day",
+        "evening_peak",
+        "flash_crowd",
+        "link_failure",
+        "deceptive_local_optimum",
+        "ood_double_failure",
+        "overload_stress"
+      ],
+      "seeds": [101, 102, 103, 104, 105]
+    }
+  },
+  "checkpoint_selection": {
+    "rule": "highest valid mean operational return over seven scenarios and continuity seeds 101-105; exact ties choose earlier",
+    "maskable_ppo": {
+      "transition": 250000,
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_maskable_ppo_final/checkpoints/checkpoint_000250000.zip",
+      "sha256": "d34cc77ded05b064fa2a39dbe5c5ccc3126c9e6cf85e36c1b507127c987f5676",
+      "mean_operational_return": 13.452895299283881
+    },
+    "masked_bandit": {
+      "transition": 250000,
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_masked_bandit_final/checkpoints/checkpoint_000250000.pt",
+      "sha256": "c15097700eac518ee259cba67e34e4fba1716881ab3dd912188b55da0c79bf49",
+      "mean_operational_return": 22.653518511026295
+    }
+  },
+  "checkpoint_hashes": {
+    "maskable_ppo": {
+      "50000": "41e69675154e4da4f97eb26639b913ce9b4fc08b90fbf82479bdd3bc9cabfa45",
+      "100000": "0b6a82bfcd07416efd61b1ef80a4656ae1e4778ddc221a74f4a2c60a1d16c64e",
+      "150000": "1af597c2201a451b70c189d25b37f3c05109f711a879c7fb2d4f0d9e42eff2d1",
+      "200000": "8f44f81a5f713509234bcbea2a5ab2dd2cc01c7a4709d3d670dc0ee21a3e8f5d",
+      "250000": "d34cc77ded05b064fa2a39dbe5c5ccc3126c9e6cf85e36c1b507127c987f5676",
+      "300000": "5a008d06947385099e16dc6c33f7a6fd7fbd5c8e8f0bb080797a2954bbf57b8a",
+      "350000": "7331b924e57c7c8f83abf59c55f3bd8481b7932f8a38ae137e7dcbd8399b25ae",
+      "400000": "fc9cfdf45a734bac6b6c4010cc4e7e71bff35a3a8b9648149b8b364e3a742033"
+    },
+    "masked_bandit": {
+      "50000": "09ba54acaca16d90811463785094d1ddee04a943f1c5372d83cb716d1529f3a5",
+      "100000": "68e76479292c8cdd8dd7e28e3cf329171a144a2bbe8c38b258720c5baff3ee95",
+      "150000": "65a9c54df47054cd69b747e8fbd441fc16392f3bac7bc73e85c260c3f13be5a1",
+      "200000": "17268daf266dd828db5760fa00ce211719bb4652ab058f39078524e514be4c94",
+      "250000": "c15097700eac518ee259cba67e34e4fba1716881ab3dd912188b55da0c79bf49",
+      "300000": "4e26fa430c5272b40a92189cef3f006ac390d631c5318047a578cc029d8d8309",
+      "350000": "8919f203bb446f63d4e05881a05e63e6f0cf0d789e10d6c4e5180c0fdbe0438d",
+      "400000": "94aee1342d59d2088f00cd40976c5192d2d1f297985f338589875e7087d0bf78"
+    }
+  },
+  "invalidated_or_superseded_runs": {
+    "invalid_ppo": {
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_maskable_ppo",
+      "reason": "SB3 replaced the governed root on workers 1-15; recorded roots were 42-57"
+    },
+    "invalid_comparison": {
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_comparison",
+      "reason": "included invalid PPO"
+    },
+    "superseded_valid_bandit": {
+      "path": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_masked_bandit",
+      "reason": "repeated unchanged to bind both learners to final source SHA"
+    }
+  },
+  "commands": [
+    "git merge-base --is-ancestor 859fdb2e0c5005b4eabd4ac1c3c8e48d2c0e31ac HEAD",
+    "py -m pytest tests/test_learning_v2.py -q",
+    "py -m pytest tests/test_v1_v2_compatibility.py tests/test_env_v2.py tests/test_reward_v2.py tests/test_transition_v2.py -q",
+    "py -m pytest -q",
+    "py scripts/validate_env_v2.py --all",
+    "py -m pip install torch==2.11.0+cu128 --index-url https://download.pytorch.org/whl/cu128",
+    "py scripts/benchmark_v2.py --output-dir runs/v2/benchmark_seed42_rerun --vector-counts 8 12 16 --vector-steps 512",
+    "py scripts/train_v2.py --purpose smoke --algorithm maskable_ppo --run-dir runs/v2/gpu_benchmark_corrected/maskable_ppo_cuda_8env --root-seed 42 --scenario random_day --transitions 4096 --n-envs 8 --checkpoint-interval 4096 --device cuda",
+    "py scripts/train_v2.py --purpose smoke --algorithm masked_bandit --run-dir runs/v2/gpu_benchmark/masked_bandit_cuda_8env --root-seed 42 --scenario random_day --transitions 4096 --n-envs 8 --checkpoint-interval 4096 --device cuda",
+    "py scripts/train_v2.py --purpose smoke --algorithm maskable_ppo --run-dir runs/v2/gpu_benchmark_corrected/maskable_ppo_cuda_16env --root-seed 42 --scenario random_day --transitions 8192 --n-envs 16 --checkpoint-interval 8192 --device cuda",
+    "py scripts/train_v2.py --purpose smoke --algorithm masked_bandit --run-dir runs/v2/gpu_benchmark_corrected/masked_bandit_cuda_16env --root-seed 42 --scenario random_day --transitions 8192 --n-envs 16 --checkpoint-interval 8192 --device cuda",
+    "py scripts/evaluate_v2.py --algorithm maskable_ppo --checkpoint runs/v2/gpu_benchmark_corrected/maskable_ppo_cuda_16env/checkpoints/checkpoint_000008192.zip --output-dir runs/v2/smoke_eval/maskable_ppo --scenarios evening_peak --seeds 101 --device cuda --no-steps",
+    "py scripts/evaluate_v2.py --algorithm masked_bandit --checkpoint runs/v2/gpu_benchmark_corrected/masked_bandit_cuda_16env/checkpoints/checkpoint_000008192.pt --output-dir runs/v2/smoke_eval/masked_bandit --scenarios evening_peak --seeds 101 --device cuda --no-steps",
+    "py scripts/train_v2.py --purpose meaningful --algorithm maskable_ppo --run-dir runs/v2/seed42_maskable_ppo --root-seed 42 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+    "py scripts/train_v2.py --purpose meaningful --algorithm masked_bandit --run-dir runs/v2/seed42_masked_bandit --root-seed 42 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+    "py scripts/compare_v2.py --ppo-run runs/v2/seed42_maskable_ppo --bandit-run runs/v2/seed42_masked_bandit --output-dir runs/v2/seed42_comparison --device cuda",
+    "py scripts/train_v2.py --purpose smoke --algorithm maskable_ppo --run-dir runs/v2/seedfix_smoke_ppo --root-seed 42 --scenario random_day --transitions 4096 --n-envs 8 --checkpoint-interval 4096 --device cuda",
+    "py scripts/train_v2.py --purpose meaningful --algorithm maskable_ppo --run-dir runs/v2/seed42_maskable_ppo_final --root-seed 42 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+    "py scripts/train_v2.py --purpose meaningful --algorithm masked_bandit --run-dir runs/v2/seed42_masked_bandit_final --root-seed 42 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+    "py scripts/compare_v2.py --ppo-run runs/v2/seed42_maskable_ppo_final --bandit-run runs/v2/seed42_masked_bandit_final --output-dir runs/v2/seed42_comparison_final --device cuda"
+  ],
+  "artifacts": {
+    "machine_readable_training_steps": [
+      "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_maskable_ppo_final/training_steps.jsonl.gz",
+      "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_masked_bandit_final/training_steps.jsonl.gz"
+    ],
+    "machine_readable_training_episodes": [
+      "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_maskable_ppo_final/training_episodes.jsonl",
+      "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_masked_bandit_final/training_episodes.jsonl"
+    ],
+    "evaluation_directory": "C:/Users/ugure/OneDrive/Masaüstü/rl_in_mpls/.worktrees/seed42/runs/v2/seed42_comparison_final",
+    "committed_compact_results": "results/v2_seed42",
+    "models_or_large_logs_committed": false
+  },
+  "runtime_estimate_remaining_roots": {
+    "measured_training_seconds_per_root": 3418.7583460999885,
+    "measured_comparison_seconds_per_root": 392.3791081,
+    "estimated_total_seconds_for_roots_314159_and_271828_sequential": 7622.274908399977,
+    "estimated_total_hours": 2.1172985856666603
+  }
+}

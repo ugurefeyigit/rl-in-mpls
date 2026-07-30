@@ -1,0 +1,43 @@
+{
+ "training_runs": {
+  "maskable_ppo": "runs\\v2\\seed42_maskable_ppo_final",
+  "masked_bandit": "runs\\v2\\seed42_masked_bandit_final"
+ },
+ "selected_checkpoints": {
+  "maskable_ppo": {
+   "algorithm": "maskable_ppo",
+   "checkpoint": "runs\\v2\\seed42_maskable_ppo_final\\checkpoints\\checkpoint_000250000.zip",
+   "checkpoint_transition": 250000,
+   "mean_operational_return": 13.452895299283881,
+   "valid": true,
+   "integrity_failure": null,
+   "payload_sha256": "d34cc77ded05b064fa2a39dbe5c5ccc3126c9e6cf85e36c1b507127c987f5676"
+  },
+  "masked_bandit": {
+   "algorithm": "masked_bandit",
+   "checkpoint": "runs\\v2\\seed42_masked_bandit_final\\checkpoints\\checkpoint_000250000.pt",
+   "checkpoint_transition": 250000,
+   "mean_operational_return": 22.653518511026295,
+   "valid": true,
+   "integrity_failure": null,
+   "payload_sha256": "c15097700eac518ee259cba67e34e4fba1716881ab3dd912188b55da0c79bf49"
+  }
+ },
+ "scenarios": [
+  "full_day",
+  "evening_peak",
+  "flash_crowd",
+  "link_failure",
+  "deceptive_local_optimum",
+  "ood_double_failure",
+  "overload_stress"
+ ],
+ "seeds": [
+  101,
+  102,
+  103,
+  104,
+  105
+ ],
+ "holdout_accessed": false
+}
