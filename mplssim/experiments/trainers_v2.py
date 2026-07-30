@@ -522,6 +522,13 @@ def train_experiment(
             raise RuntimeError(
                 f"run stopped at {completed_transitions}, expected "
                 f"{aggregate_transitions} aggregate transitions")
+        if any(
+            int(record["root_seed"]) != int(root_seed)
+            for record in seed_ledger.records
+        ):
+            raise RuntimeError(
+                "recorded episode seed used a root other than the governed "
+                f"training root {root_seed}")
         integrity = _integrity_totals(audited_envs)
         if any(integrity[key] for key in (
             "invalid_action_attempts", "mask_disagreements",

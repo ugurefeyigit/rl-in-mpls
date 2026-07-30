@@ -201,9 +201,28 @@ class AuditedV2Env(gym.Wrapper):
         self.seed_ledger = seed_ledger
         self.integrity = IntegrityCounters()
         self._pre_action_mask: np.ndarray | None = None
+        self._governed_root_seed = int(env.root_seed)
+        self._governed_worker_rank = int(env.worker_rank)
 
-    def reset(self, **kwargs):
-        observation, info = self.env.reset(**kwargs)
+    def reset(
+        self,
+        *,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ):
+        # SB3 seeds vector workers as model_seed + rank.  That seed is valid
+        # for generic Gym environments, but V2 already derives independent
+        # episode seeds from one governed root plus worker_rank.  Forwarding
+        # SB3's value would count rank twice and put different algorithms on
+        # different training scenarios.  Model RNG seeding remains handled by
+        # SB3; the experiment wrapper deliberately preserves the V2 root.
+        observation, info = self.env.reset(seed=None, options=options)
+        if (
+            int(info["root_seed"]) != self._governed_root_seed
+            or int(info["worker_rank"]) != self._governed_worker_rank
+        ):
+            raise RuntimeError(
+                "V2 training reset changed the governed root or worker rank")
         row = dict(info)
         row["episode_index"] = int(self.env._episode_index) - 1
         self.seed_ledger.record(row)

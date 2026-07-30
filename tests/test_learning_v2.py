@@ -259,6 +259,29 @@ def test_audited_factory_constructs_v2_and_records_derived_episode_seeds() -> No
     assert all(row["worker_rank"] == 3 for row in ledger.records)
 
 
+def test_ppo_vector_seeding_cannot_replace_the_governed_root() -> None:
+    """SB3's seed+rank reset must not double-count rank in episode seeds."""
+    from mplssim.experiments.learning_common import SeedLedger
+    from mplssim.experiments.trainers_v2 import build_training_vec
+
+    ledger = SeedLedger()
+    vec, _ = build_training_vec(
+        scenario="random_day",
+        root_seed=42,
+        n_envs=2,
+        seed_ledger=ledger,
+    )
+    try:
+        vec.seed(42)
+        vec.reset()
+    finally:
+        vec.close()
+
+    assert [row["root_seed"] for row in ledger.records] == [42, 42]
+    assert [row["worker_rank"] for row in ledger.records] == [0, 1]
+    assert [row["episode_seed"] for row in ledger.records] == [42, 43]
+
+
 def test_audited_env_rejects_an_invalid_action_before_transition() -> None:
     """Rollout code must not rely on the environment's rejected-action penalty."""
     from mplssim.experiments.learning_common import SeedLedger, make_audited_env
