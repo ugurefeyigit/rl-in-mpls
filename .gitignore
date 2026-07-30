@@ -2,10 +2,16 @@ __pycache__/
 *.pyc
 .pytest_cache/
 runs/
+.worktrees/
 models/smoke/
+results/environment_v2_validation/fixed_trace_*.csv
 results/runs.db
 results/*.csv
 results/*.json
+!results/v2_seed42/
+!results/v2_seed42/*.csv
+!results/v2_seed42/*.json
+!results/v2_seed42/*.md
 !results/figures/.gitkeep
 *.egg-info/
 .venv/

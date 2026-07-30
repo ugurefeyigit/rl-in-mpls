@@ -44,11 +44,26 @@ ALLOWED_NEW_FILES = {
     "tests/test_transition_v2.py",
     "tests/test_v1_v2_compatibility.py",
     "scripts/validate_env_v2.py",
+    # V2 seed-42 learning comparison tooling (never imported by V1).
+    "configs/experiments/learning_v2.yaml",
+    "mplssim/experiments/learning_common.py",
+    "mplssim/experiments/masked_bandit.py",
+    "mplssim/experiments/trainers_v2.py",
+    "mplssim/experiments/evaluation_v2.py",
+    "scripts/train_v2.py",
+    "scripts/evaluate_v2.py",
+    "scripts/benchmark_v2.py",
+    "scripts/compare_v2.py",
+    "tests/test_learning_v2.py",
+    "docs/superpowers/specs/2026-07-30-v2-learning-comparison-design.md",
+    "docs/superpowers/plans/2026-07-30-v2-learning-comparison.md",
 }
 ALLOWED_MODIFIED_FILES = {
+    ".gitignore",
     "mplssim/factory.py",
     "scripts/train.py",
     "scripts/evaluate.py",
+    "tests/test_state_machine.py",
 }
 
 #: The single directory the implementation prompt designates for validation
@@ -56,11 +71,13 @@ ALLOWED_MODIFIED_FILES = {
 #: results/environment_v2_validation/"). Every other path under results/ and
 #: models/ stays protected.
 ALLOWED_OUTPUT_PREFIX = "results/environment_v2_validation/"
+ALLOWED_LEARNING_OUTPUT_PREFIX = "results/v2_seed42/"
 
 
 def _is_allowed(path: str) -> bool:
     return (path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES
-            or path.startswith(ALLOWED_OUTPUT_PREFIX))
+            or path.startswith(ALLOWED_OUTPUT_PREFIX)
+            or path.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX))
 
 #: The two V1 candidates that transit a PE. They must still be present in V1.
 V1_PE_TRANSIT = {
@@ -193,6 +210,10 @@ def test_models_results_figures_and_v1_configs_are_byte_identical_to_the_base():
         # rest of results/ (v1_manifest.json, eval_*, figures/) and all of
         # models/ stay protected.
         if path.startswith(ALLOWED_OUTPUT_PREFIX):
+            continue
+        if path.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX):
+            continue
+        if path in ALLOWED_NEW_FILES:
             continue
         assert path not in protected_exact, path
         assert not path.startswith(protected_prefixes), path

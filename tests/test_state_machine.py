@@ -74,7 +74,11 @@ def test_repeated_pause_resume_idempotent_single_loop(client):
 
 
 def test_manual_step_requires_pause_and_advances_exactly_one(client):
-    start(client, autostart=True)
+    # At "fast" (zero delay), the optimized simulator can finish all 84
+    # intervals before the pause below, making manual step correctly return
+    # 409 for a completed session. Pace this test so it measures the intended
+    # running -> paused -> manual-step transition.
+    start(client, autostart=True, speed="20x")
     time.sleep(0.2)
     r = client.post("/api/simulation/step")
     assert r.status_code == 409, "step must be rejected while running"
