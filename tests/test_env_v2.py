@@ -505,20 +505,27 @@ def test_assert_training_pin_passes_and_returns_a_usable_record():
     assert "git_commit" in pin
 
 
-def test_the_pin_is_line_ending_independent(tmp_path, monkeypatch):
-    """A CRLF checkout must not be reported as definition drift."""
+@pytest.mark.parametrize("ending", [b"\n", b"\r\n", b"\r"])
+def test_the_pin_is_line_ending_independent(ending, monkeypatch):
+    """Neither an LF, a CRLF nor a lone-CR checkout may be reported as drift.
+
+    Both renderings are constructed explicitly rather than read from disk, so
+    the test means the same thing whichever way this checkout materialized the
+    file (a fresh clone here is CRLF, a Linux clone is LF).
+    """
     import mplssim.experiments.v2_factory as v2f
     rel = "configs/experiments/rl_reward_v2.yaml"
-    original = (v2f.REPO_ROOT / rel).read_bytes()
-    crlf = original.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
-    assert crlf != original or b"\n" not in original
-
+    target = v2f.REPO_ROOT / rel
     real_read_bytes = Path.read_bytes
 
+    lf = real_read_bytes(target).replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    assert b"\n" in lf, "file must contain line breaks for this test to mean anything"
+    rendered = lf if ending == b"\n" else lf.replace(b"\n", ending)
+    if ending != b"\n":
+        assert rendered != lf, "renderings must genuinely differ in raw bytes"
+
     def fake_read_bytes(self):
-        if self == v2f.REPO_ROOT / rel:
-            return crlf
-        return real_read_bytes(self)
+        return rendered if self == target else real_read_bytes(self)
 
     monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
     assert frozen_definition_drift() == {}
