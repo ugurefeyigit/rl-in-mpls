@@ -121,14 +121,20 @@ def main() -> None:
     model_dir.mkdir(parents=True, exist_ok=True)
 
     if args.env_version == "v2":
-        # Fail closed before any training work: the V2 identity record is
-        # written first so a checkpoint can never exist without one.
+        # Fail closed before any training work. The pin is checked first, then
+        # the identity record is written, so a V2 checkpoint can never exist
+        # without a verified frozen definition behind it.
         import json
 
-        from mplssim.experiments.v2_factory import build_environment_metadata
+        from mplssim.experiments.v2_factory import (
+            assert_training_pin, build_environment_metadata)
+        pin = assert_training_pin()
         meta = build_environment_metadata(root_seed=seed, worker_rank=0)
+        meta["training_pin"] = pin
         (model_dir / "environment_v2.json").write_text(
             json.dumps(meta, indent=1), encoding="utf-8")
+        print(f"V2 definitions frozen at {pin['pinned_environment_commit'][:12]}; "
+              f"{len(pin['frozen_definition_paths'])} files verified")
         train_env = DummyVecEnv([make_env_v2_worker(scenario, seed, i)
                                  for i in range(n_envs)])
         eval_env = DummyVecEnv([make_env_v2_worker(cfg["eval_scenarios"][0],
@@ -178,6 +184,15 @@ def main() -> None:
 
     model.learn(total_timesteps=timesteps, callback=callbacks, tb_log_name=args.tag,
                 progress_bar=False)
+
+    if args.env_version == "v2":
+        # Re-verify after the run: a definition edited mid-training would make
+        # the checkpoint's recorded identity a lie, and a long run gives ample
+        # opportunity for that.
+        from mplssim.experiments.v2_factory import assert_training_pin
+        assert_training_pin()
+        print("V2 definitions still frozen at the pinned commit after training")
+
     model.save(model_dir / "final_model")
     print(f"saved {model_dir / 'final_model.zip'}")
 

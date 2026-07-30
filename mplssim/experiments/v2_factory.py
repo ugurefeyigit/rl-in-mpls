@@ -56,6 +56,66 @@ HASHED_CONFIGS: tuple[str, ...] = (
 )
 
 
+#: Commit whose V2 environment and reward definitions received pre-training
+#: owner sign-off. Primary V2 training is pinned to these definitions.
+#:
+#: The pin is deliberately NOT "HEAD == this SHA": the commit that introduces
+#: the pin necessarily has a different SHA, and later commits may legitimately
+#: add training tooling, results or documentation. What must not move is the
+#: *definition* of the problem, so the pin compares the frozen files below
+#: against their content at this commit. Repointing the pin therefore requires
+#: editing this constant in a reviewable commit.
+PINNED_ENVIRONMENT_COMMIT = "dca533b5c6fa9953307d01470c23cac512eb2961"
+
+#: Every file whose content can change V2 environment or reward behaviour.
+#: Covers the V2 modules, the V2 configs, the shared problem definition
+#: (topology, traffic classes, scenarios) and the shared analytic/topology code
+#: that V2 builds on -- notably sim/models.py, which owns the queue-delay and
+#: loss curves, and traffic/model.py, which owns offered traffic.
+FROZEN_DEFINITION_PATHS: tuple[str, ...] = (
+    # V2 implementation
+    "mplssim/sim/engine_v2.py",
+    "mplssim/rl/env_v2.py",
+    "mplssim/rl/reward_v2.py",
+    "mplssim/paths/candidates_v2.py",
+    # V2 configuration
+    "configs/experiments/rl_env_v2.yaml",
+    "configs/experiments/rl_observation_v2.yaml",
+    "configs/experiments/rl_reward_v2.yaml",
+    # shared problem definition
+    "configs/topology.yaml",
+    "configs/traffic_classes.yaml",
+    "configs/scenarios.yaml",
+    # shared code V2 behaviour depends on
+    "mplssim/sim/models.py",       # queue-delay and loss curves
+    "mplssim/traffic/model.py",    # offered traffic and scenario events
+    "mplssim/paths/candidates.py",  # admin cost
+    "mplssim/core/model.py",       # demand / link / class structures
+    "mplssim/core/topology.py",    # topology construction, CONFIG_DIR
+    "mplssim/factory.py",          # which topology/traffic/scenarios get loaded
+)
+
+#: ``mplssim/experiments/v2_factory.py`` -- this file -- is deliberately NOT in
+#: the frozen set, and that is a real, acknowledged limitation rather than an
+#: oversight. It is the governance and metadata plumbing layer, so it has to be
+#: editable to carry changes like this pin; freezing it would make the pin
+#: unrepointable. Its behaviour is constrained instead by the identity it emits
+#: (version strings, canonical configuration hashes, the ordered candidate-path
+#: table, all re-validated by :func:`assert_training_pin`) and by the test
+#: suite. A reviewer changing hashing or metadata semantics here must therefore
+#: rely on those, not on the pin.
+UNFROZEN_PLUMBING = "mplssim/experiments/v2_factory.py"
+
+
+class TrainingPinError(RuntimeError):
+    """The V2 definitions are not frozen at the signed-off commit.
+
+    Raised before any training work begins. Never downgraded to a warning: a
+    primary V2 run whose problem definition drifted is not the run the owner
+    approved.
+    """
+
+
 class MetadataMismatchError(ValueError):
     """Stored V2 metadata disagrees with the live environment. Always fatal.
 
@@ -145,6 +205,78 @@ def config_hashes() -> dict[str, str]:
             raise FileNotFoundError(f"config {path} required for V2 metadata")
         out[f"configs/{rel}"] = canonical_text_sha256(path)
     return out
+
+
+def _blob_at(commit: str, rel: str) -> bytes:
+    """Raw bytes of ``rel`` as committed at ``commit``.
+
+    Reads from the object database, so the answer does not depend on how the
+    working tree rendered line endings.
+    """
+    result = subprocess.run(
+        ["git", "cat-file", "blob", f"{commit}:{rel}"],
+        cwd=REPO_ROOT, capture_output=True, timeout=60,
+    )
+    if result.returncode != 0:
+        raise TrainingPinError(
+            f"cannot read {rel} at pinned commit {commit[:12]}: "
+            f"{result.stderr.decode('utf-8', 'replace').strip()}. A shallow "
+            f"clone will not contain it; fetch the full history before training.")
+    return result.stdout
+
+
+def frozen_definition_drift(commit: str = PINNED_ENVIRONMENT_COMMIT) -> dict[str, str]:
+    """Map of path -> reason for every frozen definition that has drifted.
+
+    Comparison is on LF-canonical content, matching how the configuration
+    identity is hashed, so a CRLF checkout is not reported as drift.
+    """
+    drift: dict[str, str] = {}
+    for rel in FROZEN_DEFINITION_PATHS:
+        path = REPO_ROOT / rel
+        if not path.exists():
+            drift[rel] = "missing from the working tree"
+            continue
+        pinned = canonical_text_bytes(_blob_at(commit, rel))
+        current = canonical_text_bytes(path.read_bytes())
+        if pinned != current:
+            drift[rel] = (
+                f"content differs from the pinned commit "
+                f"(pinned sha256 {hashlib.sha256(pinned).hexdigest()[:12]}, "
+                f"current {hashlib.sha256(current).hexdigest()[:12]})")
+    return drift
+
+
+def assert_training_pin(commit: str = PINNED_ENVIRONMENT_COMMIT) -> dict[str, Any]:
+    """Fail closed unless the signed-off V2 definitions are exactly in place.
+
+    Two independent layers, both required:
+
+    1. every frozen definition file is byte-identical (LF-canonical) to its
+       content at the pinned commit;
+    2. the live environment metadata validates against itself, so the version
+       identities, configuration hashes and the ordered candidate-path table
+       are internally consistent.
+
+    Returns the pin record to embed in the run's metadata.
+    """
+    drift = frozen_definition_drift(commit)
+    if drift:
+        detail = "; ".join(f"{rel}: {why}" for rel, why in sorted(drift.items()))
+        raise TrainingPinError(
+            f"V2 definitions have drifted from the signed-off commit "
+            f"{commit[:12]}: {detail}. Primary V2 training is pinned to those "
+            f"definitions; restore them or repoint PINNED_ENVIRONMENT_COMMIT in "
+            f"a reviewed commit.")
+    metadata = build_environment_metadata()
+    validate_environment_metadata(metadata, metadata)
+    return {
+        "pinned_environment_commit": commit,
+        "frozen_definition_paths": list(FROZEN_DEFINITION_PATHS),
+        "frozen_definitions_verified": True,
+        "environment_metadata_validated": True,
+        **git_metadata(),
+    }
 
 
 def git_metadata() -> dict[str, Any]:
@@ -337,6 +469,12 @@ __all__ = [
     "make_env_v2",
     "episode_seed_for",
     "CONFIG_HASH_ALGORITHM",
+    "PINNED_ENVIRONMENT_COMMIT",
+    "FROZEN_DEFINITION_PATHS",
+    "UNFROZEN_PLUMBING",
+    "TrainingPinError",
+    "assert_training_pin",
+    "frozen_definition_drift",
     "canonical_text_bytes",
     "canonical_text_sha256",
     "config_hashes",

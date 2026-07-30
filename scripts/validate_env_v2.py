@@ -33,7 +33,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import numpy as np
 
 from mplssim.experiments.v2_factory import (
+    FROZEN_DEFINITION_PATHS,
+    PINNED_ENVIRONMENT_COMMIT,
+    UNFROZEN_PLUMBING,
     build_environment_metadata,
+    frozen_definition_drift,
     make_engine_v2,
     make_env_v2,
     validate_environment_metadata,
@@ -821,6 +825,23 @@ def main() -> int:
         findings["environment"] = meta
         print("metadata: validated")
 
+        # Continuous verification of the signed-off freeze. Reported as a gate
+        # rather than raised, so drift shows up as a FAIL line beside every
+        # other check instead of a traceback.
+        drift = frozen_definition_drift()
+        findings["training_pin"] = {
+            "pinned_environment_commit": PINNED_ENVIRONMENT_COMMIT,
+            "frozen_definition_paths": list(FROZEN_DEFINITION_PATHS),
+            "unfrozen_plumbing": UNFROZEN_PLUMBING,
+            "drift": drift,
+            "frozen": not drift,
+        }
+        print(f"training pin: {len(FROZEN_DEFINITION_PATHS)} definition file(s) "
+              f"{'frozen at' if not drift else 'DRIFTED from'} "
+              f"{PINNED_ENVIRONMENT_COMMIT[:12]}")
+        for rel, why in sorted(drift.items()):
+            print(f"  DRIFT {rel}: {why}")
+
     if run_all or args.candidates:
         written.append(emit_candidate_paths(findings))
         c = findings["candidates"]
@@ -851,6 +872,9 @@ def main() -> int:
               f"{findings['flow_solver']['max_iterations_configured']}")
 
     gates = {
+        "v2_definitions_frozen_at_signed_off_commit": (
+            findings["training_pin"]["frozen"]
+            if "training_pin" in findings else None),
         "no_pe_transit_candidates": (
             not findings.get("candidates", {}).get("pe_transit_present", False)
             if "candidates" in findings else None),

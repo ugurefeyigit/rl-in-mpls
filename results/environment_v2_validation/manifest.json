@@ -635,9 +635,33 @@
    "root_seed": null,
    "worker_rank": null
   },
-  "git_commit": "2bc3e5bd122e9eafa935cb6777eb77891d0baa6d",
+  "git_commit": "dca533b5c6fa9953307d01470c23cac512eb2961",
   "git_branch": "feat/rl-environment-v2",
   "git_dirty": true
+ },
+ "training_pin": {
+  "pinned_environment_commit": "dca533b5c6fa9953307d01470c23cac512eb2961",
+  "frozen_definition_paths": [
+   "mplssim/sim/engine_v2.py",
+   "mplssim/rl/env_v2.py",
+   "mplssim/rl/reward_v2.py",
+   "mplssim/paths/candidates_v2.py",
+   "configs/experiments/rl_env_v2.yaml",
+   "configs/experiments/rl_observation_v2.yaml",
+   "configs/experiments/rl_reward_v2.yaml",
+   "configs/topology.yaml",
+   "configs/traffic_classes.yaml",
+   "configs/scenarios.yaml",
+   "mplssim/sim/models.py",
+   "mplssim/traffic/model.py",
+   "mplssim/paths/candidates.py",
+   "mplssim/core/model.py",
+   "mplssim/core/topology.py",
+   "mplssim/factory.py"
+  ],
+  "unfrozen_plumbing": "mplssim/experiments/v2_factory.py",
+  "drift": {},
+  "frozen": true
  },
  "candidates": {
   "total": 68,
@@ -898,6 +922,7 @@
   "headroom": 26
  },
  "gates": {
+  "v2_definitions_frozen_at_signed_off_commit": true,
   "no_pe_transit_candidates": true,
   "exactly_four_candidates_per_demand": true,
   "reward_ordering_matches": true,

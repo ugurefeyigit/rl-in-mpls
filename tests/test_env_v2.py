@@ -10,17 +10,23 @@ from __future__ import annotations
 import copy
 import math
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from mplssim.experiments.v2_factory import (
     CONFIG_HASH_ALGORITHM,
+    FROZEN_DEFINITION_PATHS,
     IDENTITY_FIELDS,
+    PINNED_ENVIRONMENT_COMMIT,
     MetadataMismatchError,
+    TrainingPinError,
+    assert_training_pin,
     build_environment_metadata,
     canonical_text_sha256,
     config_hashes,
+    frozen_definition_drift,
     make_engine_v2,
     make_env_v2,
     sha256_file,
@@ -452,6 +458,149 @@ def test_a_record_written_under_a_different_hash_scheme_fails_closed(env):
                                for rel in CONFIG_RELATIVE_PATHS}
     with pytest.raises(MetadataMismatchError, match="config_hash_algorithm"):
         validate_environment_metadata(legacy)
+
+
+# ================================ 2d. training pin / frozen definitions
+def test_the_pinned_commit_is_the_signed_off_sha():
+    assert PINNED_ENVIRONMENT_COMMIT == "dca533b5c6fa9953307d01470c23cac512eb2961"
+    assert len(PINNED_ENVIRONMENT_COMMIT) == 40
+
+
+def test_frozen_definition_set_covers_everything_that_changes_v2_behaviour():
+    """Guards against a definition file quietly escaping the freeze."""
+    frozen = set(FROZEN_DEFINITION_PATHS)
+    # the V2 implementation and its configs
+    assert {"mplssim/sim/engine_v2.py", "mplssim/rl/env_v2.py",
+            "mplssim/rl/reward_v2.py", "mplssim/paths/candidates_v2.py",
+            "configs/experiments/rl_env_v2.yaml",
+            "configs/experiments/rl_observation_v2.yaml",
+            "configs/experiments/rl_reward_v2.yaml"} <= frozen
+    # the shared problem definition V2 reads
+    assert {"configs/topology.yaml", "configs/traffic_classes.yaml",
+            "configs/scenarios.yaml"} <= frozen
+    # shared code V2 behaviour depends on: the analytic curves, offered
+    # traffic, admin cost and the topology/demand model
+    assert {"mplssim/sim/models.py", "mplssim/traffic/model.py",
+            "mplssim/paths/candidates.py", "mplssim/core/model.py",
+            "mplssim/core/topology.py", "mplssim/factory.py"} <= frozen
+    # every hashed config is frozen
+    for rel in CONFIG_RELATIVE_PATHS:
+        assert f"configs/{rel}" in frozen
+    # the plumbing layer is knowingly excluded, and every listed path is checked
+    from mplssim.experiments.v2_factory import UNFROZEN_PLUMBING
+    assert UNFROZEN_PLUMBING not in frozen
+    assert len(frozen) == len(FROZEN_DEFINITION_PATHS)
+
+
+def test_definitions_are_currently_frozen_at_the_pinned_commit():
+    assert frozen_definition_drift() == {}
+
+
+def test_assert_training_pin_passes_and_returns_a_usable_record():
+    pin = assert_training_pin()
+    assert pin["pinned_environment_commit"] == PINNED_ENVIRONMENT_COMMIT
+    assert pin["frozen_definitions_verified"] is True
+    assert pin["environment_metadata_validated"] is True
+    assert set(pin["frozen_definition_paths"]) == set(FROZEN_DEFINITION_PATHS)
+    assert "git_commit" in pin
+
+
+def test_the_pin_is_line_ending_independent(tmp_path, monkeypatch):
+    """A CRLF checkout must not be reported as definition drift."""
+    import mplssim.experiments.v2_factory as v2f
+    rel = "configs/experiments/rl_reward_v2.yaml"
+    original = (v2f.REPO_ROOT / rel).read_bytes()
+    crlf = original.replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
+    assert crlf != original or b"\n" not in original
+
+    real_read_bytes = Path.read_bytes
+
+    def fake_read_bytes(self):
+        if self == v2f.REPO_ROOT / rel:
+            return crlf
+        return real_read_bytes(self)
+
+    monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
+    assert frozen_definition_drift() == {}
+
+
+@pytest.mark.parametrize("rel", [
+    "mplssim/rl/reward_v2.py",
+    "configs/experiments/rl_reward_v2.yaml",
+    "configs/topology.yaml",
+    "mplssim/sim/models.py",
+])
+def test_the_pin_detects_a_drifted_definition(rel, monkeypatch):
+    """Negative control: any real edit to a frozen file must fail closed."""
+    import mplssim.experiments.v2_factory as v2f
+    target = v2f.REPO_ROOT / rel
+    real_read_bytes = Path.read_bytes
+
+    def fake_read_bytes(self):
+        if self == target:
+            return real_read_bytes(self) + b"\n# drifted\n"
+        return real_read_bytes(self)
+
+    monkeypatch.setattr(Path, "read_bytes", fake_read_bytes)
+    drift = frozen_definition_drift()
+    assert rel in drift, drift
+    with pytest.raises(TrainingPinError, match="drifted from the signed-off"):
+        assert_training_pin()
+
+
+def test_the_pin_detects_a_missing_definition(monkeypatch):
+    import mplssim.experiments.v2_factory as v2f
+    rel = "configs/experiments/rl_env_v2.yaml"
+    real_exists = Path.exists
+
+    def fake_exists(self):
+        return False if self == v2f.REPO_ROOT / rel else real_exists(self)
+
+    monkeypatch.setattr(Path, "exists", fake_exists)
+    assert frozen_definition_drift()[rel] == "missing from the working tree"
+    with pytest.raises(TrainingPinError):
+        assert_training_pin()
+
+
+def test_an_unknown_pinned_commit_fails_closed_rather_than_passing():
+    with pytest.raises(TrainingPinError, match="cannot read"):
+        frozen_definition_drift("0" * 40)
+
+
+def test_v2_training_entry_point_checks_the_pin_before_any_training_work():
+    """The guard must run before envs or the model are constructed."""
+    source = (Path(__file__).resolve().parents[1] / "scripts" / "train.py"
+              ).read_text(encoding="utf-8")
+    assert "assert_training_pin" in source
+    pin_at = source.index("pin = assert_training_pin()")
+    assert pin_at < source.index("DummyVecEnv([make_env_v2_worker")
+    assert pin_at < source.index("MaskablePPO(")
+    assert source.index("model.learn(") < source.rindex("assert_training_pin()")
+    assert '"training_pin"' in source
+
+
+def test_v2_reward_and_engine_configs_are_immutable_dataclasses():
+    """Frozen definitions are also frozen objects: no in-run mutation."""
+    import dataclasses
+    from mplssim.rl.reward_v2 import load_reward_config_v2
+    from mplssim.sim.engine_v2 import load_engine_config_v2
+    reward_cfg = load_reward_config_v2()
+    engine_cfg = load_engine_config_v2()
+    assert dataclasses.fields(reward_cfg) and dataclasses.fields(engine_cfg)
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        reward_cfg.move_fixed = 0.0
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        engine_cfg.minimum_te_dwell_steps = 1
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        engine_cfg.flow_solver.max_iterations = 1
+
+
+def test_v2_training_refuses_v1_style_reward_overrides():
+    """--zero-weight is a V1 reward ablation and must not touch the V2 reward."""
+    source = (Path(__file__).resolve().parents[1] / "scripts" / "train.py"
+              ).read_text(encoding="utf-8")
+    assert 'args.env_version == "v2" and args.zero_weight' in source
+    assert "ap.error(" in source
 
 
 # ============================================================== 3. candidates
