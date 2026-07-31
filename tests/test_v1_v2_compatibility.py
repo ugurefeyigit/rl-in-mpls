@@ -73,12 +73,14 @@ ALLOWED_MODIFIED_FILES = {
 #: models/ stays protected.
 ALLOWED_OUTPUT_PREFIX = "results/environment_v2_validation/"
 ALLOWED_LEARNING_OUTPUT_PREFIX = "results/v2_seed42/"
+ALLOWED_CONTINUITY_OUTPUT_PREFIX = "results/v2_three_root_continuity/"
 
 
 def _is_allowed(path: str) -> bool:
     return (path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES
             or path.startswith(ALLOWED_OUTPUT_PREFIX)
-            or path.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX))
+            or path.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX)
+            or path.startswith(ALLOWED_CONTINUITY_OUTPUT_PREFIX))
 
 #: The two V1 candidates that transit a PE. They must still be present in V1.
 V1_PE_TRANSIT = {
@@ -214,6 +216,8 @@ def test_models_results_figures_and_v1_configs_are_byte_identical_to_the_base():
             continue
         if path.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX):
             continue
+        if path.startswith(ALLOWED_CONTINUITY_OUTPUT_PREFIX):
+            continue
         if path in ALLOWED_NEW_FILES:
             continue
         assert path not in protected_exact, path
@@ -233,7 +237,8 @@ def test_the_validation_output_carve_out_touches_nothing_v1_owns():
                 if (p.startswith("models/")
                     or (p.startswith("results/")
                         and not p.startswith(ALLOWED_OUTPUT_PREFIX)
-                        and not p.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX)))}
+                        and not p.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX)
+                        and not p.startswith(ALLOWED_CONTINUITY_OUTPUT_PREFIX)))}
     assert not v1_owned, f"frozen V1 artifacts changed: {sorted(v1_owned)}"
     assert not _git("diff", "--name-only", AUDITED_BASE_COMMIT, "--",
                     "results/v1_manifest.json").strip()

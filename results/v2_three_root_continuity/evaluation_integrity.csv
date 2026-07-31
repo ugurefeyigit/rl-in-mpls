@@ -1,0 +1,16 @@
+training_root,algorithm,episodes,continuity_seeds,all_reward_component_sums_exact,max_abs_reward_sum_error,all_truncated,any_terminated,invalid_action_attempts,mask_disagreements,solver_convergence_failures,protected_safety_failures,holdout_accessed
+42,maskable_ppo,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+42,masked_bandit,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+42,static,35,"101,102,103,104,105",True,8.526512829121202e-14,True,False,0,0,0,0,False
+42,greedy,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+42,cspf,35,"101,102,103,104,105",True,1.7053025658242404e-13,True,False,0,0,0,0,False
+314159,maskable_ppo,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+314159,masked_bandit,35,"101,102,103,104,105",True,1.7053025658242404e-13,True,False,0,0,0,0,False
+314159,static,35,"101,102,103,104,105",True,8.526512829121202e-14,True,False,0,0,0,0,False
+314159,greedy,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+314159,cspf,35,"101,102,103,104,105",True,1.7053025658242404e-13,True,False,0,0,0,0,False
+271828,maskable_ppo,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+271828,masked_bandit,35,"101,102,103,104,105",True,1.1368683772161603e-13,True,False,0,0,0,0,False
+271828,static,35,"101,102,103,104,105",True,8.526512829121202e-14,True,False,0,0,0,0,False
+271828,greedy,35,"101,102,103,104,105",True,5.684341886080802e-14,True,False,0,0,0,0,False
+271828,cspf,35,"101,102,103,104,105",True,1.7053025658242404e-13,True,False,0,0,0,0,False

@@ -1,0 +1,438 @@
+{
+ "format": "v2-three-root-continuity-v1",
+ "status": "completed",
+ "branch": "feat/rl-environment-v2",
+ "report_parent_sha": "6a8a4068b98bf9a71dead6e547595b4bbd755689",
+ "scientific_training_code_sha_seed42": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+ "continuation_training_source_sha": "6a8a4068b98bf9a71dead6e547595b4bbd755689",
+ "approved_ancestor": "859fdb2e0c5005b4eabd4ac1c3c8e48d2c0e31ac",
+ "signed_off_environment_sha": "dca533b5c6fa9953307d01470c23cac512eb2961",
+ "environment": {
+  "class": "MplsTeEnvV2",
+  "observation_dim": 604,
+  "action_dim": 69,
+  "definitions_frozen": true
+ },
+ "training_roots": [
+  42,
+  314159,
+  271828
+ ],
+ "continuity_evaluation_seeds": [
+  101,
+  102,
+  103,
+  104,
+  105
+ ],
+ "holdout_seeds": [
+  1001,
+  1002,
+  1003,
+  1004,
+  1005
+ ],
+ "holdout_accessed": false,
+ "holdout_confirmation": "Seeds 1001-1005 were not constructed, evaluated, inspected, debugged, selected, or tuned with during this continuation.",
+ "tests": {
+  "focused_learning_and_compatibility": "71 passed",
+  "definition_freeze_pin_subset": "14 passed, 110 deselected",
+  "cuda_exercise": "PyTorch parameter, gradient, and Adam tensor state exercised on cuda:0; NVIDIA GeForce RTX 4070 Laptop GPU"
+ },
+ "checkpoint_selection": [
+  {
+   "training_root": 42,
+   "algorithm": "maskable_ppo",
+   "checkpoint_transition": 250000,
+   "mean_operational_return": 13.452895299283881,
+   "payload_sha256": "d34cc77ded05b064fa2a39dbe5c5ccc3126c9e6cf85e36c1b507127c987f5676",
+   "valid": true,
+   "checkpoint": "runs\\v2\\seed42_maskable_ppo_final\\checkpoints\\checkpoint_000250000.zip"
+  },
+  {
+   "training_root": 42,
+   "algorithm": "masked_bandit",
+   "checkpoint_transition": 250000,
+   "mean_operational_return": 22.653518511026295,
+   "payload_sha256": "c15097700eac518ee259cba67e34e4fba1716881ab3dd912188b55da0c79bf49",
+   "valid": true,
+   "checkpoint": "runs\\v2\\seed42_masked_bandit_final\\checkpoints\\checkpoint_000250000.pt"
+  },
+  {
+   "training_root": 314159,
+   "algorithm": "maskable_ppo",
+   "checkpoint_transition": 350000,
+   "mean_operational_return": 16.158880574475976,
+   "payload_sha256": "0af41be78102617b103c3e21ebb0ba26ae251f2626ff50b30c0887fdb1320489",
+   "valid": true,
+   "checkpoint": "runs\\v2\\seed314159_maskable_ppo_final_r2\\checkpoints\\checkpoint_000350000.zip"
+  },
+  {
+   "training_root": 314159,
+   "algorithm": "masked_bandit",
+   "checkpoint_transition": 300000,
+   "mean_operational_return": 29.80010662240387,
+   "payload_sha256": "fd474430e9f5ed60d09d82e3d08390151f54c8c0ca10b5abd98fe11d5d2c8433",
+   "valid": true,
+   "checkpoint": "runs\\v2\\seed314159_masked_bandit_final_r2\\checkpoints\\checkpoint_000300000.pt"
+  },
+  {
+   "training_root": 271828,
+   "algorithm": "maskable_ppo",
+   "checkpoint_transition": 150000,
+   "mean_operational_return": 20.484067180808296,
+   "payload_sha256": "40d0f9b7fe92449e6e8bfe2bcb44604ac2a5002c0f2a662dbad6cf70c219fb79",
+   "valid": true,
+   "checkpoint": "runs\\v2\\seed271828_maskable_ppo_final\\checkpoints\\checkpoint_000150000.zip"
+  },
+  {
+   "training_root": 271828,
+   "algorithm": "masked_bandit",
+   "checkpoint_transition": 400000,
+   "mean_operational_return": 24.769438111002266,
+   "payload_sha256": "d9c31430ad4320ae238f6d3aa833614edc120f7411c5a3e99372c85707116e73",
+   "valid": true,
+   "checkpoint": "runs\\v2\\seed271828_masked_bandit_final\\checkpoints\\checkpoint_000400000.pt"
+  }
+ ],
+ "checkpoint_hashes": {
+  "42": {
+   "maskable_ppo": {
+    "50000": "41e69675154e4da4f97eb26639b913ce9b4fc08b90fbf82479bdd3bc9cabfa45",
+    "100000": "0b6a82bfcd07416efd61b1ef80a4656ae1e4778ddc221a74f4a2c60a1d16c64e",
+    "150000": "1af597c2201a451b70c189d25b37f3c05109f711a879c7fb2d4f0d9e42eff2d1",
+    "200000": "8f44f81a5f713509234bcbea2a5ab2dd2cc01c7a4709d3d670dc0ee21a3e8f5d",
+    "250000": "d34cc77ded05b064fa2a39dbe5c5ccc3126c9e6cf85e36c1b507127c987f5676",
+    "300000": "5a008d06947385099e16dc6c33f7a6fd7fbd5c8e8f0bb080797a2954bbf57b8a",
+    "350000": "7331b924e57c7c8f83abf59c55f3bd8481b7932f8a38ae137e7dcbd8399b25ae",
+    "400000": "fc9cfdf45a734bac6b6c4010cc4e7e71bff35a3a8b9648149b8b364e3a742033"
+   },
+   "masked_bandit": {
+    "50000": "09ba54acaca16d90811463785094d1ddee04a943f1c5372d83cb716d1529f3a5",
+    "100000": "68e76479292c8cdd8dd7e28e3cf329171a144a2bbe8c38b258720c5baff3ee95",
+    "150000": "65a9c54df47054cd69b747e8fbd441fc16392f3bac7bc73e85c260c3f13be5a1",
+    "200000": "17268daf266dd828db5760fa00ce211719bb4652ab058f39078524e514be4c94",
+    "250000": "c15097700eac518ee259cba67e34e4fba1716881ab3dd912188b55da0c79bf49",
+    "300000": "4e26fa430c5272b40a92189cef3f006ac390d631c5318047a578cc029d8d8309",
+    "350000": "8919f203bb446f63d4e05881a05e63e6f0cf0d789e10d6c4e5180c0fdbe0438d",
+    "400000": "94aee1342d59d2088f00cd40976c5192d2d1f297985f338589875e7087d0bf78"
+   }
+  },
+  "314159": {
+   "maskable_ppo": {
+    "50000": "15f7c10b74e3fb309d65c7a0414061ec30c9f458a828d73316eb3cb774f9e5e5",
+    "100000": "dca803d077fa1b53a66dcda6c7e40af814d998ed03c1bb8368aeb43aa9ba1a49",
+    "150000": "752929eba34f4a619870495e4bb35b9f604dd4c2e5d5d5621edc9b3897f8de36",
+    "200000": "ff26f44f0c8458a8a6ce72a522c49d651caa40c99defe4b8e4468a3becee3555",
+    "250000": "7374e43e3dca36c7248c1956c17f6b1a49c13f658a31854ab93e2d682bf4ebee",
+    "300000": "e630a09110feaae89a749ee963626ae8b19e273720f9ded37260fbb4b2ecdd9f",
+    "350000": "0af41be78102617b103c3e21ebb0ba26ae251f2626ff50b30c0887fdb1320489",
+    "400000": "532d2a8572fdd5665e58f5bf0ea4a3d0fdd9bb434dc1145ed814f472fe99593f"
+   },
+   "masked_bandit": {
+    "50000": "4a1a1f04bc5edbf603ee177a1ef14db8ac8350733717a03418d5a45234a13f8f",
+    "100000": "9f2af7b1ed50fe744a9ad357efeb42d959a51b056fdd2195f8f498b0b532645a",
+    "150000": "629bc98480c708ab9594a9adff3c72ba5333f6042100610255a48ce3037eaea4",
+    "200000": "81c43707db483a487182b52ff31819fb5f7abfc664ec0a37713efe40e9840e85",
+    "250000": "bbf18192d3d11bc9058517c2261d0d86bd4cf10fe84c08af7722be8f43d18610",
+    "300000": "fd474430e9f5ed60d09d82e3d08390151f54c8c0ca10b5abd98fe11d5d2c8433",
+    "350000": "c8eb4693d6aca3c4e13eb8cc9c73730049ad0d0c1269d816f6f44a068620feef",
+    "400000": "4ea1fab0ef0062edcd3f74d61595df07bcbb231e828f498114019c068b77765c"
+   }
+  },
+  "271828": {
+   "maskable_ppo": {
+    "50000": "54fd2e728ff4800fad8dde86bc55da8ad6f8a01fd252fc3bb95037ebc5ef142d",
+    "100000": "7a7d3143a2a7e694ee1b33e6574b82d9996436548c092f07c328b4560a1e1ab8",
+    "150000": "40d0f9b7fe92449e6e8bfe2bcb44604ac2a5002c0f2a662dbad6cf70c219fb79",
+    "200000": "eab6f67ce9fab3e6de48f0cd957fdedfa7c8df577e7d080b3a9b4476097c1ab5",
+    "250000": "64509680ee30dea168a23742c4be96f611c69cbfb1c82f643e2d7ee5f62d359c",
+    "300000": "85cda891c8b6b8749418a217c499b8963ff57c787a9c7fff9a389776d64f2ab2",
+    "350000": "ec642dfe814c53dbbc9e8d53a1dcb2a0accd808ccb84d141c69a334ebf98129a",
+    "400000": "fd6fdbdb3450d77c53540be591658e04079ff18e553e45be8e821f4f0f1edcd6"
+   },
+   "masked_bandit": {
+    "50000": "3db013b9c22e95cad7898f697d0731a21e76fb6c3499ac1aca2c43929e57ebc9",
+    "100000": "d8ce2c9b4f37ddc9fe2c82dfd84f8f3642ff6ec549a8e8627d433adb804a9293",
+    "150000": "b2d40039841df1264ccd92f6c5b5668bf5b19f7d15fc1d835e2ddde277eebf58",
+    "200000": "f11787e64971e33b6756c285230ce07b21210622546d18ae3a98af71f33e66f6",
+    "250000": "833f52d95e6c650bc44eea818a167783834da93bcf9e939343d6bd2a7de550fa",
+    "300000": "527bf689d3cf960ae40004bb19336c10873a0d398a2948bd95ea3b09903caa4d",
+    "350000": "29497eb1da79ce85d3dd8a5de09b1aea722253fbb109b8c1a6a25f8b0a6d0eed",
+    "400000": "d9c31430ad4320ae238f6d3aa833614edc120f7411c5a3e99372c85707116e73"
+   }
+  }
+ },
+ "episode_seed_ledger_hashes": {
+  "42:maskable_ppo": "4928123efccc4324614943935f63b01b57ebde2ef07cc4a2d885ac2a73275668",
+  "42:masked_bandit": "4928123efccc4324614943935f63b01b57ebde2ef07cc4a2d885ac2a73275668",
+  "314159:maskable_ppo": "7d7ee2ce7dfaf5e7513843424e9b4f5458954885705e7f0eb2e454e28da1c0ce",
+  "314159:masked_bandit": "7d7ee2ce7dfaf5e7513843424e9b4f5458954885705e7f0eb2e454e28da1c0ce",
+  "271828:maskable_ppo": "8af520ccb423fc72571b2d7944e29a43228349553758830a99d007847946fc56",
+  "271828:masked_bandit": "8af520ccb423fc72571b2d7944e29a43228349553758830a99d007847946fc56"
+ },
+ "training_runs": [
+  {
+   "training_root": 42,
+   "algorithm": "maskable_ppo",
+   "status": "completed",
+   "training_source_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "scientific_base_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "aggregate_transitions": 400000,
+   "n_envs": 16,
+   "scenario": "random_day",
+   "checkpoint_interval": 50000,
+   "device": "cuda",
+   "wall_time_seconds": 1608.4342342999298,
+   "aggregate_transitions_per_second": 248.6890613678711,
+   "peak_gpu_memory_bytes": 30024192,
+   "episode_seed_ledger_sha256": "4928123efccc4324614943935f63b01b57ebde2ef07cc4a2d885ac2a73275668",
+   "episode_seed_records": 1392,
+   "unique_episode_seeds": 1392,
+   "episode_seed_min": 42,
+   "episode_seed_max": 88121,
+   "algorithm_diagnostics_json": "{\"approx_kl\": 0.010549336671829224, \"clip_fraction\": 0.1101837158203125, \"entropy_loss\": -3.0226504039019346, \"explained_variance\": 0.8654506206512451, \"n_updates\": 384, \"policy_gradient_loss\": -0.011467546341009438, \"value_loss\": 74.16844865679741}",
+   "run_path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\seed42\\runs\\v2\\seed42_maskable_ppo_final"
+  },
+  {
+   "training_root": 42,
+   "algorithm": "masked_bandit",
+   "status": "completed",
+   "training_source_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "scientific_base_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "aggregate_transitions": 400000,
+   "n_envs": 16,
+   "scenario": "random_day",
+   "checkpoint_interval": 50000,
+   "device": "cuda",
+   "wall_time_seconds": 1810.3241118000587,
+   "aggregate_transitions_per_second": 220.95490934066396,
+   "peak_gpu_memory_bytes": 24719360,
+   "episode_seed_ledger_sha256": "4928123efccc4324614943935f63b01b57ebde2ef07cc4a2d885ac2a73275668",
+   "episode_seed_records": 1392,
+   "unique_episode_seeds": 1392,
+   "episode_seed_min": 42,
+   "episode_seed_max": 88121,
+   "algorithm_diagnostics_json": "{\"final_epsilon\": 0.02, \"gradient_norm\": 0.7349768877029419, \"loss\": 0.10753051936626434, \"replay_size\": 100000, \"updates\": 6187}",
+   "run_path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\seed42\\runs\\v2\\seed42_masked_bandit_final"
+  },
+  {
+   "training_root": 314159,
+   "algorithm": "maskable_ppo",
+   "status": "completed",
+   "training_source_sha": "6a8a4068b98bf9a71dead6e547595b4bbd755689",
+   "scientific_base_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "aggregate_transitions": 400000,
+   "n_envs": 16,
+   "scenario": "random_day",
+   "checkpoint_interval": 50000,
+   "device": "cuda",
+   "wall_time_seconds": 1435.1158240999794,
+   "aggregate_transitions_per_second": 278.7231478343266,
+   "peak_gpu_memory_bytes": 30024192,
+   "episode_seed_ledger_sha256": "7d7ee2ce7dfaf5e7513843424e9b4f5458954885705e7f0eb2e454e28da1c0ce",
+   "episode_seed_records": 1392,
+   "unique_episode_seeds": 1392,
+   "episode_seed_min": 314159,
+   "episode_seed_max": 402238,
+   "algorithm_diagnostics_json": "{\"train/approx_kl\": 0.010501639917492867, \"train/clip_fraction\": 0.108489990234375, \"train/clip_range\": 0.2, \"train/entropy_loss\": -3.093196103349328, \"train/explained_variance\": 0.8538395166397095, \"train/learning_rate\": 0.0003, \"train/loss\": 26.5830135345459, \"train/n_updates\": 384, \"train/policy_gradient_loss\": -0.013642647569213295, \"train/value_loss\": 71.57270976901054}",
+   "run_path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed314159_maskable_ppo_final_r2"
+  },
+  {
+   "training_root": 314159,
+   "algorithm": "masked_bandit",
+   "status": "completed",
+   "training_source_sha": "6a8a4068b98bf9a71dead6e547595b4bbd755689",
+   "scientific_base_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "aggregate_transitions": 400000,
+   "n_envs": 16,
+   "scenario": "random_day",
+   "checkpoint_interval": 50000,
+   "device": "cuda",
+   "wall_time_seconds": 1196.1285847999388,
+   "aggregate_transitions_per_second": 334.4122070846613,
+   "peak_gpu_memory_bytes": 24719360,
+   "episode_seed_ledger_sha256": "7d7ee2ce7dfaf5e7513843424e9b4f5458954885705e7f0eb2e454e28da1c0ce",
+   "episode_seed_records": 1392,
+   "unique_episode_seeds": 1392,
+   "episode_seed_min": 314159,
+   "episode_seed_max": 402238,
+   "algorithm_diagnostics_json": "{\"epsilon\": 0.01999999999999999, \"final_epsilon\": 0.01999999999999999, \"gradient_norm\": 0.18336966633796692, \"loss\": 0.10872428864240646, \"replay_size\": 100000, \"updates\": 6187}",
+   "run_path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed314159_masked_bandit_final_r2"
+  },
+  {
+   "training_root": 271828,
+   "algorithm": "maskable_ppo",
+   "status": "completed",
+   "training_source_sha": "6a8a4068b98bf9a71dead6e547595b4bbd755689",
+   "scientific_base_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "aggregate_transitions": 400000,
+   "n_envs": 16,
+   "scenario": "random_day",
+   "checkpoint_interval": 50000,
+   "device": "cuda",
+   "wall_time_seconds": 1472.2381272999337,
+   "aggregate_transitions_per_second": 271.69517796254536,
+   "peak_gpu_memory_bytes": 30024192,
+   "episode_seed_ledger_sha256": "8af520ccb423fc72571b2d7944e29a43228349553758830a99d007847946fc56",
+   "episode_seed_records": 1392,
+   "unique_episode_seeds": 1392,
+   "episode_seed_min": 271828,
+   "episode_seed_max": 359907,
+   "algorithm_diagnostics_json": "{\"train/approx_kl\": 0.009272167459130287, \"train/clip_fraction\": 0.10406494140625, \"train/clip_range\": 0.2, \"train/entropy_loss\": -3.0323013458400965, \"train/explained_variance\": 0.8528563380241394, \"train/learning_rate\": 0.0003, \"train/loss\": 36.84163284301758, \"train/n_updates\": 384, \"train/policy_gradient_loss\": -0.012756829866702901, \"train/value_loss\": 78.31468707323074}",
+   "run_path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed271828_maskable_ppo_final"
+  },
+  {
+   "training_root": 271828,
+   "algorithm": "masked_bandit",
+   "status": "completed",
+   "training_source_sha": "6a8a4068b98bf9a71dead6e547595b4bbd755689",
+   "scientific_base_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "aggregate_transitions": 400000,
+   "n_envs": 16,
+   "scenario": "random_day",
+   "checkpoint_interval": 50000,
+   "device": "cuda",
+   "wall_time_seconds": 1270.8220803999575,
+   "aggregate_transitions_per_second": 314.7568854596157,
+   "peak_gpu_memory_bytes": 24719360,
+   "episode_seed_ledger_sha256": "8af520ccb423fc72571b2d7944e29a43228349553758830a99d007847946fc56",
+   "episode_seed_records": 1392,
+   "unique_episode_seeds": 1392,
+   "episode_seed_min": 271828,
+   "episode_seed_max": 359907,
+   "algorithm_diagnostics_json": "{\"epsilon\": 0.01999999999999999, \"final_epsilon\": 0.01999999999999999, \"gradient_norm\": 0.9922791719436646, \"loss\": 0.11861900985240936, \"replay_size\": 100000, \"updates\": 6187}",
+   "run_path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed271828_masked_bandit_final"
+  }
+ ],
+ "comparison_runs": {
+  "42": {
+   "path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\seed42\\runs\\v2\\seed42_comparison_final",
+   "wall_time_seconds": 392.3791081,
+   "scenarios": [
+    "full_day",
+    "evening_peak",
+    "flash_crowd",
+    "link_failure",
+    "deceptive_local_optimum",
+    "ood_double_failure",
+    "overload_stress"
+   ],
+   "seeds": [
+    101,
+    102,
+    103,
+    104,
+    105
+   ],
+   "holdout_accessed": false
+  },
+  "314159": {
+   "path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed314159_comparison_final_r2",
+   "wall_time_seconds": 395.4614674,
+   "scenarios": [
+    "full_day",
+    "evening_peak",
+    "flash_crowd",
+    "link_failure",
+    "deceptive_local_optimum",
+    "ood_double_failure",
+    "overload_stress"
+   ],
+   "seeds": [
+    101,
+    102,
+    103,
+    104,
+    105
+   ],
+   "holdout_accessed": false
+  },
+  "271828": {
+   "path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed271828_comparison_final",
+   "wall_time_seconds": 360.6124142,
+   "scenarios": [
+    "full_day",
+    "evening_peak",
+    "flash_crowd",
+    "link_failure",
+    "deceptive_local_optimum",
+    "ood_double_failure",
+    "overload_stress"
+   ],
+   "seeds": [
+    101,
+    102,
+    103,
+    104,
+    105
+   ],
+   "holdout_accessed": false
+  }
+ },
+ "integrity": {
+  "all_training_counters_zero": true,
+  "all_evaluation_counters_zero": true,
+  "all_reward_component_sums_exact": true,
+  "all_episode_seed_ledgers_byte_identical_within_root": true,
+  "all_episode_seeds_unique_within_learner": true,
+  "all_checkpoints_valid": true,
+  "all_final_episodes_truncated": true,
+  "any_final_episode_terminated": false
+ },
+ "failures": [
+  {
+   "stage": "root_314159_initial_launch",
+   "status": "failed_before_run_directory_creation",
+   "source_sha": "ca64b62fe29e45ab61aa86d642799aec5a4c25e1",
+   "evidence": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\seed42\\runs\\v2\\seed314159_maskable_ppo_final.stdout.log",
+   "reason": "pilot-only training-root guard rejected preregistered root 314159"
+  },
+  {
+   "stage": "root_314159_first_comparison",
+   "status": "failed_and_preserved",
+   "source_sha": "288a980c5546c7ed1adce9b5fcd70c39fa48f592",
+   "evidence": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed314159_comparison_final",
+   "reason": "pilot-only checkpoint-selection guard rejected every non-42 checkpoint"
+  }
+ ],
+ "superseded_valid_runs": [
+  {
+   "algorithm": "maskable_ppo",
+   "source_sha": "288a980c5546c7ed1adce9b5fcd70c39fa48f592",
+   "path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed314159_maskable_ppo_final",
+   "reason": "scientifically valid training, superseded so final training and comparison share exact source SHA 6a8a406"
+  },
+  {
+   "algorithm": "masked_bandit",
+   "source_sha": "288a980c5546c7ed1adce9b5fcd70c39fa48f592",
+   "path": "C:\\Users\\ugure\\OneDrive\\Masa\u00fcst\u00fc\\rl_in_mpls\\.worktrees\\continuity_v2\\runs\\v2\\seed314159_masked_bandit_final",
+   "reason": "scientifically valid training, superseded so final training and comparison share exact source SHA 6a8a406"
+  }
+ ],
+ "commands": [
+  "py -m pytest tests/test_learning_v2.py tests/test_v1_v2_compatibility.py -q",
+  "py -m pytest tests/test_env_v2.py -q -k \"pinned_commit or frozen_definition_set or definitions_are_currently_frozen or assert_training_pin or pin_is_line_ending or pin_detects or unknown_pinned_commit or training_entry_point_checks_the_pin\"",
+  "py scripts/train_v2.py --purpose meaningful --algorithm maskable_ppo --run-dir runs/v2/seed314159_maskable_ppo_final_r2 --root-seed 314159 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+  "py scripts/train_v2.py --purpose meaningful --algorithm masked_bandit --run-dir runs/v2/seed314159_masked_bandit_final_r2 --root-seed 314159 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+  "py scripts/compare_v2.py --ppo-run runs/v2/seed314159_maskable_ppo_final_r2 --bandit-run runs/v2/seed314159_masked_bandit_final_r2 --output-dir runs/v2/seed314159_comparison_final_r2 --device cuda",
+  "py scripts/train_v2.py --purpose meaningful --algorithm maskable_ppo --run-dir runs/v2/seed271828_maskable_ppo_final --root-seed 271828 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+  "py scripts/train_v2.py --purpose meaningful --algorithm masked_bandit --run-dir runs/v2/seed271828_masked_bandit_final --root-seed 271828 --scenario random_day --transitions 400000 --n-envs 16 --checkpoint-interval 50000 --device cuda",
+  "py scripts/compare_v2.py --ppo-run runs/v2/seed271828_maskable_ppo_final --bandit-run runs/v2/seed271828_masked_bandit_final --output-dir runs/v2/seed271828_comparison_final --device cuda"
+ ],
+ "compact_artifacts": [
+  "comparison_metrics_by_root.csv",
+  "aggregate_metrics.csv",
+  "scenario_metrics.csv",
+  "reward_components.csv",
+  "action_distribution.csv",
+  "checkpoint_selection.csv",
+  "learning_curves.csv",
+  "training_summary.csv",
+  "training_integrity.csv",
+  "evaluation_integrity.csv",
+  "REPORT.md"
+ ],
+ "large_artifacts_committed": false,
+ "generated_at_utc": "2026-07-31T06:53:06.075323+00:00"
+}

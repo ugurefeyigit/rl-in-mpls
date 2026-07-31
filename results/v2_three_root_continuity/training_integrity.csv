@@ -1,0 +1,7 @@
+training_root,algorithm,invalid_action_attempts,mask_disagreements,reward_mismatches,nonfinite_values,solver_failures,protected_safety_failures,ledger_byte_identical_with_peer,only_intended_root,seed_collisions,aggregate_transitions
+42,maskable_ppo,0,0,0,0,0,0,True,True,0,400000
+42,masked_bandit,0,0,0,0,0,0,True,True,0,400000
+314159,maskable_ppo,0,0,0,0,0,0,True,True,0,400000.0
+314159,masked_bandit,0,0,0,0,0,0,True,True,0,400000.0
+271828,maskable_ppo,0,0,0,0,0,0,True,True,0,400000.0
+271828,masked_bandit,0,0,0,0,0,0,True,True,0,400000.0
