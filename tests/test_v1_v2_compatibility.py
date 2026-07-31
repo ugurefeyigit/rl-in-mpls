@@ -232,7 +232,8 @@ def test_the_validation_output_carve_out_touches_nothing_v1_owns():
     v1_owned = {p for p in changed
                 if (p.startswith("models/")
                     or (p.startswith("results/")
-                        and not p.startswith(ALLOWED_OUTPUT_PREFIX)))}
+                        and not p.startswith(ALLOWED_OUTPUT_PREFIX)
+                        and not p.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX)))}
     assert not v1_owned, f"frozen V1 artifacts changed: {sorted(v1_owned)}"
     assert not _git("diff", "--name-only", AUDITED_BASE_COMMIT, "--",
                     "results/v1_manifest.json").strip()

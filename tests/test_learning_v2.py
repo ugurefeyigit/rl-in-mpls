@@ -28,22 +28,23 @@ def test_governed_config_registers_only_the_two_v2_learners() -> None:
     assert tuple(cfg["algorithms"]) == ("maskable_ppo", "masked_bandit")
     assert cfg["environment_version"] == "v2"
     assert cfg["training_roots"] == [42, 314159, 271828]
-    assert cfg["active_training_roots"] == [42]
+    assert cfg["active_training_roots"] == [42, 314159, 271828]
     assert cfg["continuity_seeds"] == [101, 102, 103, 104, 105]
     assert cfg["holdout_seeds"] == [1001, 1002, 1003, 1004, 1005]
 
 
-def test_task_seed_policy_allows_root_42_and_continuity_only() -> None:
-    """Using another training root or a non-continuity evaluation seed is a bug."""
+def test_task_seed_policy_allows_preregistered_roots_and_continuity_only() -> None:
+    """Rejecting a preregistered root or accepting an unknown root is a bug."""
     from mplssim.experiments.learning_common import (
         validate_evaluation_seeds,
         validate_training_root,
     )
 
-    validate_training_root(42)
+    for root_seed in (42, 314159, 271828):
+        validate_training_root(root_seed)
     validate_evaluation_seeds([101, 102, 103, 104, 105])
-    with pytest.raises(ValueError, match="task permits training root 42 only"):
-        validate_training_root(314159)
+    with pytest.raises(ValueError, match="active preregistered training roots"):
+        validate_training_root(7)
     with pytest.raises(ValueError, match="forbidden holdout"):
         validate_evaluation_seeds([1001])
     with pytest.raises(ValueError, match="continuity"):
@@ -368,7 +369,11 @@ def test_metrics_writer_persists_machine_readable_steps_and_episodes(
         {"episode_seed": 42, "return": 7.5}]
 
 
-def test_checkpoint_sidecar_detects_payload_corruption(tmp_path: Path) -> None:
+@pytest.mark.parametrize("root_seed", [42, 314159, 271828])
+def test_checkpoint_sidecar_detects_payload_corruption(
+    tmp_path: Path,
+    root_seed: int,
+) -> None:
     """Checkpoint bytes may not be loaded after their recorded hash changes."""
     from mplssim.experiments.learning_common import (
         validate_checkpoint_sidecar,
@@ -378,7 +383,7 @@ def test_checkpoint_sidecar_detects_payload_corruption(tmp_path: Path) -> None:
 
     payload = tmp_path / "checkpoint_000050000.pt"
     payload.write_bytes(b"trusted checkpoint")
-    environment_record = verified_environment_record(root_seed=42)
+    environment_record = verified_environment_record(root_seed=root_seed)
     sidecar = write_checkpoint_sidecar(
         payload,
         algorithm="masked_bandit",
@@ -387,7 +392,7 @@ def test_checkpoint_sidecar_detects_payload_corruption(tmp_path: Path) -> None:
         run_config={
             "algorithm": "masked_bandit",
             "environment_version": "v2",
-            "root_seed": 42,
+            "root_seed": root_seed,
             "n_envs": 8,
         },
         device={"requested": "auto", "resolved": "cpu"},

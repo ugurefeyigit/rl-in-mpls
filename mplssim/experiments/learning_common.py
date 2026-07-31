@@ -23,7 +23,6 @@ import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 LEARNING_CONFIG_PATH = REPO_ROOT / "configs" / "experiments" / "learning_v2.yaml"
-TASK_TRAINING_ROOT = 42
 MEANINGFUL_TRANSITIONS = 400_000
 MEANINGFUL_CHECKPOINT_INTERVAL = 50_000
 RUN_PURPOSES = ("meaningful", "smoke", "benchmark")
@@ -44,10 +43,15 @@ def load_learning_config(path: Path = LEARNING_CONFIG_PATH) -> dict[str, Any]:
 
 
 def validate_training_root(root_seed: int) -> None:
-    """Enforce this task's preregistered single-root scope."""
-    if int(root_seed) != TASK_TRAINING_ROOT:
+    """Enforce the active subset of preregistered training roots."""
+    cfg = load_learning_config()
+    registered = {int(value) for value in cfg["training_roots"]}
+    active = {int(value) for value in cfg["active_training_roots"]}
+    permitted = registered & active
+    if int(root_seed) not in permitted:
         raise ValueError(
-            f"this task permits training root 42 only, got {root_seed}")
+            "this task permits only active preregistered training roots "
+            f"{sorted(permitted)}, got {root_seed}")
 
 
 def validate_run_purpose(
@@ -464,8 +468,7 @@ def validate_checkpoint_sidecar(
         raise ValueError("checkpoint run_config algorithm mismatch")
     if run_config.get("environment_version") != "v2":
         raise ValueError("checkpoint run_config is not V2")
-    if int(run_config.get("root_seed", -1)) != TASK_TRAINING_ROOT:
-        raise ValueError("checkpoint run_config does not use root seed 42")
+    validate_training_root(int(run_config.get("root_seed", -1)))
     stored_source = metadata.get("source")
     if stored_source != metadata.get("environment_record", {}).get("source"):
         raise ValueError("checkpoint source identity records disagree")

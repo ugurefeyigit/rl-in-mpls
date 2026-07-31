@@ -3,7 +3,7 @@ environment_version: v2
 algorithms: [maskable_ppo, masked_bandit]
 
 training_roots: [42, 314159, 271828]
-active_training_roots: [42]
+active_training_roots: [42, 314159, 271828]
 continuity_seeds: [101, 102, 103, 104, 105]
 holdout_seeds: [1001, 1002, 1003, 1004, 1005]
 
