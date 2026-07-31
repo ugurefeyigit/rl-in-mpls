@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V2 Study — sealed evidence record</title>
+<link rel="stylesheet" href="/static/css/study.css">
+</head>
+<body data-state="loading">
+<a class="skip-link" href="#record">Skip to the evidence record</a>
+
+<!-- ============================ seal band ============================ -->
+<div id="seal-band" class="seal-band" role="status">
+  <span class="seal-text" id="seal-text">Reading the sealed record…</span>
+</div>
+
+<header id="study-header">
+  <div class="masthead">
+    <h1>Masked contextual bandit <span class="vs">versus</span> MaskablePPO</h1>
+    <p class="standfirst">
+      A closed, one-shot comparison on a frozen simulated backbone. Every figure on
+      this page is read from the committed evidence files at request time. None of
+      them is stored in this page.
+    </p>
+  </div>
+  <div class="masthead-meta">
+    <span id="stage-badge" class="badge badge-sealed">Study closed</span>
+    <dl class="ident" id="study-ident"></dl>
+  </div>
+</header>
+
+<div id="error-banner" class="banner banner-error" role="alert" hidden></div>
+
+<div class="shell">
+  <!-- ========================= record spine ========================= -->
+  <nav class="spine" aria-label="Evidence record">
+    <p class="spine-title">Record</p>
+    <ol class="spine-list">
+      <li><a id="nav-verdict"     href="#verdict">Verdict</a></li>
+      <li><a id="nav-holdout"     href="#holdout">Final holdout</a></li>
+      <li><a id="nav-scenarios"   href="#scenarios">Scenarios</a></li>
+      <li><a id="nav-churn"       href="#churn">Operations &amp; churn</a></li>
+      <li class="spine-dev"><a id="nav-development" href="#development">Development</a></li>
+      <li><a id="nav-provenance"  href="#provenance">Provenance</a></li>
+      <li><a id="nav-replay"      href="#replay">Recorded replay</a></li>
+    </ol>
+    <p class="spine-note">
+      Development evidence selected the checkpoints. Final-holdout evidence tested
+      them once. The two are never combined.
+    </p>
+  </nav>
+
+  <!-- ========================= the record ========================== -->
+  <main id="record">
+    <div id="empty-state" class="empty-state" hidden>
+      <p class="empty-title">No evidence loaded</p>
+      <p>The frozen artifacts under <code>results/v2_final_holdout/</code> could not be
+         read. Nothing is shown rather than something approximate.</p>
+    </div>
+
+    <!-- ------------------------------- verdict -->
+    <section id="verdict" class="chapter" aria-labelledby="verdict-h">
+      <div class="chapter-head">
+        <h2 id="verdict-h">What the evidence says</h2>
+      </div>
+      <div id="verdict-body" class="chapter-body"></div>
+    </section>
+
+    <!-- ------------------------- final holdout -->
+    <section id="holdout" class="chapter" aria-labelledby="holdout-h">
+      <div class="chapter-head">
+        <h2 id="holdout-h">The final holdout, run once</h2>
+        <p class="chapter-note">
+          Untouched seeds, evaluated once. No checkpoint was selected, reselected,
+          tuned or redesigned from anything in this section.
+        </p>
+      </div>
+      <div id="holdout-body" class="chapter-body"></div>
+    </section>
+
+    <!-- ---------------------------- scenarios -->
+    <section id="scenarios" class="chapter" aria-labelledby="scenarios-h">
+      <div class="chapter-head">
+        <h2 id="scenarios-h">Where the advantage holds, and where it does not</h2>
+        <p class="chapter-note">
+          Each learner value is the mean of three training-root means. Bars point
+          toward the winner and the margin is printed beside them.
+        </p>
+      </div>
+      <figure id="scenario-figure" class="figure"></figure>
+      <div id="scenario-body" class="chapter-body"></div>
+    </section>
+
+    <!-- ------------------------ operations & churn -->
+    <section id="churn" class="chapter" aria-labelledby="churn-h">
+      <div class="chapter-head">
+        <h2 id="churn-h">Delivery, congestion and route churn</h2>
+      </div>
+      <div id="churn-body" class="chapter-body"></div>
+      <div id="reward-body" class="chapter-body"></div>
+      <div id="action-body" class="chapter-body"></div>
+    </section>
+
+    <!-- --------------------------- development -->
+    <section id="development" class="chapter chapter-dev" aria-labelledby="development-h">
+      <div class="chapter-head">
+        <p class="dev-ribbon">Development / continuity — not holdout evidence</p>
+        <h2 id="development-h">How the checkpoints were chosen</h2>
+        <p class="chapter-note">
+          Evaluated on the development seeds. These results selected the six
+          checkpoints. They are not a generalization claim, and no figure here may be
+          averaged with the final holdout.
+        </p>
+      </div>
+      <div id="development-body" class="chapter-body"></div>
+      <div id="development-curves" class="chapter-body"></div>
+    </section>
+
+    <!-- ---------------------------- provenance -->
+    <section id="provenance" class="chapter" aria-labelledby="provenance-h">
+      <div class="chapter-head">
+        <h2 id="provenance-h">Safety, integrity and chain of custody</h2>
+      </div>
+      <div id="integrity-body" class="chapter-body"></div>
+      <div id="provenance-body" class="chapter-body"></div>
+      <div id="disclosure-body" class="chapter-body"></div>
+    </section>
+
+    <!-- -------------------------------- replay -->
+    <section id="replay" class="chapter" aria-labelledby="replay-h">
+      <div class="chapter-head">
+        <h2 id="replay-h">Recorded episode playback</h2>
+        <p class="chapter-note">
+          Recorded evidence, played back from the traces the one-shot evaluation
+          wrote. Nothing here runs a controller or evaluates a checkpoint.
+        </p>
+      </div>
+      <div id="replay-controls" class="replay-controls"></div>
+      <div id="replay-readout" class="replay-readout"></div>
+      <div id="replay-timeline" class="replay-timeline"></div>
+      <div id="replay-body" class="chapter-body"></div>
+    </section>
+
+    <footer class="colophon">
+      <p>Every number above is read at request time from the committed compact
+         artifacts. Full step traces and checkpoints stay outside Git.</p>
+      <p class="colophon-links">
+        <a href="/">Engineering console</a> ·
+        <a href="/present">Presentation mode</a> ·
+        <a href="/docs">API reference</a>
+      </p>
+    </footer>
+  </main>
+</div>
+
+<script src="/static/vendor/echarts.min.js"></script>
+<script type="module" src="/static/js/study.js"></script>
+</body>
+</html>

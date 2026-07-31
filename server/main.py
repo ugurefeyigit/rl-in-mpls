@@ -35,6 +35,7 @@ from mplssim.factory import get_scenarios, get_topology, get_traffic_config
 from mplssim.validation import ConfigError, validate_configs
 from server import db
 from server.events import log_event, recent_events
+from server.evidence_api import router as evidence_router
 from server.session import (
     SessionConfig, SessionError, SessionState, SimSession, list_checkpoints,
 )
@@ -546,5 +547,13 @@ def advanced() -> FileResponse:
 def present() -> FileResponse:
     return FileResponse(ROOT / "frontend" / "present.html")
 
+
+@app.get("/study")
+def study_page() -> FileResponse:
+    return FileResponse(ROOT / "frontend" / "study.html")
+
+
+# Read-only V2 study evidence. GET-only by construction — see server/evidence_api.py.
+app.include_router(evidence_router)
 
 app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")

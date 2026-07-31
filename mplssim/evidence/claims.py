@@ -82,8 +82,19 @@ def root_aggregate(per_root: pd.DataFrame, algorithm: str) -> dict[str, Any]:
 
 
 def aggregate_table(fh: FinalHoldout) -> list[dict[str, Any]]:
-    """The five-method aggregate comparison, ordered best return first."""
-    rows = [root_aggregate(fh.per_root, a) for a in identity.ALL_ALGORITHMS]
+    """The five-method aggregate comparison, ordered best return first.
+
+    Episode dispersion is read from the frozen aggregate table rather than
+    recomputed: it is the pooled standard deviation over all of a method's
+    episodes, which is not the mean of the per-root standard deviations.
+    """
+    frozen = fh.aggregate.set_index("algorithm")
+    rows = []
+    for algo in identity.ALL_ALGORITHMS:
+        row = root_aggregate(fh.per_root, algo)
+        row["operational_return_std"] = float(frozen.loc[algo, "operational_return_std"])
+        row["episode_std_grain"] = "pooled over every episode of this method"
+        rows.append(row)
     return sorted(rows, key=lambda r: r["operational_return_mean"], reverse=True)
 
 
