@@ -85,6 +85,15 @@ ALLOWED_NEW_FILES = {
     "docs/RELEASE_CHECKLIST.md",
     "docs/V3_RESEARCH_BACKLOG.md",
     "docs/superpowers/plans/2026-07-31-post-study-productization.md",
+    # Approved post-study UI design/specification package. These are design
+    # records only; production frontend, simulation, learners, and evidence are
+    # deliberately outside this change.
+    "PRODUCT.md",
+    "DESIGN.md",
+    "docs/ADR-002-unified-three-mode-product-shell.md",
+    "docs/UNIFIED_UI_SURFACE_BRIEF.md",
+    "docs/superpowers/specs/2026-07-31-unified-rl-in-mpls-product-design.md",
+    "docs/superpowers/plans/2026-07-31-unified-rl-in-mpls-ui.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",
