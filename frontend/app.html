@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RL-in-MPLS · National Backbone Dispatch Atlas</title>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/shell.css">
+<link rel="stylesheet" href="/static/css/topology-atlas.css">
+<link rel="stylesheet" href="/static/css/presentation-mode.css">
+<link rel="stylesheet" href="/static/css/network-mode.css">
+<link rel="stylesheet" href="/static/css/rl-mode.css">
+<link rel="stylesheet" href="/static/css/responsive.css">
+</head>
+<body data-mode="network" data-source="live_session" data-audience="off">
+
+<!-- Authored icon set: one 1.5px outlined family, square terminals. Every use
+     carries a text label or an accessible name; no glyph carries meaning alone. -->
+<svg class="icon-defs" aria-hidden="true" focusable="false" width="0" height="0">
+  <defs>
+    <g id="i-live"><path d="M5 3.5 13 8l-8 4.5z"/></g>
+    <g id="i-recorded"><circle cx="8" cy="8" r="4.5"/><circle cx="8" cy="8" r="1.5"/></g>
+    <g id="i-development"><path d="M6.5 2v4L3 12.5h10L9.5 6V2z"/><path d="M6 2h4"/></g>
+    <g id="i-final-evidence"><circle cx="8" cy="6.5" r="3.5"/><path d="M5.5 9.5 4.5 14 8 12.5 11.5 14l-1-4.5"/></g>
+    <g id="i-node"><rect x="2.5" y="4.5" width="11" height="7"/><path d="M2.5 8h11"/></g>
+    <g id="i-route"><path d="M2 12h3.5L10 4h4"/><path d="M11.5 2 14 4l-2.5 2"/></g>
+    <g id="i-demand"><path d="M2 8h12"/><path d="M10.5 4.5 14 8l-3.5 3.5"/></g>
+    <g id="i-pressure"><path d="M8 2.5 14.5 13.5h-13z"/><path d="M8 6.5v3.5"/></g>
+    <g id="i-failure"><path d="M4 4l8 8M12 4l-8 8"/></g>
+    <g id="i-recovery"><path d="M13 8a5 5 0 1 1-1.7-3.8"/><path d="M13.5 2v3h-3"/></g>
+    <g id="i-recommendation"><rect x="2.5" y="3.5" width="11" height="9"/><path d="M5 6.5h6M5 9.5h4"/></g>
+    <g id="i-mask"><rect x="2.5" y="2.5" width="11" height="11"/><path d="M2.5 2.5l11 11"/></g>
+    <g id="i-observation"><circle cx="8" cy="8" r="2.5"/><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8z"/></g>
+    <g id="i-reward"><path d="M2.5 13.5V9m3.5 4.5V5.5m3.5 8V7.5m3.5 6V3"/></g>
+    <g id="i-checkpoint"><rect x="3.5" y="2.5" width="9" height="11"/><path d="M6 5.5h4M6 8h4M6 10.5h2"/></g>
+    <g id="i-fullscreen"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></g>
+    <g id="i-audience"><path d="M1.5 13c0-2.5 2.9-4 6.5-4s6.5 1.5 6.5 4"/><circle cx="8" cy="4.5" r="2.5"/></g>
+    <g id="i-help"><circle cx="8" cy="8" r="6"/><path d="M6.2 6.2A1.9 1.9 0 0 1 9.8 7c0 1.3-1.8 1.5-1.8 2.8"/><path d="M8 11.8v.2"/></g>
+    <g id="i-close"><path d="M4 4l8 8M12 4l-8 8"/></g>
+    <g id="i-explain"><circle cx="8" cy="8" r="6"/><path d="M8 7.2v4"/><path d="M8 4.6v.2"/></g>
+    <g id="i-bookmark"><path d="M4 2.5h8v11L8 10.5 4 13.5z"/></g>
+    <g id="i-link-out"><path d="M9 2.5h4.5V7"/><path d="M13.5 2.5 7 9"/><path d="M11 9.5v4h-8.5v-8.5h4"/></g>
+  </defs>
+</svg>
+
+<a class="skip-link" href="#stage">Skip to the network</a>
+<a class="skip-link" href="#mode-surface">Skip to the current mode</a>
+
+<header class="shell-head">
+  <div class="wordmark">
+    <span class="wordmark__name">RL-in-MPLS</span>
+    <span class="wordmark__sub">National backbone dispatch atlas</span>
+  </div>
+
+  <nav class="modes" id="mode-nav" aria-label="Primary modes">
+    <a class="mode" id="mode-presentation" href="/present" data-mode="presentation">
+      <span class="mode__label">Presentation</span>
+      <span class="mode__hint">Alt+1</span>
+    </a>
+    <a class="mode" id="mode-network" href="/advanced" data-mode="network">
+      <span class="mode__label">Network Information</span>
+      <span class="mode__hint">Alt+2</span>
+    </a>
+    <a class="mode" id="mode-rl" href="/study" data-mode="rl">
+      <span class="mode__label">RL Information</span>
+      <span class="mode__hint">Alt+3</span>
+    </a>
+  </nav>
+
+  <div class="head-tools">
+    <button type="button" class="tool" id="btn-explain" aria-expanded="false">
+      <svg class="icon" aria-hidden="true"><use href="#i-explain"/></svg>
+      <span>Explain this moment</span>
+      <kbd>E</kbd>
+    </button>
+    <button type="button" class="tool" id="btn-audience" aria-pressed="false">
+      <svg class="icon" aria-hidden="true"><use href="#i-audience"/></svg>
+      <span class="tool__text">Audience view</span>
+    </button>
+    <button type="button" class="tool" id="btn-fullscreen" aria-pressed="false">
+      <svg class="icon" aria-hidden="true"><use href="#i-fullscreen"/></svg>
+      <span class="tool__text">Fullscreen</span>
+    </button>
+    <button type="button" class="tool" id="btn-help" aria-expanded="false">
+      <svg class="icon" aria-hidden="true"><use href="#i-help"/></svg>
+      <span class="tool__text">Keys</span>
+      <kbd>?</kbd>
+    </button>
+  </div>
+</header>
+
+<div class="ledger" id="ledger">
+  <div class="stamp" id="provenance-stamp" data-kind="live_session">
+    <svg class="icon stamp__icon" aria-hidden="true"><use href="#i-live"/></svg>
+    <span class="stamp__word" id="provenance-word">LIVE</span>
+    <span class="stamp__detail" id="provenance-detail">Starting…</span>
+  </div>
+
+  <dl class="context" id="context-ledger" aria-label="Current context"></dl>
+
+  <div class="source-switch" id="source-switch">
+    <span class="source-switch__label" id="source-switch-label">Record</span>
+    <div class="source-switch__options" role="group" aria-labelledby="source-switch-label"></div>
+  </div>
+
+  <p class="conn" id="conn-state" data-state="connecting">
+    <span class="conn__dot" aria-hidden="true"></span>
+    <span id="conn-text">Connecting</span>
+  </p>
+</div>
+
+<main id="main" class="shell-main">
+
+  <!-- Presentation moment rail. Fixed cells: values change, geometry does not. -->
+  <section class="moment-rail" id="moment-rail" aria-label="Current moment">
+    <div class="moment-rail__row" id="moment-primary"></div>
+    <p class="moment-rail__change" id="moment-change">Waiting for the first completed interval.</p>
+  </section>
+
+  <div class="stage-wrap" id="stage-wrap">
+    <section class="stage" id="stage" aria-labelledby="stage-title" tabindex="-1">
+      <div class="stage__head">
+        <h1 class="stage__title" id="stage-title">Network</h1>
+        <div class="stage__controls" role="group" aria-label="Topology view">
+          <button type="button" class="chip" id="btn-zoom-out">Zoom out</button>
+          <button type="button" class="chip" id="btn-zoom-in">Zoom in</button>
+          <button type="button" class="chip" id="btn-fit">Fit</button>
+          <button type="button" class="chip" id="btn-reset-view">Reset view</button>
+          <button type="button" class="chip" id="btn-topology-list" aria-expanded="false">
+            List view
+          </button>
+        </div>
+      </div>
+
+      <div class="atlas" id="atlas" role="application"
+           aria-label="Curated national backbone topology. Arrow keys move between cities.">
+        <svg id="atlas-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"
+             role="img" aria-labelledby="atlas-svg-title atlas-svg-desc">
+          <title id="atlas-svg-title">Curated national backbone topology</title>
+          <desc id="atlas-svg-desc">Eighteen cities joined by thirty-two links. An
+            equivalent list is available through the List view control.</desc>
+          <g id="atlas-links"></g>
+          <g id="atlas-overlays"></g>
+          <g id="atlas-nodes"></g>
+        </svg>
+        <p class="atlas__unavailable" id="atlas-unavailable" hidden></p>
+      </div>
+
+      <div class="topology-list" id="topology-list" hidden>
+        <h2 class="panel__title">Topology list</h2>
+        <div id="topology-list-body"></div>
+      </div>
+
+      <footer class="stage__foot">
+        <ul class="legend" id="atlas-legend" aria-label="Topology legend"></ul>
+        <p class="disclaimer" id="atlas-disclaimer"></p>
+      </footer>
+    </section>
+
+    <aside class="rail" id="rail" aria-label="Context rail"></aside>
+  </div>
+
+  <!-- The recommendation card sits directly beneath the topology, and only
+       when a real policy output exists. -->
+  <section class="recommendation" id="recommendation" hidden
+           aria-labelledby="rec-headline"></section>
+
+  <section class="timeband" id="timeband" aria-labelledby="timeband-title">
+    <h2 class="visually-hidden" id="timeband-title">Incident time band</h2>
+    <ol class="timeband__track" id="timeband-track"></ol>
+  </section>
+
+  <section class="mode-surface" id="mode-surface" tabindex="-1"
+           aria-labelledby="mode-surface-title">
+    <h2 class="visually-hidden" id="mode-surface-title">Network Information</h2>
+
+    <div class="surface-panel" id="panel-presentation" data-mode="presentation" hidden></div>
+    <div class="surface-panel" id="panel-network" data-mode="network" hidden></div>
+    <div class="surface-panel" id="panel-rl" data-mode="rl" hidden></div>
+  </section>
+</main>
+
+<footer class="cockpit" id="cockpit" aria-label="Presenter cockpit" hidden>
+  <div class="cockpit__group" role="group" aria-label="Playback">
+    <button type="button" class="ctl ctl--primary" id="btn-playpause">Play</button>
+    <button type="button" class="ctl" id="btn-step">Step</button>
+    <button type="button" class="ctl" id="btn-next-event">Next event</button>
+    <label class="ctl-field">
+      <span>Speed</span>
+      <select id="sel-speed">
+        <option value="1x">1x</option>
+        <option value="5x">5x</option>
+        <option value="20x">20x</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="cockpit__group" role="group" aria-label="Story">
+    <button type="button" class="ctl" id="btn-story-prev">Back</button>
+    <p class="story-progress" id="story-progress">Guided Story is not running.</p>
+    <button type="button" class="ctl" id="btn-story-next">Next</button>
+    <button type="button" class="ctl" id="btn-story-toggle">Start Guided Story <kbd>G</kbd></button>
+  </div>
+
+  <div class="cockpit__group" role="group" aria-label="Decision">
+    <button type="button" class="ctl" id="btn-propose">Preview recommendation</button>
+    <button type="button" class="ctl ctl--accept" id="btn-approve" disabled>Approve</button>
+    <button type="button" class="ctl" id="btn-reject" disabled>Reject</button>
+  </div>
+
+  <div class="cockpit__group" role="group" aria-label="Jumps">
+    <button type="button" class="ctl" id="btn-bookmark-prev" aria-label="Previous incident bookmark">
+      <svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg><kbd>[</kbd>
+    </button>
+    <button type="button" class="ctl" id="btn-bookmark-next" aria-label="Next incident bookmark">
+      <svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg><kbd>]</kbd>
+    </button>
+    <button type="button" class="ctl" id="btn-questions" aria-expanded="false">Q&amp;A jumps</button>
+    <button type="button" class="ctl" id="btn-conclusion" aria-expanded="false">
+      Governed conclusion
+    </button>
+  </div>
+</footer>
+
+<!-- Drawers. Each traps focus while open and returns focus to its invoker. -->
+<div class="drawer" id="drawer-explain" role="dialog" aria-modal="true"
+     aria-labelledby="drawer-explain-title" hidden>
+  <div class="drawer__head">
+    <h2 id="drawer-explain-title">Explain this moment</h2>
+    <button type="button" class="icon-btn" data-close="drawer-explain" aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="depth-switch" role="group" aria-label="Explanation depth">
+    <button type="button" class="chip" data-depth="presentation">Presentation</button>
+    <button type="button" class="chip" data-depth="network">Network</button>
+    <button type="button" class="chip" data-depth="rl">RL</button>
+  </div>
+  <div class="drawer__body" id="explain-body"></div>
+</div>
+
+<div class="drawer" id="drawer-help" role="dialog" aria-modal="true"
+     aria-labelledby="drawer-help-title" hidden>
+  <div class="drawer__head">
+    <h2 id="drawer-help-title">Keyboard and controls</h2>
+    <button type="button" class="icon-btn" data-close="drawer-help" aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="drawer__body" id="help-body"></div>
+</div>
+
+<div class="drawer drawer--evidence" id="drawer-conclusion" role="dialog" aria-modal="true"
+     aria-labelledby="drawer-conclusion-title" hidden>
+  <div class="drawer__head">
+    <div class="stamp stamp--inline" data-kind="final_holdout_evidence">
+      <svg class="icon stamp__icon" aria-hidden="true"><use href="#i-final-evidence"/></svg>
+      <span class="stamp__word">FINAL EVIDENCE</span>
+    </div>
+    <h2 id="drawer-conclusion-title">What the closed V2 study established</h2>
+    <button type="button" class="icon-btn" data-close="drawer-conclusion" aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="drawer__body" id="conclusion-body"></div>
+</div>
+
+<div class="drawer" id="drawer-questions" role="dialog" aria-modal="true"
+     aria-labelledby="drawer-questions-title" hidden>
+  <div class="drawer__head">
+    <h2 id="drawer-questions-title">Q&amp;A jumps</h2>
+    <button type="button" class="icon-btn" data-close="drawer-questions" aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="drawer__body" id="questions-body"></div>
+</div>
+
+<div class="drawer" id="drawer-inspector" role="dialog" aria-modal="true"
+     aria-labelledby="drawer-inspector-title" hidden>
+  <div class="drawer__head">
+    <h2 id="drawer-inspector-title">Selected object</h2>
+    <button type="button" class="icon-btn" data-close="drawer-inspector" aria-label="Close">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+  </div>
+  <div class="drawer__body" id="inspector-drawer-body"></div>
+</div>
+
+<p class="banner" id="error-banner" role="alert" hidden></p>
+<p class="visually-hidden" id="live-region" role="status" aria-live="polite"></p>
+
+<script type="module" src="/static/js/product/main.js"></script>
+</body>
+</html>

@@ -161,6 +161,7 @@ ALLOWED_NEW_FILES = {
     "tests/test_product_accessibility.py",
     "docs/PRODUCT_UI.md",
     "docs/ACCESSIBILITY.md",
+    "HANDOFF_THREE_MODE_UI.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",
