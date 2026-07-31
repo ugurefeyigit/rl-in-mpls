@@ -36,6 +36,8 @@ from mplssim.validation import ConfigError, validate_configs
 from server import db
 from server.events import log_event, recent_events
 from server.evidence_api import router as evidence_router
+from server.product_api import bind_session_provider
+from server.product_api import router as product_router
 from server.session import (
     SessionConfig, SessionError, SessionState, SimSession, list_checkpoints,
 )
@@ -555,5 +557,10 @@ def study_page() -> FileResponse:
 
 # Read-only V2 study evidence. GET-only by construction — see server/evidence_api.py.
 app.include_router(evidence_router)
+
+# Additive product-layer surface for the unified three-mode shell. It reads the
+# live session through this provider rather than importing this module back.
+bind_session_provider(lambda: STATE["session"])
+app.include_router(product_router)
 
 app.mount("/static", StaticFiles(directory=ROOT / "frontend"), name="static")

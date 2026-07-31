@@ -31,6 +31,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
+from uuid import uuid4
 
 import numpy as np
 
@@ -125,6 +126,7 @@ class AlgoRunner:
             self.env.reset(options={"episode_seed": cfg.seed})
             self.eng: SimulationEngine = self.env.eng
             self._obs = self.env._obs()
+            self._prior_obs = None
         else:
             self.eng = make_engine(cfg.scenario, seed=cfg.seed,
                                    cfg=engine_config_from_training())
@@ -214,6 +216,9 @@ class AlgoRunner:
 
         before_max_util = float(np.max(self.eng.link_util))
         pre_state = self._pre_action_context(action)
+        # Kept so the RL observation inspector can show prior/current/delta
+        # without the client having to retain and re-key a 586-value vector.
+        self._prior_obs = self._obs
         self._obs, reward, terminated, truncated, info = env.step(action)
         self._last_raw_reward = float(reward)
         self.cumulative_reward += float(reward)
@@ -332,6 +337,11 @@ class SimSession:
         if config.speed not in SPEED_SECONDS:
             raise ValueError(f"speed must be one of {list(SPEED_SECONDS)}")
         self.config = config
+        # Stable identity for product payloads. A client that holds a prior
+        # snapshot must be able to tell "same run, one step later" apart from
+        # "the session was reset underneath me" before it renders a delta.
+        self.id = uuid4().hex[:12]
+        self.sequence = 0
         self.runners = [AlgoRunner(config, a) for a in config.algorithms]
         self.state = SessionState.IDLE
         self.speed = config.speed
@@ -360,11 +370,19 @@ class SimSession:
                     step=self.runners[0].eng.step_count,
                     t_min=self.runners[0].eng.t_min)
 
+    @property
+    def generation(self) -> int:
+        """Bumped by reset. A delta computed across generations is meaningless."""
+        return self._generation
+
     def status(self) -> dict[str, Any]:
         eng = self.runners[0].eng
         return {
             "state": self.state.value,
             "error": self.error_message,
+            "session_id": self.id,
+            "generation": self._generation,
+            "sequence": self.sequence,
             "scenario": self.config.scenario,
             "algorithms": list(self.config.algorithms),
             "seed": self.config.seed,
@@ -384,6 +402,9 @@ class SimSession:
 
     def payload(self, decisions: list[dict] | None = None,
                 kind: str = "tick") -> dict[str, Any]:
+        # Monotonic per emitted payload: a client can drop an out-of-order or
+        # replayed frame instead of rendering it as the present.
+        self.sequence += 1
         return {
             "type": kind,
             "status": self.status(),
