@@ -23,6 +23,7 @@ from mplssim.experiments.evaluation_v2 import (
 from mplssim.experiments.learning_common import (
     create_run_directory,
     load_learning_config,
+    validate_training_root,
 )
 
 
@@ -66,8 +67,7 @@ def validate_meaningful_checkpoint_metadata(
         raise ValueError("checkpoint run_config algorithm mismatch")
     if run_config.get("environment_version") != "v2":
         raise ValueError("checkpoint is not from V2")
-    if int(run_config.get("root_seed", -1)) != 42:
-        raise ValueError("checkpoint must use training root seed 42")
+    validate_training_root(int(run_config.get("root_seed", -1)))
     if int(run_config.get("aggregate_transitions", -1)) != 400_000:
         raise ValueError(
             "checkpoint must come from a 400000-transition training run")

@@ -449,8 +449,8 @@ def test_checkpoint_sidecar_binds_filename_transition_and_source(
             require_clean_source=False)
 
 
-def test_meaningful_checkpoint_metadata_rejects_smoke_or_wrong_root() -> None:
-    """Checkpoint selection accepts only the preregistered 400k root-42 run."""
+def test_meaningful_checkpoint_metadata_rejects_smoke_or_unknown_root() -> None:
+    """Checkpoint selection accepts every active preregistered 400k root."""
     from scripts.compare_v2 import validate_meaningful_checkpoint_metadata
 
     metadata = {
@@ -467,6 +467,18 @@ def test_meaningful_checkpoint_metadata_rejects_smoke_or_wrong_root() -> None:
     }
     validate_meaningful_checkpoint_metadata(
         Path("checkpoint_000050000.pt"), metadata, "masked_bandit")
+    for root_seed in (314159, 271828):
+        validate_meaningful_checkpoint_metadata(
+            Path("checkpoint_000050000.pt"),
+            {
+                **metadata,
+                "run_config": {
+                    **metadata["run_config"],
+                    "root_seed": root_seed,
+                },
+            },
+            "masked_bandit",
+        )
     with pytest.raises(ValueError, match="400000"):
         validate_meaningful_checkpoint_metadata(
             Path("checkpoint_000050000.pt"),
@@ -480,12 +492,12 @@ def test_meaningful_checkpoint_metadata_rejects_smoke_or_wrong_root() -> None:
             },
             "masked_bandit",
         )
-    with pytest.raises(ValueError, match="root seed 42"):
+    with pytest.raises(ValueError, match="active preregistered training roots"):
         validate_meaningful_checkpoint_metadata(
             Path("checkpoint_000050000.pt"),
             {
                 **metadata,
-                "run_config": {**metadata["run_config"], "root_seed": 314159},
+                "run_config": {**metadata["run_config"], "root_seed": 7},
             },
             "masked_bandit",
         )
