@@ -154,6 +154,7 @@ ALLOWED_NEW_FILES = {
     "frontend/js/product/model-provenance.js",
     "frontend/js/product/governed-study.js",
     "frontend/js/product/recorded-trace.js",
+    "frontend/js/product/latest-refresh.js",
     "frontend/js/product/main.js",
     "tests/test_product_contracts.py",
     "tests/test_product_api.py",

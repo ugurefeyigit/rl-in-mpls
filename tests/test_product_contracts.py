@@ -189,9 +189,5 @@ def test_forbidden_product_vocabulary_is_enumerated():
     assert "causal importance" in banned
 
 
-def test_final_findings_carry_both_halves_of_the_planning_conclusion():
-    findings = " ".join(contracts.FINAL_FINDINGS).lower()
-    assert "did not positively establish" in findings
-    assert "does not establish that planning is generally irrelevant" in findings
-    assert "safety" in findings
-    assert "deceptive_local_optimum" in findings
+def test_product_contracts_do_not_duplicate_frozen_scientific_conclusions():
+    assert not hasattr(contracts, "FINAL_FINDINGS")

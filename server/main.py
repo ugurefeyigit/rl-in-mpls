@@ -31,6 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from mplssim.display import display_bundle, scenario_label
+from mplssim.evidence import identity
 from mplssim.factory import get_scenarios, get_topology, get_traffic_config
 from mplssim.validation import ConfigError, validate_configs
 from server import db
@@ -112,7 +113,7 @@ class MultiplierRequest(BaseModel):
 
 
 class RunUntilRequest(BaseModel):
-    condition: str = "next_event"   # next_event | congestion | end
+    condition: str = "next_event"   # next_event | congestion | failure | recovery | end
     max_steps: int = 300
     util_threshold: float = 0.9
 
@@ -222,9 +223,8 @@ def benchmark() -> dict:
 # ------------------------------------------------------ simulation control
 @app.post("/api/simulation/start")
 async def sim_start(req: StartRequest) -> dict:
-    old: SimSession | None = STATE["session"]
-    if old is not None:
-        await old.pause()
+    if req.seed in identity.HOLDOUT_SEEDS:
+        raise HTTPException(400, "frozen final-holdout seeds are blocked for live sessions")
     if req.scenario not in get_scenarios():
         raise HTTPException(400, f"unknown scenario {req.scenario}")
     for a in req.algorithms:
@@ -239,6 +239,9 @@ async def sim_start(req: StartRequest) -> dict:
         ))
     except (FileNotFoundError, ConfigError, ValueError) as e:
         raise HTTPException(400, str(e)) from e
+    old: SimSession | None = STATE["session"]
+    if old is not None:
+        await old.pause()
     STATE["session"] = session
     session.subscribers.append(WS_HUB.send)
     if req.autostart and not req.advisor:
@@ -537,22 +540,22 @@ async def ws_telemetry(ws: WebSocket) -> None:
 # ---------------------------------------------------------------- frontend
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(ROOT / "frontend" / "index.html")
+    return FileResponse(ROOT / "frontend" / "app.html")
 
 
 @app.get("/advanced")
 def advanced() -> FileResponse:
-    return FileResponse(ROOT / "frontend" / "index.html")
+    return FileResponse(ROOT / "frontend" / "app.html")
 
 
 @app.get("/present")
 def present() -> FileResponse:
-    return FileResponse(ROOT / "frontend" / "present.html")
+    return FileResponse(ROOT / "frontend" / "app.html")
 
 
 @app.get("/study")
 def study_page() -> FileResponse:
-    return FileResponse(ROOT / "frontend" / "study.html")
+    return FileResponse(ROOT / "frontend" / "app.html")
 
 
 # Read-only V2 study evidence. GET-only by construction — see server/evidence_api.py.

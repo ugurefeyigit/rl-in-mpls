@@ -21,15 +21,10 @@ FRONTEND = ROOT / "frontend"
 # Ids `study.js` binds to at boot. Renaming one in the markup without updating the
 # script throws on load, so the contract is pinned here.
 STUDY_IDS = [
-    "study-header", "stage-badge", "seal-band",
-    "nav-verdict", "nav-holdout", "nav-scenarios", "nav-churn",
-    "nav-development", "nav-provenance", "nav-replay",
-    "verdict-body", "holdout-body", "scenario-body", "scenario-figure",
-    "churn-body", "reward-body", "action-body",
-    "development-body", "development-curves",
-    "provenance-body", "integrity-body", "disclosure-body",
-    "replay-body", "replay-controls", "replay-timeline", "replay-readout",
-    "error-banner", "empty-state",
+    "mode-nav", "mode-presentation", "mode-network", "mode-rl",
+    "provenance-stamp", "context-ledger", "source-switch", "stage",
+    "atlas-svg", "topology-list", "mode-surface", "panel-rl",
+    "drawer-conclusion", "error-banner", "live-region",
 ]
 
 
@@ -48,7 +43,7 @@ def test_study_page_has_every_bound_element(client):
 def test_study_page_serves_with_its_title(client):
     r = client.get("/study")
     assert r.status_code == 200
-    assert "V2 Study" in r.text
+    assert "National Backbone Dispatch Atlas" in r.text
 
 
 def test_study_page_uses_only_vendored_assets(client):
@@ -129,9 +124,9 @@ def test_static_module_graph_still_resolves(client):
             assert client.get(f"/static/js/{target.name}").status_code == 200
 
 
-def test_existing_frontends_are_untouched_by_the_new_page(client):
-    """The study surface is additive. The two live UIs keep their contract."""
-    for path, marker in (("/", "Traffic Engineering Console"),
-                         ("/present", "National Backbone")):
+def test_legacy_frontend_routes_share_the_unified_shell(client):
+    """The cutover preserves URLs while replacing the disconnected surfaces."""
+    for path, marker in (("/", "National Backbone Dispatch Atlas"),
+                         ("/present", "National Backbone Dispatch Atlas")):
         r = client.get(path)
         assert r.status_code == 200 and marker in r.text

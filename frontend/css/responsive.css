@@ -1,0 +1,92 @@
+/* Desktop is the base composition. These are the three deliberate collapse points. */
+@media (max-width: 1280px) {
+  .shell-head { gap: var(--space-3); }
+  .wordmark__sub, .mode__hint, .tool__text { display: none; }
+  .stage-wrap { grid-template-columns: minmax(0, 1fr) 280px; }
+  .rl-grid { grid-template-columns: 1fr; }
+  .moment-rail__row { grid-template-columns: minmax(130px, 1.2fr) minmax(112px, 1fr)
+    minmax(210px, 1.8fr) minmax(112px, 1fr) repeat(4, minmax(118px, 1fr)); }
+}
+
+@media (max-width: 768px) {
+  html, body { height: auto; min-height: 100%; }
+  body { min-height: 100vh; grid-template-rows: auto auto auto auto; }
+  .shell-main { overflow-y: visible; }
+  .shell-head { flex-wrap: wrap; padding: var(--space-2) var(--space-3); }
+  .wordmark { border-right: 0; padding-right: 0; }
+  .modes { order: 3; width: 100%; flex-basis: 100%; border-top: var(--rule); }
+  .mode { flex: 1; padding-inline: var(--space-2); }
+  .head-tools { margin-left: auto; padding-left: 0; border-left: 0; }
+  .tool, .chip, .ctl, .icon-btn, .field, .ctl-field select, .ctl-field input {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .ledger { align-items: flex-start; }
+  .context { order: 3; width: 100%; flex-basis: 100%; }
+  .source-switch { margin-left: auto; }
+  .stage-wrap { display: block; }
+  .rail { border-left: 0; border-top: var(--rule); max-height: none; }
+  .atlas { min-height: 48vw; }
+  .rec__outcomes { grid-template-columns: 1fr; }
+  .cockpit { max-height: none; overflow-y: visible; }
+  .cockpit__group { width: 100%; min-width: 0; flex-wrap: wrap;
+                    border-right: 0; padding-right: 0; }
+  .drawer { width: 100vw; top: auto; max-height: 80vh; border-left: 0; border-top: var(--rule-strong); }
+  .filters { align-items: stretch; }
+  .filters__group { width: 100%; }
+  .pipeline, .table-scroll, .moment-rail__row, .story__beats { overflow-x: auto; }
+}
+
+@media (max-width: 390px) {
+  :root { --shell-pad: var(--space-3); }
+  .shell-head { display: grid; grid-template-columns: 1fr auto; }
+  .modes { grid-column: 1 / -1; display: grid;
+           grid-template-columns: .9fr 1.35fr 1fr; overflow: visible; }
+  .mode { min-width: 0; align-items: center; padding-inline: var(--space-1); text-align: center; }
+  .mode__label { font-size: .6875rem; line-height: 1.2; white-space: normal; }
+  .head-tools .tool:not(#btn-help) { display: none; }
+  .ledger { display: grid; grid-template-columns: 1fr auto; }
+  .ledger { gap: var(--space-2); padding-block: var(--space-2); }
+  .stamp { grid-column: 1 / -1; }
+  .source-switch { grid-column: 1 / -1; margin-left: 0; display: grid; overflow: visible; }
+  .source-switch__options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .source-switch__options .chip { width: 100%; justify-content: center; padding-inline: var(--space-1); }
+  .source-switch__options .chip { font-size: .625rem; letter-spacing: .03em; }
+  .context { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+             grid-auto-flow: dense; gap: var(--space-2); overflow: visible; }
+  .context__cell { min-width: 0; flex-direction: column; gap: 0; }
+  .context__cell[data-term="scenario"], .context__cell[data-term="policy"] { grid-column: span 3; }
+  .context__cell[data-term="selected"], .context__cell[data-term="stage"],
+  .context__cell[data-term="grain"] { grid-column: span 2; }
+  .context dt { font-size: .5625rem; }
+  .context dd { font-size: .6875rem; line-height: 1.3; }
+  .context dd { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+  .moment-rail { padding-block: var(--space-1); }
+  .moment-rail__row { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; }
+  .moment-cell { padding: var(--space-1) var(--space-2); border-bottom: var(--rule); }
+  .moment-cell[data-kind="phase"], .moment-cell[data-kind="time"],
+  .moment-cell[data-kind="incident"], .moment-cell[data-kind="action"] { grid-column: span 2; }
+  .moment-cell__value { white-space: normal; overflow: visible; text-overflow: clip; }
+  .moment-rail__change { font-size: .6875rem; line-height: 1.35; }
+  .stage__controls { overflow-x: auto; max-width: 100%; }
+  .atlas { min-height: 336px; overflow-x: auto; }
+  #atlas-svg { width: 720px; min-width: 720px; height: 336px; min-height: 336px; }
+  .rail { padding: var(--space-3); }
+  .mode-surface { padding-inline: var(--space-3); }
+  .facts { grid-template-columns: 1fr; }
+  .facts dd { margin-bottom: var(--space-2); }
+  .rec__head { align-items: flex-start; flex-wrap: wrap; }
+  .rec__facts { grid-template-columns: 1fr; }
+  .cmp__lane { grid-template-columns: 28px 1fr; }
+  .rl-subnav { display: grid; grid-template-columns: 1fr; }
+  .acts__grid { grid-template-columns: 1fr; }
+}
+
+/* Wide data regions own their overflow. The document itself never scrolls sideways. */
+.table-scroll, .pipeline, .story__beats { overflow-x: auto; max-width: 100%; }
+html, body { overflow-x: hidden; }
+
+@media print {
+  .head-tools, .source-switch, .cockpit, .stage__controls { display: none !important; }
+  body { background: white; color: black; }
+}

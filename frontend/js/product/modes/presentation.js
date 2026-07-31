@@ -8,8 +8,8 @@
  * link the same visual weight as the delivered ratio.
  */
 
-import { $, el, fill, unavailable } from "./dom.js";
-import { count, percent, signed } from "./format.js";
+import { $, el, fill, unavailable } from "../dom.js";
+import { count, percent, signed } from "../format.js";
 import { renderComparisonLane } from "../comparison-lane.js";
 import { BEATS, beatAt, progressText, storyContext } from "../guided-story.js";
 
@@ -83,14 +83,17 @@ function actionText(decision) {
 }
 
 /** One sentence about what changed since the prior completed step. */
-function changeSentence(state) {
+export function changeSentence(state) {
   const snapshot = state.data.snapshot;
   const previous = state.data.previousSnapshot;
   if (!snapshot?.metrics?.available) {
     return "Waiting for the first completed interval.";
   }
   if (!previous) {
-    return "This is the first interval of this run, so there is nothing to compare against yet.";
+    if ((snapshot.time?.step ?? 0) <= 1) {
+      return "This is the first completed interval, so there is nothing to compare against yet.";
+    }
+    return "No prior browser snapshot is available for comparison with this progressed session.";
   }
   const parts = [];
   const nowFailed = new Set(snapshot.incident.failed_links);
@@ -157,12 +160,6 @@ function renderPresentationRail(state) {
   if (state.mode !== "presentation") return;
 
   fill(rail, [
-    el("section", { class: "panel" }, [
-      el("h2", { class: "panel__title", text: "What changed" }),
-      snapshot
-        ? el("p", { class: "prose", text: changeSentence(state) })
-        : unavailable("What changed", "No session snapshot yet."),
-    ]),
     el("section", { class: "panel" }, [
       el("h2", { class: "panel__title", text: "Network condition" }),
       snapshot ? conditionList(snapshot)

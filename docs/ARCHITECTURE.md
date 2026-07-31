@@ -2,15 +2,15 @@
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│ frontend/ (static, no build step)                                      │
-│   index.html   Cytoscape topology · ECharts · decision tape (live)     │
-│   present.html Presentation Mode (live)                                │
-│   study.html   V2 sealed evidence record (read-only, no session)       │
+│ frontend/ (static ES modules, no build step)                           │
+│   app.html     shared shell · fixed SVG topology · three modes         │
+│   js/product/ typed source adapters · store guards · mode renderers    │
 │         ▲ REST (fetch)                  ▲ WebSocket /ws/telemetry      │
 ├─────────┴───────────────────────────────┴──────────────────────────────┤
 │ server/ (FastAPI, one process)                                         │
 │   main.py    REST + WS endpoints, training-job subprocess control      │
 │   evidence_api.py  GET-only /api/v2/* over the frozen V2 evidence      │
+│   product_api.py   additive typed product snapshot/decision endpoints  │
 │   session.py SimSession → AlgoRunner(s): paced stepping, decisions,    │
 │              explanations, counterfactuals, paired compare mode        │
 │   db.py      SQLite run summaries                                      │
@@ -25,7 +25,8 @@
 │   baselines/ static SP · greedy utilization · CSPF reopt · random      │
 │   rl/        MplsTeEnv (Gymnasium, masked Discrete actions), reward    │
 │   experiments/ paired episode runner + summary metrics                 │
-│   evidence/  read-only access to the CLOSED V2 study:                  │
+│   evidence/  read-only access to the CLOSED V2 study                   │
+│   product/   display metadata, source contracts, schemas, serializers  │
 │              identity.py frozen study constants (no I/O)               │
 │              loader.py   fail-closed schema/identity/integrity checks  │
 │              claims.py   every scientific calculation, one place       │
@@ -83,12 +84,32 @@ intervals) and flap detection discourage oscillation.
 the UI shows proposed vs accepted actions and rejection reasons. Evaluation
 can disable it (`--no-safety`) for the experimental-mode comparison.
 
+### Shared shell and typed sources
+`frontend/app.html` serves `/`, `/advanced`, `/present`, and `/study`. Client
+routing selects one of three modes without creating separate products. The
+store guards live snapshots by session generation and monotonic sequence, and
+guards asynchronous reads by source revision so a late LIVE response cannot
+populate a RECORDED or evidence surface.
+
+Four adapters preserve the data boundary: live V1 may execute and render link
+telemetry; recorded V2 is immutable and has no per-link utilization;
+development evidence is selection-stage only; final evidence is the frozen
+one-shot holdout. Source changes clear incompatible snapshots, timelines,
+decisions, comparisons, recommendations, selections, and story state.
+
+The SVG atlas reads a display-only map built from the existing schematic
+coordinates. It never writes to `configs/topology.yaml`, moves a node during a
+session, or feeds display coordinates back to the simulator.
+
 ### Why the frontend has no build step
-The demo machine has no Node toolchain, and a presentation must not depend on
-npm or a CDN. Cytoscape.js + ECharts are vendored under `frontend/vendor/`;
-the app is plain ES modules served by FastAPI. Cytoscape.js was chosen for
-first-class network-graph styling (per-edge data-driven color/width, overlay
-classes for LSP highlighting) without a framework dependency.
+The demo must work offline without npm or a CDN. The application is plain local
+HTML, CSS, and ES modules served by FastAPI; legacy vendor assets remain for
+compatibility surfaces but the unified topology has no runtime framework.
+
+The unified product reads a live interval through
+`GET /api/simulation/moment`. The endpoint holds the session lock while it
+serializes the snapshot, decision, timeline, comparison, and recommendation, so
+the interface cannot combine fields from different simulation intervals.
 
 
 ## The read-only evidence path

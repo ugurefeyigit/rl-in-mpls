@@ -1,24 +1,19 @@
-"""Display-only curated Turkey layout for the topology stage.
+"""Display-only fixed engineering layout for the topology stage.
 
 This registry is *presentation metadata*. `configs/topology.yaml` keeps the
 scientific graph — router IDs, link IDs, endpoints, capacities, delays and
 weights — and nothing here may change it. The x/y in the scientific config is a
-schematic left-to-right diagram; these coordinates are a curated, geographically
-recognizable arrangement of the same 18 routers so a room audience can read the
-network as a national backbone.
-
-The layout is **curated, not GIS**. West/east and regional relationships are
-correct enough to be intuitive; absolute positions are not survey data, and the
-product says so wherever network imagery appears.
+schematic left-to-right diagram. The product reuses that proven placement,
+scaled into SVG coordinates, so paths and node plates remain easy to separate.
+City names provide the presentation vocabulary; their placement is explicitly
+not geographic.
 
 Positions are fixed. There is no force-directed layout and nothing moves during
 a session: a node that drifts between two steps destroys the one visual anchor
 the whole product depends on.
 
-Coordinates are normalized to a 0-100 box, y increasing downward (SVG order).
-Bend points are display-only waypoints chosen so links clear node plates and so
-the two links the study talks about most — `L11` Ankara-Kayseri and `L20`
-Kayseri-Samsun — stay visually separable.
+Coordinates preserve the original topology diagram with a display-only scale,
+y increasing downward (SVG order). No coordinate is written back to the engine.
 """
 
 from __future__ import annotations
@@ -51,40 +46,20 @@ class NodeLayout:
     anchor: str
 
 
-#: Curated positions, from the approved design specification (§9.1).
-NODE_LAYOUT: dict[str, NodeLayout] = {
-    "PE1": NodeLayout(8, 30, "left"),      # İstanbul
-    "PE2": NodeLayout(7, 64, "left"),      # İzmir
-    "PE3": NodeLayout(16, 45, "left"),     # Bursa
-    "PE4": NodeLayout(28, 87, "below"),    # Antalya
-    "P1": NodeLayout(28, 48, "below"),     # Eskişehir
-    "P2": NodeLayout(41, 40, "above"),     # Ankara
-    "P3": NodeLayout(41, 70, "below"),     # Konya
-    "P4": NodeLayout(31, 31, "above"),     # Bolu
-    "P5": NodeLayout(54, 53, "right"),     # Kayseri
-    "P6": NodeLayout(55, 82, "below"),     # Adana
-    "P7": NodeLayout(67, 79, "below"),     # Gaziantep
-    "P8": NodeLayout(57, 21, "above"),     # Samsun
-    "A1": NodeLayout(65, 48, "above"),     # Sivas
-    "A2": NodeLayout(71, 62, "right"),     # Malatya
-    "PE5": NodeLayout(71, 17, "above"),    # Trabzon
-    "PE6": NodeLayout(83, 35, "right"),    # Erzurum
-    "PE7": NodeLayout(80, 70, "below"),    # Diyarbakır
-    "PE8": NodeLayout(94, 53, "right"),    # Van
+#: Label placement is presentation metadata; router coordinates come directly
+#: from the existing pre-redesign schematic and remain read-only.
+LABEL_ANCHORS: dict[str, str] = {
+    router_id: "center" for router_id in (
+        "PE1", "PE2", "PE3", "PE4", "P1", "P2", "P3", "P4", "P5",
+        "P6", "P7", "P8", "A1", "A2", "PE5", "PE6", "PE7", "PE8"
+    )
 }
 
-#: Display-only waypoints. A link with no entry is drawn straight.
-#: Each bend exists to clear a node plate or to make an unavoidable crossing
-#: read as deliberate rather than accidental.
-LINK_BENDS: dict[str, tuple[tuple[float, float], ...]] = {
-    "L3": ((26, 58),),                       # İzmir-Ankara, south of Eskişehir
-    "L4": ((28, 41),),                       # Bursa-Ankara, north of Eskişehir
-    "L7": ((24, 37),),                       # İstanbul-Ankara, north of Bolu's approach
-    "L12": ((46, 60),),                      # Ankara-Adana, west of Kayseri
-    "L14": ((54, 73),),                      # Konya-Gaziantep, north of Adana
-    "L15": ((45, 35),),                      # Bolu-Kayseri, north of Ankara
-    "L18": ((36, 42), (52, 62), (60, 74)),   # Bolu-Gaziantep long detour arc
-    "L30": ((74, 54),),                      # Sivas-Diyarbakır, east of Malatya
+# The legacy Cytoscape view rendered this long P4-P7 edge as a Bezier curve.
+# One fixed waypoint preserves that clearance in the SVG renderer so it does
+# not pass through the P5 and P6 plates.
+SCHEMATIC_BENDS: dict[str, tuple[tuple[float, float], ...]] = {
+    "L18": ((80.0, 31.5),),
 }
 
 #: Links the governed study and the guided story point at by name. The layout
@@ -113,8 +88,8 @@ UTILIZATION_BANDS: tuple[dict[str, Any], ...] = (
     {"id": "overloaded", "max": None, "label": "over 100%", "state": "failure", "ticks": 3},
 )
 
-GEOGRAPHIC_PRECISION = "curated_not_gis"
-LAYOUT_NOTE = "Curated geographic layout · not exact GIS"
+GEOGRAPHIC_PRECISION = "engineering_schematic"
+LAYOUT_NOTE = "Fixed engineering schematic for readability · not geographic"
 
 
 def capacity_class(capacity_mbps: float) -> dict[str, Any]:
@@ -138,7 +113,8 @@ def display_map(topology: Any) -> dict[str, Any]:
     """
     nodes = []
     for router_id, router in topology.routers.items():
-        layout = NODE_LAYOUT[router_id]
+        layout = NodeLayout(router.x / 8.0 + 5.0, router.y / 10.0,
+                            LABEL_ANCHORS[router_id])
         nodes.append({
             "id": router_id,
             "city": CITY_NAMES[router_id],
@@ -164,13 +140,13 @@ def display_map(topology: Any) -> dict[str, Any]:
             "capacity_mbps": link.capacity_mbps,
             "capacity_class": cls["id"],
             "stroke": cls["stroke"],
-            "bends": [list(p) for p in LINK_BENDS.get(link_id, ())],
+            "bends": [list(point) for point in SCHEMATIC_BENDS.get(link_id, ())],
             "signature": SIGNATURE_LINKS.get(link_id),
         })
     return {
         "geographic_precision": GEOGRAPHIC_PRECISION,
         "layout_note": LAYOUT_NOTE,
-        "viewbox": [0, 0, 100, 100],
+        "viewbox": [0, 0, 135, 63],
         "nodes": sorted(nodes, key=lambda n: (n["y"], n["x"])),
         "links": links,
         "capacity_classes": list(CAPACITY_CLASSES),

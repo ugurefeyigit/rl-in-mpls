@@ -335,24 +335,7 @@ REQUIRED_VOCABULARY: dict[str, str] = {
 }
 
 
-# ------------------------------------------------------------- final findings
-#: The closed study's conclusions. Both halves of the temporal-planning finding
-#: travel together — a positive half alone would misrepresent the result.
-FINAL_FINDINGS: tuple[str, ...] = (
-    "Masked bandit returned 18.221, MaskablePPO 9.036 and greedy -2.327 on the "
-    "one-shot final holdout.",
-    "The masked bandit won all three training roots and six of seven scenarios.",
-    "MaskablePPO led only deceptive_local_optimum, by 1.107.",
-    "Safety remained intact across the holdout: no protected-class violation and "
-    "no invalid transition was admitted.",
-    "The bandit moved more bandwidth than PPO but drastically less than greedy.",
-    "The evidence did not positively establish a need for temporal planning in "
-    "this formulation.",
-    "This does not establish that planning is generally irrelevant to MPLS or "
-    "traffic engineering.",
-)
-
 #: The disclaimer that must accompany any network imagery.
 TOPOLOGY_DISCLAIMER = (
     "Fictional scaled national backbone for demonstration — not a real operator "
-    "topology. Curated geographic layout · not exact GIS.")
+    "topology. Fixed engineering schematic · not geographic.")

@@ -2,13 +2,13 @@
 
 ## Direction contract
 
-**Thesis.** RL-in-MPLS is a dispatch atlas for one simulated network, not a dashboard of unrelated metrics. The stable Turkey topology and its route changes own the visual field; every surrounding element reads like the quiet notation, time band, and operating ledger of an infrastructure control room.
+**Thesis.** RL-in-MPLS is a dispatch atlas for one simulated network, not a dashboard of unrelated metrics. The stable engineering topology and its route changes own the visual field; every surrounding element reads like the quiet notation, time band, and operating ledger of an infrastructure control room.
 
 **Own world.** Matte blue-black drafting surfaces, cool mineral neutrals, fine cartographic rules, humanist language typography, condensed city plates, and tabular instrument numerals. Semantic color is used on routes and state, never as decorative glow.
 
 **Story.** The viewer locates the network state, sees the incident and policy decision, follows old → proposed → observed routing, and can deepen the same moment into network or RL detail without losing context.
 
-**First viewport.** A restrained application header and provenance ledger frame a geographically recognizable Turkey topology occupying most of the viewport. A time-distance incident band runs along its lower edge. Current facts sit in one quiet rail; a recommendation appears directly beneath the map only when an actual recommendation exists.
+**First viewport.** A restrained application header and provenance ledger frame a readable fixed engineering schematic occupying most of the viewport. A time-distance incident band runs along its lower edge. Current facts sit in one quiet rail; a recommendation appears directly beneath the map only when an actual recommendation exists.
 
 **Form.** A railway dispatcher's working diagram fused with a national infrastructure atlas. It refuses both the generic NOC card grid and the academic report page as the primary application form.
 
@@ -24,7 +24,7 @@ Three genuinely different directions were evaluated:
 
 | Direction | Product fit | Decision |
 |---|---|---|
-| **Dispatch Atlas** — national infrastructure atlas plus railway time-distance working diagram | Makes stable geography, incident time, route movement, and synchronized comparison one coherent object. Scales from a presentation stage to technical inspection. | Chosen |
+| **Dispatch Atlas** — national infrastructure atlas plus railway time-distance working diagram | Makes stable network structure, incident time, route movement, and synchronized comparison one coherent object. Scales from a presentation stage to technical inspection. | Chosen |
 | **Bench Instrument** — tactile creator hardware with keyed controls and a single amber readout | Excellent for presenter controls and state certainty, but turns the product into a control surface and makes the network secondary. | Rejected |
 | **Timeband Console** — a 16-step instrument sequencer adapted to five-minute intervals | Strong story progress and causality, but overweights time, implies looping, and encourages ambient motion the product does not need. | Rejected |
 
@@ -144,9 +144,9 @@ P2    3 LSP · 62%
 - Alternate path: thinner dashed rail.
 - Comparator: parallel offset rail, never a glow.
 
-### Geography
+### Schematic placement
 
-Use a curated, geographically recognizable Turkey layout, not an exact GIS claim. West/east and regional relationships must feel correct. Node positions remain stable in every mode and state. Links use deliberate bends and shared trunks to reduce crossings. The long Kayseri–Samsun constraint and Ankara–Kayseri failure corridor must be legible.
+Use the stable pre-redesign engineering schematic, display-scaled from the existing topology coordinates. It is intentionally non-geographic: route readability and node separation take priority over city location. Node positions remain stable in every mode and state. Links use deliberate bends and shared trunks to reduce crossings. The Kayseri–Samsun constraint and Ankara–Kayseri failure corridor must remain legible. This placement is display-only and never changes simulator topology or routing semantics.
 
 ## Charts and tables
 
@@ -194,7 +194,7 @@ Motion explains change; nothing moves continuously.
 - WCAG 2.1 AA for text and meaningful graphics.
 - Minimum 44×44 px touch targets at 768 px and below.
 - Visible focus not hidden by selection state.
-- Topology objects are keyboard reachable in geographic order, with arrow-key local navigation and a list alternative.
+- Topology objects are keyboard reachable in stable schematic reading order, with arrow-key navigation and a list alternative.
 - Incidents, failures, pressure, selection, provenance, and policy series use shape, label, line style, or token in addition to color.
 - Live regions announce state changes and recommendations without narrating every telemetry tick.
 - Focus returns to the invoking control when a drawer or modal closes.

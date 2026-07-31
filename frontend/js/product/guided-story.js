@@ -15,6 +15,29 @@ export const STORY_SCENARIO = "demo_evening";
 export const STORY_SEED = 42;
 export const STORY_COMPARATOR = "greedy";
 
+export function storySessionConfig() {
+  return {
+    scenario: STORY_SCENARIO,
+    algorithms: ["rl", STORY_COMPARATOR],
+    seed: STORY_SEED,
+    model_tag: "ppo_te",
+    safety_filter: true,
+    speed: "1x",
+    autostart: false,
+    advisor: true,
+    interface_mode: "present",
+  };
+}
+
+export function matchesStorySession(status) {
+  return Boolean(status?.session_id
+    && status.scenario === STORY_SCENARIO
+    && status.seed === STORY_SEED
+    && status.model_tag === "ppo_te"
+    && status.advisor === true
+    && status.algorithms?.join(",") === `rl,${STORY_COMPARATOR}`);
+}
+
 /**
  * `advance` is what the presenter's Next does at this beat. `narrate` builds the
  * copy from the live snapshot, so it can only say what the payload contains.
@@ -111,15 +134,15 @@ export const BEATS = [
   {
     id: 9,
     label: "Demand surge and failure",
-    advance: { kind: "runUntil", condition: "next_event" },
+    advance: { kind: "runUntil", condition: "failure" },
     narrate: (ctx) =>
       ctx.failedLinks.length
         ? `A link has failed: ${ctx.failedLabels.join(", ")}. The engine's built-in ` +
           `fast reroute moved the affected paths immediately — that is protection, ` +
           `not a controller decision. What follows is the traffic-engineering ` +
           `response to the pressure the failure left behind.`
-        : `We have advanced to ${ctx.clock}. The scripted flash crowd and the ` +
-          `Kayseri–Samsun failure arrive later in this scenario; nothing is failed yet.`,
+        : `We advanced to ${ctx.clock}, but the scenario did not expose the scheduled ` +
+          `Kayseri–Samsun failure within the allowed window.`,
   },
   {
     id: 10,
@@ -135,7 +158,7 @@ export const BEATS = [
   {
     id: 11,
     label: "Repair and conclusion",
-    advance: { kind: "runUntil", condition: "next_event" },
+    advance: { kind: "runUntil", condition: "recovery" },
     conclusion: true,
     narrate: () =>
       `That is one evening on one simulated backbone. What the closed V2 study ` +

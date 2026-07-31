@@ -590,9 +590,13 @@ class SimSession:
     async def run_until(self, condition: str, max_steps: int = 300,
                         util_threshold: float = 0.9) -> dict[str, Any]:
         """Fast-forward (used by Guided Story's 'Next Event'):
-        condition = 'next_event' | 'congestion' | 'end'. Steps synchronously
+        condition = 'next_event' | 'congestion' | 'failure' | 'recovery' |
+        'end'. Steps synchronously
         under the lock; no wall-clock pacing; state must not be RUNNING."""
         async with self._lock:
+            allowed = {"next_event", "congestion", "failure", "recovery", "end"}
+            if condition not in allowed:
+                raise SessionError(f"unknown run-until condition: {condition}")
             if self.state == SessionState.RUNNING:
                 raise SessionError("pause before fast-forwarding")
             if self.done:
@@ -602,6 +606,7 @@ class SimSession:
             if self.state == SessionState.IDLE:
                 self.state = SessionState.PAUSED
             eng = self.runners[0].eng
+            failure_seen = any(not up for up in eng.link_up.values())
             next_event_t = None
             if condition == "next_event":
                 future = [ev["t_min"] for ev in eng.scenario.events
@@ -617,6 +622,15 @@ class SimSession:
                         break
                 elif condition == "congestion":
                     if payload["runs"][0]["snapshot"]["metrics"]["max_util"] >= util_threshold:
+                        break
+                elif condition == "failure":
+                    if any(not up for up in eng.link_up.values()):
+                        break
+                elif condition == "recovery":
+                    failure_seen = failure_seen or any(
+                        not up for up in eng.link_up.values()
+                    )
+                    if failure_seen and all(eng.link_up.values()):
                         break
             if self.done:
                 self.state = SessionState.COMPLETED

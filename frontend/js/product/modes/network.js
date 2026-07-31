@@ -5,8 +5,8 @@
  * map. There is one selection and one moment behind all three.
  */
 
-import { $, el, fill, unavailable } from "./dom.js";
-import { count, mbps, metricDelta, metricValue, percent } from "./format.js";
+import { $, el, fill, unavailable } from "../dom.js";
+import { count, mbps, metricDelta, metricValue, percent } from "../format.js";
 import { renderDemandRiskTable, riskSummary } from "../demand-risk-table.js";
 import { matchesDemand, renderFilterBar } from "../network-filters.js";
 import { crosses, renderInspector } from "../object-inspector.js";

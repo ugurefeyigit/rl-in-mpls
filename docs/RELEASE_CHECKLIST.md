@@ -8,8 +8,8 @@ around it without disturbing the record.
 - [ ] `git status` shows only the intended working set. The one expected
       pre-existing change is `results/environment_v2_validation/manifest.json`,
       which is **preserved unstaged and never committed**.
-- [ ] That file's SHA-256 is
-      `5680610c95cec9551cd22fad2b365b1023485f59edb87d3e568bc908eda086c0`.
+- [ ] In the implementation worktree, that file's SHA-256 is
+      `5227c91a1990c52101a510bc7115c049e138d5b34c2cdd649c66c8aa726a979d`.
       A mismatch stops the release.
 
       ```bash
@@ -60,6 +60,8 @@ Must be empty apart from the one preserved manifest.
       [V2_EVIDENCE_AUDIT.md](V2_EVIDENCE_AUDIT.md).
 - [ ] Development and final-holdout evidence appear in separate regions and are
       never averaged.
+- [ ] LIVE, RECORDED, DEVELOPMENT, and FINAL EVIDENCE remain distinct after
+      repeated source switching; no stale live timeline survives a switch.
 - [ ] Both halves of the planning statement appear together.
 
 ## Tests
@@ -74,6 +76,12 @@ Must be empty apart from the one preserved manifest.
 
       ```bash
       python -m pytest tests/test_presentation.py tests/test_api_e2e.py -q
+      ```
+
+- [ ] Unified shell, product API, and accessibility contracts:
+
+      ```bash
+      python -m pytest tests/test_product_contracts.py tests/test_product_api.py tests/test_product_ui.py tests/test_product_accessibility.py -q
       ```
 
 - [ ] Freeze / pin gates and V1↔V2 compatibility:
@@ -95,7 +103,9 @@ and `runs/` and do not commit it.
 
 ## Product
 
-- [ ] `/study`, `/present` and `/` all serve.
+- [ ] `/`, `/advanced`, `/present`, and `/study` all serve the unified shell.
+- [ ] Exactly three primary modes are visible; Guided Story is nested inside
+      Presentation.
 - [ ] No page pulls an external asset — the demo machine may be offline.
 - [ ] `/api/v2/*` is GET-only and exposes no train, tune, evaluate, select, sweep
       or rerun route.
@@ -106,8 +116,7 @@ and `runs/` and do not commit it.
 
 ## Visual and accessibility
 
-- [ ] Checked at desktop (1280×800), presentation (1920×1080), narrow
-      (768×1024) and phone (375×812).
+- [ ] Fresh loads checked at 1920×1080, 1440×900, 1280 px, 768 px, and 390 px.
 - [ ] Zero horizontal page overflow at every width; wide tables scroll inside
       their own container.
 - [ ] Charts never paint wider than the box CSS gave them.
@@ -117,6 +126,8 @@ and `runs/` and do not commit it.
 - [ ] Visible keyboard focus; skip link; landmarks.
 - [ ] `prefers-reduced-motion` honoured.
 - [ ] Loading, empty, failure and replay-unavailable states all reachable.
+- [ ] Fixed router plates do not overlap, leave the atlas, or move during a
+      session; the schematic/non-geographic disclaimer remains visible.
 
 ## Commit and push
 
@@ -146,12 +157,10 @@ and `runs/` and do not commit it.
   `congested_links`) but not per-link utilization, so replay shows the real
   per-interval operational record. Colouring individual links would require
   inventing data and is deliberately not done.
-- **Live-resize could not be exercised in the QA harness.** The browser tooling
-  changes the viewport without dispatching `resize` or firing `ResizeObserver`,
-  so chart re-fitting on window resize is implemented against both signals but
-  verified only on fresh loads at each width.
-- **Screenshots were not captured.** The Browser pane was not displayed during
-  QA, so verification was done by measuring layout, overflow and computed
-  contrast in the live page rather than by image inspection.
+- **V2 live policy demonstration is unavailable in this checkout.** Only V1
+  live checkpoints are configured; the capability catalogue prints the reason.
+- **PPO entropy/value are unavailable.** The live runner does not expose them,
+  so the decision surface prints an unavailable reason rather than deriving
+  substitutes.
 - The scientific limitations of the study itself are unchanged; see
   [TECHNICAL_DEFENSE.md](TECHNICAL_DEFENSE.md) §8.

@@ -22,11 +22,22 @@ export function renderGovernedStudy(state) {
     return el("p", { class: "tb-empty", text: "Loading the frozen study record…" });
   }
 
-  return el("div", { class: "study" }, [
-    finalRegion(state, evidence),
-    developmentRegion(state, evidence),
-    disclosuresRegion(evidence),
-  ]);
+  const regions = studyRegionsForSource(state.source.kind);
+  if (!regions.length) {
+    return unavailable("Choose an evidence record",
+      "Governed study results are not part of a live session. Select DEVELOPMENT or FINAL EVIDENCE explicitly.");
+  }
+  return el("div", { class: "study" }, regions.map((region) => {
+    if (region === "final") return finalRegion(state, evidence);
+    if (region === "development") return developmentRegion(state, evidence);
+    return disclosuresRegion(evidence);
+  }).filter(Boolean));
+}
+
+export function studyRegionsForSource(kind) {
+  if (kind === "final_holdout_evidence") return ["final", "disclosures"];
+  if (kind === "development_evidence") return ["development", "disclosures"];
+  return [];
 }
 
 /* ------------------------------------------------------------ final evidence */
@@ -35,7 +46,9 @@ function finalRegion(state, evidence) {
   const scenarios = evidence.finalScenarios;
   const actions = evidence.finalActions;
   const integrity = evidence.finalIntegrity;
+  const rewardComponents = evidence.finalRewardComponents;
   const contracts = state.data.contracts;
+  const findings = conclusionFindings(evidence) || [];
 
   return el("section", { class: "region region--final", "aria-labelledby": "final-heading" }, [
     el("header", { class: "region__head" }, [
@@ -49,14 +62,15 @@ function finalRegion(state, evidence) {
               "tuned, reselected or retried on these seeds." }),
     ]),
 
-    contracts
-      ? el("ul", { class: "findings" }, contracts.final_findings.map((finding) =>
+    findings.length
+      ? el("ul", { class: "findings" }, findings.map((finding) =>
           el("li", { class: "findings__item", text: finding })))
-      : null,
+      : unavailable("Conclusions unavailable", "The frozen conclusion payload did not load."),
 
     holdout ? holdoutTable(holdout) : loading(),
     scenarios ? scenarioTable(scenarios) : loading(),
     actions ? actionRegion(actions, state) : loading(),
+    rewardComponents ? rewardRegion(rewardComponents) : loading(),
     integrity ? integrityRegion(integrity) : loading(),
   ]);
 }
@@ -66,9 +80,10 @@ function loading() {
 }
 
 function holdoutTable(holdout) {
-  const rows = holdout.policies || holdout.results || holdout.returns || [];
-  const list = Array.isArray(rows) ? rows : Object.entries(rows).map(
-    ([id, value]) => (typeof value === "object" ? { id, ...value } : { id, value }));
+  const list = holdoutRows(holdout);
+  const columns = ["operational_return_mean", "delivered_ratio_mean_mean",
+    "sla_violations_demand_intervals_mean", "reroutes_per_hour_mean",
+    "moved_mbps_total_mean", "noop_frequency_mean"];
 
   return el("div", { class: "table-scroll" }, [
     el("table", { class: "grid" }, [
@@ -77,22 +92,20 @@ function holdoutTable(holdout) {
            "means, each over five holdout seeds." }),
       el("thead", {}, [el("tr", {}, [
         el("th", { scope: "col", text: "Method" }),
-        ...columnsOf(list).map((key) => el("th", { scope: "col", text: label(key) })),
+        ...columns.map((key) => el("th", { scope: "col", text: label(key) })),
       ])]),
       el("tbody", {}, list.map((row) => el("tr", {}, [
         el("th", { scope: "row", text: row.id || row.algorithm || row.policy_id }),
-        ...columnsOf(list).map((key) => el("td", { text: cell(row[key]) })),
+        ...columns.map((key) => el("td", { text: cell(row[key]) })),
       ]))),
     ]),
   ]);
 }
 
 function scenarioTable(payload) {
-  const scenarios = payload.scenarios || {};
-  const names = Object.keys(scenarios);
-  if (!names.length) return unavailable("Scenarios", "The artifact reports no scenarios.");
-  const methods = Object.keys(scenarios[names[0]] || {})
-    .filter((k) => typeof scenarios[names[0]][k] === "number");
+  const scenarios = scenarioRows(payload);
+  if (!scenarios.length) return unavailable("Scenarios", "The artifact reports no scenarios.");
+  const methods = ["bandit", "ppo", "static", "greedy", "cspf", "advantage", "winner"];
 
   return el("div", { class: "table-scroll" }, [
     el("table", { class: "grid" }, [
@@ -101,30 +114,25 @@ function scenarioTable(payload) {
         el("th", { scope: "col", text: "Scenario" }),
         ...methods.map((m) => el("th", { scope: "col", text: label(m) })),
       ])]),
-      el("tbody", {}, names.map((name) => el("tr", {}, [
-        el("th", { scope: "row", text: name }),
-        ...methods.map((m) => el("td", { text: cell(scenarios[name][m]) })),
+      el("tbody", {}, scenarios.map((row) => el("tr", {}, [
+        el("th", { scope: "row", text: row.scenario }),
+        ...methods.map((m) => el("td", { text: cell(row[m]) })),
       ]))),
     ]),
   ]);
 }
 
 function actionRegion(actions, state) {
-  const noop = actions.noop || {};
   const grains = state.data.contracts?.noop_metrics || {};
 
   // Each no-op grain gets its own block with its own denominator printed. They
   // are never placed in one column where a reader could average them.
-  const blocks = Object.entries(noop).map(([grain, value]) => {
-    const meta = grains[grain];
-    const rows = (value && typeof value === "object")
-      ? Object.entries(value)
-      : [[grain, value]];
+  const blocks = noopBlocks(actions, grains).map(({ meta, values, grain }) => {
+    const rows = Object.entries(values);
     return el("div", { class: "panel" }, [
-      el("h4", { class: "panel__title", text: meta?.label || label(grain) }),
+      el("h4", { class: "panel__title", text: meta.label }),
       el("p", { class: "rew__note",
-        text: meta ? `Denominator: ${meta.denominator}. ${meta.description}`
-                   : "Denominator not declared for this measure." }),
+        text: `Denominator: ${meta.denominator}. ${meta.description}` }),
       el("div", { class: "table-scroll" }, [
         el("table", { class: "grid" }, [
           el("thead", {}, [el("tr", {}, [
@@ -144,7 +152,33 @@ function actionRegion(actions, state) {
     el("h3", { class: "panel__title", text: "Action and no-op distribution" }),
     ...blocks,
     el("p", { class: "rew__note",
-      text: `Distribution source: ${shortHash(actions.source_sha)}` }),
+      text: `Distribution source: ${shortHash(actions.source_sha)} Â· ` +
+            `${count(actions.noop?.steps_per_policy)} recorded steps per policy.` }),
+  ]);
+}
+
+function rewardRegion(payload) {
+  const components = payload.component_names || [];
+  const rows = payload.rows || [];
+  return el("div", { class: "panel" }, [
+    el("h3", { class: "panel__title", text: "Twelve-component reward integrity" }),
+    el("p", { class: "rew__note", text: payload.exact
+      ? `Exact sums reconcile. Maximum residual ${cell(payload.max_residual)}.`
+      : `Reward sums do not reconcile; maximum residual ${cell(payload.max_residual)}.` }),
+    el("div", { class: "table-scroll" }, [
+      el("table", { class: "grid" }, [
+        el("thead", {}, [el("tr", {}, [
+          el("th", { scope: "col", text: "Policy / root" }),
+          ...components.map((name) => el("th", { scope: "col", text: label(name) })),
+          el("th", { scope: "col", text: "Sum" }),
+        ])]),
+        el("tbody", {}, rows.map((row) => el("tr", {}, [
+          el("th", { scope: "row", text: `${row.policy_id} Â· ${row.training_root}` }),
+          ...components.map((name) => el("td", { text: cell(row.components?.[name]) })),
+          el("td", { text: cell(row.sum) }),
+        ]))),
+      ]),
+    ]),
   ]);
 }
 
@@ -163,6 +197,7 @@ function integrityRegion(integrity) {
 /* -------------------------------------------------------------- development */
 function developmentRegion(state, evidence) {
   const continuity = evidence.developmentContinuity;
+  const seed42 = evidence.developmentSeed42;
   return el("section", { class: "region region--development",
                          "aria-labelledby": "development-heading" }, [
     el("header", { class: "region__head" }, [
@@ -194,6 +229,32 @@ function developmentRegion(state, evidence) {
           ]),
         ])
       : loading(),
+    continuity?.summary?.methods
+      ? methodTable("Three-root continuity methods", continuity.summary.methods,
+          `Selection-stage source ${shortHash(continuity.source_sha)}`)
+      : loading(),
+    seed42?.methods
+      ? methodTable("Seed-42 pilot methods", seed42.methods, seed42.caption)
+      : loading(),
+  ]);
+}
+
+function methodTable(title, rows, caption) {
+  const columns = ["operational_return_mean", "root_return_mean", "delivered_ratio",
+    "sla_violations_demand_intervals", "reroutes_per_hour", "moved_mbps_total"]
+    .filter((key) => rows.some((row) => row[key] !== undefined));
+  return el("div", { class: "panel table-scroll" }, [
+    el("table", { class: "grid" }, [
+      el("caption", { text: `${title} Â· ${caption}` }),
+      el("thead", {}, [el("tr", {}, [
+        el("th", { scope: "col", text: "Method" }),
+        ...columns.map((key) => el("th", { scope: "col", text: label(key) })),
+      ])]),
+      el("tbody", {}, rows.map((row) => el("tr", {}, [
+        el("th", { scope: "row", text: row.algorithm }),
+        ...columns.map((key) => el("td", { text: cell(row[key]) })),
+      ]))),
+    ]),
   ]);
 }
 
@@ -226,8 +287,11 @@ function disclosuresRegion(evidence) {
 
 /* ------------------------------------------------------------ conclusion */
 export function renderConclusion(state) {
-  const contracts = state.data.contracts;
-  const findings = contracts?.final_findings || [];
+  const findings = conclusionFindings(state.data.evidence);
+  if (!findings) {
+    return [unavailable("Final evidence unavailable",
+      state.data.evidence.error || "The frozen conclusion payload did not load.")];
+  }
   return [
     el("p", { class: "prose",
       text: "This is a frozen record, opened over a live run. It is not part of " +
@@ -238,6 +302,36 @@ export function renderConclusion(state) {
       text: "Open RL Information → Governed Study for the full record, including " +
             "per-scenario results, integrity and provenance." }),
   ];
+}
+
+export function holdoutRows(payload) {
+  return Array.isArray(payload?.aggregate) ? payload.aggregate : [];
+}
+
+export function scenarioRows(payload) {
+  return Array.isArray(payload?.scenarios)
+    ? payload.scenarios.map((row) => ({ ...row, ...(row.baselines || {}) }))
+    : [];
+}
+
+export function noopBlocks(actions, grains) {
+  const noop = actions?.noop || {};
+  const mapping = [
+    ["pooled_step_share", "step_pooled_noop_share"],
+    ["episode_mean_share", "episode_mean_noop_frequency"],
+  ];
+  return mapping.flatMap(([payloadKey, contractKey]) => {
+    const values = noop[payloadKey];
+    const meta = grains?.[contractKey];
+    return values && typeof values === "object" && meta
+      ? [{ grain: contractKey, values, meta }]
+      : [];
+  });
+}
+
+export function conclusionFindings(evidence) {
+  if (evidence?.error || !Array.isArray(evidence?.finalHoldout?.conclusions)) return null;
+  return evidence.finalHoldout.conclusions;
 }
 
 /* ------------------------------------------------------------------ helpers */

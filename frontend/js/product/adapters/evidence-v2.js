@@ -33,9 +33,9 @@ async function get(path) {
 export function assertStage(payload, kind) {
   const expected = STAGE_FOR_KIND[kind];
   if (!expected) throw new Error(`not an evidence source kind: ${kind}`);
-  if (payload?.stage && payload.stage !== expected) {
+  if (!payload || payload.stage !== expected) {
     throw new Error(
-      `refused to render ${payload.stage} evidence in the ${expected} region`);
+      `refused to render ${payload?.stage || "unstaged"} evidence in the ${expected} region`);
   }
   return payload;
 }

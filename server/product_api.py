@@ -93,13 +93,12 @@ def product_contracts() -> dict:
         "output_semantics": {s.value: {"label": s.label, "description": s.description,
                                        "percent": s.percent}
                              for s in contracts.OutputSemantics},
-        "final_findings": list(contracts.FINAL_FINDINGS),
         "disclaimer": contracts.TOPOLOGY_DISCLAIMER,
     }
 
 
 @router.get("/api/product/display-map",
-            summary="Display-only curated Turkey layout for the topology stage")
+            summary="Display-only fixed engineering layout for the topology stage")
 def display_map() -> dict:
     return display_map_mod.display_map(get_topology())
 
@@ -118,6 +117,40 @@ def rl_schema(environment: str = Query("v2", pattern="^(v1|v2)$")) -> dict:
 def snapshot(algorithm: str | None = None) -> dict:
     session = _session()
     return serialize.session_snapshot(session, _runner(session, algorithm))
+
+
+@router.get("/api/simulation/moment",
+            summary="Atomic product snapshot, decision, timeline and comparison")
+async def moment(algorithm: str | None = None) -> dict:
+    """Read every surface of one displayed moment under the session lock.
+
+    The individual endpoints remain compatible, but the unified shell consumes
+    this composite so a fast runner cannot advance between its snapshot and
+    decision reads.
+    """
+    session = _session()
+    async with session._lock:
+        runner = _runner(session, algorithm)
+        snapshot_payload = serialize.session_snapshot(session, runner)
+        decision_payload = decision_mod.decision_payload(session, runner)
+        timeline_payload = timeline_mod.session_timeline(session)
+        comparison_payload = serialize.comparison_state(session)
+        advisor_payload = session.advisor_status()
+        provenance = snapshot_payload["provenance"]
+        decision_provenance = decision_payload["provenance"]
+        identity_fields = ("session_id", "generation", "step")
+        if any(provenance[key] != decision_provenance[key] for key in identity_fields):
+            raise HTTPException(409, "atomic moment provenance did not reconcile")
+        if timeline_payload["current_step"] != provenance["step"]:
+            raise HTTPException(409, "atomic moment timeline did not reconcile")
+        return {
+            "provenance": provenance,
+            "snapshot": snapshot_payload,
+            "decision": decision_payload,
+            "timeline": timeline_payload,
+            "comparison": comparison_payload,
+            "advisor": advisor_payload,
+        }
 
 
 @router.get("/api/simulation/object/{kind}/{object_id}",

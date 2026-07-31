@@ -18,8 +18,14 @@ body {
   line-height: 1.5;
   font-variant-numeric: tabular-nums;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow-x: hidden;
+}
+
+.shell-head, .ledger, .shell-main, .cockpit {
+  width: 100%;
+  min-width: 0;
 }
 
 .icon-defs { position: absolute; }
@@ -108,7 +114,7 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: 2px;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   color: var(--atlas-cloud);
   text-decoration: none;
   border-bottom: 3px solid transparent;
@@ -280,19 +286,25 @@ kbd {
 .conn__dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .conn[data-state="open"] { color: var(--state-normal); }
 .conn[data-state="lost"] { color: var(--state-failure); }
+.session-primary { margin-left: auto; color: var(--atlas-fog); border-color: var(--state-normal); }
 
 /* --- main ---------------------------------------------------------------- */
 .shell-main {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  grid-template-rows: auto auto auto auto auto;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
 }
 
+/* A wide timeline or data table owns its own scroll area. Its intrinsic width
+   must never enlarge the single shell grid column. */
+.shell-main > * { width: 100%; min-width: 0; }
+
 .stage-wrap {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  min-height: 0;
+  min-height: clamp(430px, 60vh, 640px);
   border-bottom: var(--rule);
 }
 

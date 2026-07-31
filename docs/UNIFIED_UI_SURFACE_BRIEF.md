@@ -20,7 +20,7 @@ All modes share scenario, session, model, time, selection, provenance, and expla
 
 ## Visual direction: Dispatch Atlas
 
-Use a calm national-network atlas crossed with the legibility of a dispatch diagram. The geographically recognizable Turkey topology is the signature surface and remains stable while events, paths, and decisions change around it. Quiet neutral chrome, humanist language typography, tabular data typography, generous space, and a small semantic palette support the topology rather than competing with it.
+Use a calm national-network atlas crossed with the legibility of a dispatch diagram. The stable non-geographic engineering schematic is the signature surface and remains fixed while events, paths, and decisions change around it. It deliberately reuses the prior readable node placement after the geographic arrangement proved too crowded. Quiet neutral chrome, humanist language typography, tabular data typography, generous space, and a small semantic palette support the topology rather than competing with it.
 
 Avoid a generic dashboard grid, cyberpunk HUD, glassmorphism, marketing sections, constant motion, invented glow, and walls of monospace. City and role lead each node title; the unchanged internal router ID is secondary.
 

@@ -43,6 +43,30 @@ Set `V2_FULL_ARTIFACTS` to the directory named in
 Replay is a tape player. Every payload is marked `kind: "recorded_replay"` and
 `live: false`, and the `/study` page refuses to render anything that is not.
 
+## Unified product API
+
+These additive endpoints feed the three-mode shell. They preserve all existing
+API paths. Every live payload declares provenance; routes fail closed when no
+session exists. The only POST below is a clone-only estimate that refuses stale
+generation/step fingerprints and never advances the running engine.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/product/capabilities` | Installed policies, sources, checkpoints, and truthful unavailable reasons |
+| GET | `/api/product/contracts` | Three modes, nested workflows, routes, source permissions, output semantics, no-op grains |
+| GET | `/api/product/display-map` | Fixed display-only engineering schematic, city/role labels, capacity and utilization classes |
+| GET | `/api/rl/schema?environment=v1\|v2` | Observation groups, all 69 actions, and authoritative reward-component schema |
+| GET | `/api/simulation/snapshot` | Typed live topology, demand, metric, incident, session, and provenance snapshot |
+| GET | `/api/simulation/decision` | Observation → mask → output → action → safety → transition → reward pipeline |
+| GET | `/api/simulation/timeline` | Typed live incident, action, FRR, recovery, and stabilization events |
+| GET | `/api/simulation/comparison` | Paired-lane state plus synchronization proof; no verdict when proof fails |
+| GET | `/api/simulation/object/{kind}/{id}` | Focused router, link, demand, or path details |
+| POST | `/api/simulation/counterfactual` | One-interval simulated estimate on a clone; stale requests fail closed |
+
+PPO outputs are named action probabilities only when exposed. Masked-bandit
+outputs retain their actual action-score or immediate-reward-estimate names.
+Changed observations are descriptive deltas, never causal importance.
+
 ## Static information
 
 | Method | Path | Description |
@@ -60,11 +84,16 @@ Replay is a tape player. Every payload is marked `kind: "recorded_replay"` and
 | POST | `/api/simulation/pause` | – | Pause the ticking loop |
 | POST | `/api/simulation/resume` | – | Resume |
 | POST | `/api/simulation/step` | – | Advance exactly one control interval (must be paused) |
+| POST | `/api/simulation/run-until` | `{condition, max_steps, util_threshold}` | Paused fast-forward to `next_event`, `congestion`, real `failure`, real `recovery`, or `end`; unknown conditions fail closed |
 | POST | `/api/simulation/reset` | – | Rebuild the same session at t=0 |
 | POST | `/api/simulation/speed` | `{speed: "1x"\|"5x"\|"20x"\|"fast"}` | Presentation pacing (1x = one 5-min interval / 2 s) |
 | GET | `/api/simulation/status` | – | Clock, step, running/done flags |
+| GET | `/api/simulation/moment?algorithm=rl` | – | Atomic product read of snapshot, decision, timeline, comparison, and advisor state under the session lock |
 
 Valid `algorithms`: `rl`, `static`, `greedy`, `cspf`, `random`.
+Frozen final-holdout seeds `1001–1005` are rejected for live sessions before
+the current session is changed. They remain available only through the
+read-only governed evidence APIs.
 
 ## Interventions (applied to every engine in the session — comparisons stay paired)
 

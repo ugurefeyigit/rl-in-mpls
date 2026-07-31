@@ -23,12 +23,12 @@ export function renderProvenance(state) {
                                  text: detailFor(state) }));
 }
 
-function detailFor(state) {
+export function detailFor(state) {
   const kind = state.source.kind;
   const context = state.context;
   if (kind === "live_session") {
     const status = state.data.snapshot?.session;
-    if (!status || status.state === "idle") return "No session running";
+    if (!status) return "No session running";
     return `${status.state} · step ${context.step ?? 0} · ${clock(context.hour)}`;
   }
   if (kind === "recorded_replay") {
@@ -79,7 +79,10 @@ export function renderContextLedger(state) {
 
   fill($("context-ledger"), cells
     .filter(([, value]) => value !== null && value !== undefined && value !== "")
-    .map(([term, value]) => el("div", { class: "context__cell" }, [
+    .map(([term, value]) => el("div", {
+      class: "context__cell",
+      dataset: { term: term.toLowerCase().replaceAll(" ", "-") },
+    }, [
       el("dt", { text: term }),
       el("dd", { text: String(value) }),
     ])));

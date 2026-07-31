@@ -32,36 +32,21 @@ def client():
 # IDs the module scripts bind to at boot. If one is renamed in the HTML without
 # updating the JS, the page throws on load and the presentation dies on stage —
 # so the contract is pinned here.
-ADVANCED_IDS = [
-    "state-chip", "state-error", "sim-clock", "run-desc", "conn-dot",
-    "sel-scenario", "sel-algo-a", "sel-algo-b", "sel-model", "sel-fail-link",
-    "sel-burst-demand", "btn-start", "btn-pause", "btn-resume", "btn-step",
-    "btn-reset", "btn-propose", "btn-approve", "btn-reject", "btn-train",
-    "cy-a", "cy-b", "tape-lines", "legend-disclaimer", "scoreboard",
-    "advisor-card", "agent-decision", "benchmark-body", "events-body",
-    "train-disabled", "tbl-lsps", "tbl-links", "tbl-checkpoints", "tbl-runs",
-    "chart-metric", "chart-reward", "chart-components", "chart-matrix",
-]
-
-PRESENT_IDS = [
-    "pheader", "scenario-name", "scenario-sub", "phase-chip", "present-clock",
-    "state-dot", "conn-dot", "spine", "spine-track", "spine-caption",
-    "present-map", "map-legend", "map-disclaimer", "presenter-bar",
-    "btn-story-start", "btn-playpause", "btn-next-event", "btn-approve-bar",
-    "btn-reject-bar", "btn-fail-bar", "btn-recover-bar", "btn-reset-story",
-    "sel-present-link", "sel-comparator", "chk-scale", "scale-banner",
-    "kpi-score", "kpi-busiest", "kpi-sla", "kpi-delivered", "kpi-changes",
-    "recommendation", "rec-body", "comparison", "cmp-body", "story-timeline",
-    "benchmark-story", "bm-body", "story-card", "story-title", "story-text",
-    "btn-story-continue", "error-overlay", "error-detail", "print-summary",
-    "gloss-tip", "btn-fullscreen", "btn-print",
+PRODUCT_IDS = [
+    "mode-nav", "mode-presentation", "mode-network", "mode-rl",
+    "provenance-stamp", "context-ledger", "stage", "atlas-svg",
+    "topology-list", "moment-rail", "timeband", "mode-surface",
+    "panel-presentation", "panel-network", "panel-rl", "cockpit",
+    "btn-playpause", "btn-step", "btn-next-event", "btn-story-toggle",
+    "btn-propose", "btn-approve", "btn-reject", "btn-fullscreen",
+    "recommendation", "drawer-explain", "drawer-help", "error-banner",
 ]
 
 
 @pytest.mark.parametrize("path,ids,title", [
-    ("/", ADVANCED_IDS, "Traffic Engineering Console"),
-    ("/advanced", ADVANCED_IDS, "Traffic Engineering Console"),
-    ("/present", PRESENT_IDS, "National Backbone"),
+    ("/", PRODUCT_IDS, "National Backbone Dispatch Atlas"),
+    ("/advanced", PRODUCT_IDS, "National Backbone Dispatch Atlas"),
+    ("/present", PRODUCT_IDS, "National Backbone Dispatch Atlas"),
 ])
 def test_pages_serve_with_expected_elements(client: TestClient, path, ids, title):
     r = client.get(path)
@@ -86,11 +71,13 @@ def test_static_module_graph_resolves(client: TestClient):
     """Every relative import in the frontend modules must resolve to a file
     that the static mount actually serves."""
     js_dir = FRONTEND / "js"
-    for mod in js_dir.glob("*.js"):
-        for imp in re.findall(r'from\s+"(\./[^"]+)"', mod.read_text(encoding="utf-8")):
-            target = (js_dir / imp[2:]).resolve()
-            assert target.exists(), f"{mod.name} imports missing module {imp}"
-            assert client.get(f"/static/js/{target.name}").status_code == 200
+    for mod in js_dir.rglob("*.js"):
+        for imp in re.findall(r'from\s+"((?:\./|\.\./)[^"]+)"',
+                              mod.read_text(encoding="utf-8")):
+            target = (mod.parent / imp).resolve()
+            assert target.exists(), f"{mod.relative_to(js_dir)} imports missing module {imp}"
+            url = "/static/js/" + target.relative_to(js_dir).as_posix()
+            assert client.get(url).status_code == 200
 
 
 # ------------------------------------------------------------ display scale

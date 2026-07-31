@@ -114,10 +114,10 @@ def test_contracts_endpoint_publishes_both_noop_grains(client):
         grains["episode_mean_noop_frequency"]["denominator"]
 
 
-def test_contracts_endpoint_carries_both_planning_conclusion_halves(client):
-    findings = " ".join(client.get("/api/product/contracts").json()["final_findings"])
-    assert "did not positively establish" in findings
-    assert "does not establish that planning is generally irrelevant" in findings
+def test_evidence_endpoint_carries_both_planning_conclusion_halves(client):
+    findings = " ".join(client.get("/api/v2/study").json()["conclusions"])
+    assert "does not positively support" in findings
+    assert "not evidence that planning is generally irrelevant" in findings
 
 
 # ============================================================= display map
@@ -126,8 +126,19 @@ def test_display_map_covers_every_router_and_link(client):
     topo = get_topology()
     assert {n["id"] for n in body["nodes"]} == set(topo.routers)
     assert {l["id"] for l in body["links"]} == set(topo.link_defs)
-    assert body["geographic_precision"] == "curated_not_gis"
-    assert "not exact GIS" in body["layout_note"]
+    assert body["geographic_precision"] == "engineering_schematic"
+    assert "readability" in body["layout_note"]
+
+
+def test_display_map_reuses_the_proven_pre_redesign_schematic_positions(client):
+    body = client.get("/api/product/display-map").json()
+    shown = {n["id"]: (n["x"], n["y"]) for n in body["nodes"]}
+    expected = {
+        router_id: (router.x / 8.0 + 5.0, router.y / 10.0)
+        for router_id, router in get_topology().routers.items()
+    }
+    assert shown == expected
+    assert body["viewbox"] == [0, 0, 135, 63]
 
 
 def test_display_map_leads_with_city_and_role_and_keeps_the_internal_id(client):
@@ -148,12 +159,44 @@ def test_display_coordinates_are_fixed_and_never_overlap(client):
     body = client.get("/api/product/display-map").json()
     points = [(n["x"], n["y"]) for n in body["nodes"]]
     assert len(set(points)) == len(points)
+    _, _, frame_width, frame_height = body["viewbox"]
     for x, y in points:
-        assert 0 <= x <= 100 and 0 <= y <= 100
+        assert 0 <= x <= frame_width and 0 <= y <= frame_height
     # a second read returns identical positions: the layout is not generated
     again = client.get("/api/product/display-map").json()
     assert {n["id"]: (n["x"], n["y"]) for n in again["nodes"]} == \
         {n["id"]: (n["x"], n["y"]) for n in body["nodes"]}
+
+
+def test_router_label_plates_never_overlap_or_leave_the_atlas():
+    body = display_map.display_map(get_topology())
+    plate_width, plate_height, offset = 24.0, 6.2, 1.4
+
+    def rectangle(node):
+        x, y, anchor = node["x"], node["y"], node["label_anchor"]
+        if anchor == "center":
+            return x - plate_width / 2, y - plate_height / 2, plate_width, plate_height
+        if anchor == "left":
+            return x + offset, y - plate_height / 2, plate_width, plate_height
+        if anchor == "right":
+            return x - plate_width - offset, y - plate_height / 2, plate_width, plate_height
+        if anchor == "above":
+            return x - plate_width / 2, y - plate_height - 1.6, plate_width, plate_height
+        return x - plate_width / 2, y + 1.6, plate_width, plate_height
+
+    rectangles = {node["id"]: rectangle(node) for node in body["nodes"]}
+    _, _, frame_width, frame_height = body["viewbox"]
+    for node_id, (x, y, width, height) in rectangles.items():
+        assert x >= 0 and y >= 0, node_id
+        assert x + width <= frame_width and y + height <= frame_height, node_id
+    for left_id, left in rectangles.items():
+        lx, ly, lw, lh = left
+        for right_id, right in rectangles.items():
+            if left_id >= right_id:
+                continue
+            rx, ry, rw, rh = right
+            overlaps = lx < rx + rw and lx + lw > rx and ly < ry + rh and ly + lh > ry
+            assert not overlaps, f"router plates overlap: {left_id} and {right_id}"
 
 
 def test_node_plates_do_not_collide_with_link_geometry():
@@ -564,3 +607,25 @@ def test_the_serialized_snapshot_matches_the_engine_arrays(live):
         assert link["capacity_mbps"] == source[0]["capacity_mbps"]
         assert link["worst_utilization"] == max(r["utilization"] for r in source)
     assert len(body["demands"]) == len(raw["demands"])
+
+def test_atomic_product_moment_has_one_session_generation_and_step(live):
+    response = live.get("/api/simulation/moment")
+    assert response.status_code == 200
+    moment = response.json()
+    identity_tuple = (
+        moment["provenance"]["session_id"],
+        moment["provenance"]["generation"],
+        moment["provenance"]["step"],
+    )
+    assert identity_tuple == (
+        moment["snapshot"]["provenance"]["session_id"],
+        moment["snapshot"]["provenance"]["generation"],
+        moment["snapshot"]["provenance"]["step"],
+    )
+    assert identity_tuple == (
+        moment["decision"]["provenance"]["session_id"],
+        moment["decision"]["provenance"]["generation"],
+        moment["decision"]["provenance"]["step"],
+    )
+    assert moment["timeline"]["current_step"] == identity_tuple[2]
+    assert {"snapshot", "decision", "timeline", "comparison", "advisor"} <= moment.keys()

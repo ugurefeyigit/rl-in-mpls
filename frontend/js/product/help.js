@@ -57,6 +57,15 @@ export const QUESTIONS = [
   },
 ];
 
+export function questionDestination(question) {
+  return {
+    mode: question.mode || (question.conclusion ? "presentation" : "presentation"),
+    rlView: question.rlView || (question.mode === "rl" ? "decision" : null),
+    source: question.source || null,
+    conclusion: Boolean(question.conclusion),
+  };
+}
+
 export function renderQuestions({ onJump }) {
   fill($("questions-body"), [
     el("ul", { class: "jump-list" }, QUESTIONS.map((jump) => el("li", {}, [

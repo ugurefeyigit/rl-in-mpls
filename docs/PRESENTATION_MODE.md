@@ -1,239 +1,125 @@
 # Presentation Mode
 
-A second frontend at **`/present`**, built for a live audience that knows
-nothing about reinforcement learning or MPLS. It is not a reskin of the
-engineering console — it answers different questions, in plain language, with
-city names instead of router IDs.
+Presentation is the audience-facing depth of the unified application at
+`/present`. It shares the same session, source, selection, topology, number
+formatting, and provenance rules as Network Information and RL Information.
+Guided Story is a workflow inside this mode; it is never a fourth primary mode.
 
-The engineering console stays at **`/`** (or `/advanced`); the two link to each
-other from the header.
-
----
-
-## What it shows
-
-| Region | Content |
-|---|---|
-| Header | Scenario display name, network clock (HH:MM), story-phase chip, session state, connection dot, fullscreen, print, link to the engineering view |
-| Incident spine | One block per completed five-minute interval, coloured by that interval's **peak** link utilization; notches mark scheduled events; the white marker is "now" |
-| Map | Large Cytoscape topology, city labels only, utilization colours, failed links dashed red with a ✕, the advisor's proposed route highlighted in violet |
-| KPI cards | Overall network score · Busiest link right now · Services with SLA problems · Traffic delivered · Route changes |
-| Recommendation | Appears only while a proposal is pending: plain-language headline, old vs proposed route, why, expected effect from the real lookahead, safety-check result, Approve / Reject |
-| Comparison | AI Advisor vs the comparison controller, with one honest sentence of interpretation |
-| Story timeline | Threshold crossings, failures and recoveries, proposals and operator decisions, in city names |
-| Published results | Per-scenario winner table read from `results/eval_stats.csv` |
-
-### Two different "busiest link" numbers
-
-Both are correct and both are labelled:
-
-- **KPI card and story text** use the *instantaneous* busiest link from the
-  snapshot — the same value the map is coloured by. This keeps the headline
-  number, the map and the narration from ever disagreeing on screen.
-- **The incident spine and the engineering console** use
-  `metrics.max_util`, the *peak within* each five-minute interval. It is
-  higher, because it catches sub-interval spikes.
-
----
-
-## Launching
+## Launch
 
 ```bash
 python scripts/demo.py
 ```
 
-Starts the backend with `ALLOW_TRAINING=false`, creates the fixed demo session
-(`demo_evening`, RL vs greedy, seed 42, advisor mode, paused at t=0) and opens
-`/present`.
-
-Other forms:
-
-```bash
-python scripts/demo.py --advanced
-```
-
-```bash
-python scripts/demo.py --allow-training
-```
+The launcher disables training, creates the reproducible demonstration, and
+opens `/present`. A manual server also works:
 
 ```bash
 python -m uvicorn server.main:app --port 8000
 ```
 
----
+The persistent source stamp is part of the presentation. `LIVE`, `RECORDED`,
+`DEVELOPMENT`, and `FINAL EVIDENCE` are different record types, not cosmetic
+badges. Only LIVE can execute a policy or color links from utilization.
 
-## Controls
+## Composition
 
-The presenter bar sits under the map.
+The topology is the dominant region. Above it, the current-moment rail shows
+phase, clock, incident, action, interval and cumulative reward, busiest link,
+and current SLA risk. The right rail explains what changed, the network
+condition, and the relationship to the governed study. The incident band,
+recommendation card, comparison lane, and presenter cockpit use the same live
+snapshot and provenance.
 
-| Control | What it does |
+Audience view removes the cockpit, deep analysis, source controls, and context
+rail while retaining the topology, current facts, source stamp, and disclaimer.
+Fullscreen uses the browser Fullscreen API. Neither option changes the session.
+
+The fixed topology is the proven pre-redesign left-to-right engineering
+schematic, optimized for path readability rather than geography. Node plates
+lead with city and MPLS role, retain the internal ID below, never move during a
+session, and never overlap. The footer reads: fixed engineering schematic, not
+geographic; fictional scaled network, not a real operator.
+
+## Presenter controls
+
+| Control | Behavior |
 |---|---|
-| Start Guided 5-Minute Story | Runs the scripted sequence — see [Guided story](#guided-story) |
-| Pause / Resume | Free-runs the clock at the session speed, or stops it |
-| Next event | Fast-forwards to the next scripted event **and through it** (see note below) |
-| Approve / Reject | Resolves a pending recommendation |
-| Fail backbone link / Recover link | Manual intervention on the selected link |
-| Reset story | Rebuilds the same run from t=0 with the identical configuration |
-| Compare against | Greedy (default) or fixed routing; changing it restarts the run |
-| Scaled national view (10×) | Display-only scale — see [Scaling disclosure](#scaling-disclosure) |
+| Play / Pause | Resumes or pauses the real live session |
+| Step | Advances exactly one five-minute control interval while paused |
+| Next event | Advances through the next real scenario event |
+| Speed | Selects `1x`, `5x`, or `20x` live pacing |
+| Start / End Guided Story | Starts a fresh `demo_evening`, seed-42, PPO-versus-greedy advisor session or leaves the workflow |
+| Back / Next | Reviews a prior beat without rewinding the engine, or advances the real story action |
+| Auto story | Optional 6.5-second presenter pacing; can be paused at any beat and never removes manual controls |
+| Preview recommendation | Requests the real advisor proposal without mutating the engine |
+| Approve / Reject | Applies or rejects only a pending proposal |
+| Incident bookmarks | Moves among recorded live events |
+| Q&A jumps | Opens the relevant product depth or the governed conclusion |
 
-### Keyboard shortcuts
+## Guided Story
+
+The eleven beats are:
+
+1. Establish the fictional network.
+2. Read and advance the initial evening interval.
+3. Advance until congestion.
+4. Inspect the bottleneck.
+5. Inspect current SLA risk.
+6. Request a policy recommendation.
+7. Inspect the observation, mask, safety, route, and estimate.
+8. Approve when a recommendation is pending and show the observed outcome.
+9. Advance through the real surge/failure sequence and explain built-in FRR.
+10. Compare synchronized live lanes.
+11. Advance toward repair and open the honest governed-study conclusion.
+
+Starting the workflow always creates its own real `demo_evening` seed-42
+session. It does not reuse an unrelated or already-progressed run. Going back
+reviews copy only; it does not rewind the engine. Optional automatic pacing
+invokes the same Next behavior as the visible control.
+
+The recommendation card says “MaskablePPO suggests …” and includes only values
+returned by the engine. Counterfactual telemetry is labeled a simulated
+estimate and is computed on a clone with a session fingerprint. If no truthful
+estimate exists, the UI says `Outcome estimate unavailable`. Observed telemetry
+and actual reward appear only after execution.
+
+## Comparison and governed evidence
+
+The live comparison lane is shown only when the backend proves both runners
+share scenario, seed, starting state, and exogenous inputs. A failed proof
+disables the verdict and prints the reason. Signed simulation returns are never
+converted to percentages.
+
+The final holdout is a read-only record, never an interactive live comparator.
+Development and final evidence render in mutually exclusive regions selected by
+the source control. Both halves of the planning conclusion stay together.
+
+## Keyboard
 
 | Key | Action |
 |---|---|
-| `Space` | Pause / resume — or dismiss the story card and continue |
-| `→` | Next event — or dismiss the story card and continue |
-| `A` | Approve the pending recommendation |
-| `R` | Reject the pending recommendation |
-| `F` | Fail the selected link |
-| `Esc` | Close the story card, or leave fullscreen |
+| `Alt+1`, `Alt+2`, `Alt+3` | Presentation, Network Information, RL Information |
+| `Space` | Play or pause |
+| `→` | Next step, or next Guided Story beat |
+| `←` | Review the prior Guided Story beat |
+| `G` | Start or end Guided Story |
+| `E` | Explain this moment |
+| `[` / `]` | Previous / next incident bookmark |
+| `?` | Keyboard help |
+| `Esc` | Close the current drawer, then leave fullscreen |
 
-Shortcuts are ignored while a form control has focus.
+Shortcuts are ignored while typing in a form control. Every shortcut has a
+visible control equivalent. See [ACCESSIBILITY.md](ACCESSIBILITY.md) for the
+full keyboard and reduced-motion contract.
 
-### Why "Next event" takes one extra interval
+## Honest unavailable states
 
-The engine applies scripted link events over the half-open window
-`[interval_start, interval_end)`. `POST /api/simulation/run-until` with
-`condition:"next_event"` stops as soon as the clock *reaches* the event time —
-at which point the event has not been applied yet. Presentation Mode therefore
-runs one further interval so the audience lands on the far side of the event,
-with the link actually down. This is a frontend decision; the API contract is
-unchanged.
-
----
-
-## Scaling disclosure
-
-The **Scaled national view (10×)** toggle multiplies **only** displayed traffic
-volumes and link capacities by ten. It mirrors `mplssim/display.py :: scale_mbps`
-and the JS constant `DISPLAY_SCALE` in `frontend/js/fmt.js`; the two are pinned
-together by `tests/test_presentation.py::test_js_display_scale_matches_python`.
-
-Because loads and capacities scale identically, **utilization, delay, loss, SLA
-counts, actions and rewards are unchanged**. While the toggle is on, a banner
-stating exactly that stays visible, and the sentence is repeated in the printed
-summary.
-
-The topology itself is fictional. The footer of both UIs carries:
-
-> Fictional scaled national backbone for demonstration — not a real operator topology.
-
----
-
-## Guided story
-
-See [PRESENTATION_SCRIPT.md](PRESENTATION_SCRIPT.md) for what to say. The
-sequence is:
-
-1. Intro card
-2. Fast-forward until the busiest link crosses 85 %
-3. Ask the advisor → **wait for Approve or Reject**
-4. Predicted vs measured card
-5. Fast-forward through the live-event surge (t=180)
-6. Fast-forward through the backbone failure (t=195) → fast-reroute explanation
-7. Ask the advisor again → **wait for Approve or Reject**
-8. Fast-forward through the repair (t=240)
-9. Final comparison card
-
-Every step reads real backend state. Narration describes what the run actually
-produced — for example, on seed 42 the network is already near capacity at
-17:00, and the card says so rather than claiming a build-up the audience did
-not see.
-
-**Reloading the page mid-story drops the script** (the session and all data
-survive; only the step pointer is lost). Continue with *Next event* and the
-Approve/Reject buttons, or press *Start Guided 5-Minute Story* to restart.
-
----
-
-## Failure handling
-
-- **Connection lost** — the dot next to the clock turns red and the page
-  reconnects with backoff. A reconnect replays the current snapshot; a
-  recommendation that is still pending stays on screen.
-- **Session error** — a full-screen overlay states that the run has halted and
-  shows the backend message, the scenario and the interval. Nothing on screen
-  is stale.
-- **A rejected action** — every intervention reports back from the server's
-  `changed` flag, so "already failed" never masquerades as a fresh failure.
-
-## Print / Save as PDF
-
-The header button renders a summary card from live state: final scores, peak
-utilization, SLA totals, delivered ratio, route changes and flaps for both
-controllers, plus the full story timeline and the disclaimer. Use the browser's
-"Save as PDF" destination.
-
-
----
-
-## The third surface: `/study`
-
-Presentation Mode and the engineering console both drive a **live** simulation
-session. The study surface does not: it is a read-only record of the **closed**
-V2 study, served from the committed evidence files.
-
-| Surface | Drives a session | Data source |
-|---|---|---|
-| `/` and `/advanced` | yes | live `SimSession` |
-| `/present` | yes | live `SimSession` |
-| `/study` | **no** | `results/v2_*` via `/api/v2/*` |
-
-Use it when the question is *what did the study find and can I trust it*, rather
-than *what does the controller do right now*.
-
-### What it shows
-
-1. **Verdict** - the frozen conclusions, including both halves of the planning
-   statement, which always appear together.
-2. **Final holdout** - the five-method aggregate and the per-root learner
-   comparison. Learner rows are the mean of three training-root means; baselines
-   have no training root and ran once.
-3. **Scenarios** - the seven-scenario comparison. The one scenario PPO wins
-   points its bar the other way, so the negative result is the most visible thing
-   on the chart rather than a footnote.
-4. **Operations and churn** - delivery, SLA, utilization, congestion, delay,
-   loss, reroutes, reversals, flaps, moved bandwidth, dwell, TE changes, FRR,
-   disconnections, restorations, the 12-component reward breakdown with its
-   exact-sum residual, and the action distribution.
-5. **Development** - a visually distinct region with a permanent
-   *development / continuity - not holdout evidence* ribbon, carrying the
-   learning curves and checkpoint selection. Nothing here may be averaged with
-   the holdout, and the two never arrive from the same API route.
-6. **Provenance** - safety and integrity counters, the six checkpoints with their
-   payload and sidecar hashes and source bindings, runtime and device, artifact
-   locations, and the invalidated / superseded / failed / repaired run
-   disclosures behind progressive disclosure.
-7. **Recorded replay** - preserved episodes played back from the traces the
-   one-shot evaluation wrote.
-
-### Two figures that look like one
-
-Where two published statistics share a name, both are shown with their grain
-named. **No-op share** has a pooled-step form (87.09% bandit) and an
-episode-mean form (82.10%); the final-holdout report quotes the pooled one.
-**Wall time** has a whole-runner form (152.093 s, including baselines and setup)
-and a six-checkpoint-evaluations form (115.213 s). Neither pair is
-interchangeable. See [V2_EVIDENCE_AUDIT.md](V2_EVIDENCE_AUDIT.md).
-
-### Replay is recorded, never live
-
-Every replay payload is marked `kind: "recorded_replay"` and `live: false`, and
-the page refuses to render anything that is not. Replay never runs a controller
-or evaluates a checkpoint.
-
-The step traces are large and live outside Git. Set `V2_FULL_ARTIFACTS` to the
-directory named in `results/v2_final_holdout/manifest.json` under
-`full_artifact_path`. Without it the catalogue still lists all 315 episodes and
-explains how to configure the path.
-
-The traces carry aggregate utilization rather than per-link utilization, so
-replay shows the real per-interval operational record - reward, actions, busiest
-link, delay, loss, SLA - and deliberately does not animate a topology it has no
-data for.
-
-### If nothing loads
-
-A missing or inconsistent artifact is reported as an outage, not as zeros: the
-section says what failed and why, and the page shows its empty state. That is
-the intended behaviour - the surface will not render an approximate number.
+- This installation has V1 live checkpoints only; a V2 live demonstration is
+  shown as unavailable rather than silently substituting V1.
+- Recorded V2 traces contain interval aggregates but no per-link utilization,
+  so replay shows a reference topology and never invents link animation.
+- PPO entropy and value are unavailable because the live runner does not expose
+  them.
+- Recorded episodes require `V2_FULL_ARTIFACTS`; without it the catalogue still
+  lists all 315 episodes and explains the configuration requirement.

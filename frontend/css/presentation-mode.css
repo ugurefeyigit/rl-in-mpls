@@ -1,0 +1,52 @@
+/* Presentation is one continuous speaking surface: moment, map, decision, time. */
+.moment-rail {
+  border-bottom: var(--rule);
+  background: var(--surface-inset);
+  padding: var(--space-2) var(--shell-pad);
+}
+.moment-rail[hidden] { display: none; }
+.moment-rail__row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(120px, 1fr)
+    minmax(210px, 1.8fr) minmax(120px, 1fr) repeat(4, minmax(128px, 1fr));
+  overflow-x: auto;
+}
+.moment-cell { padding: var(--space-2) var(--space-3); border-right: var(--rule); min-width: 0; }
+.moment-cell:last-child { border-right: 0; }
+.moment-cell__label { display: block; color: var(--atlas-cloud); font-size: var(--size-utility); letter-spacing: var(--track-utility); text-transform: uppercase; }
+.moment-cell__value { display: block; overflow: visible; text-overflow: clip;
+                      white-space: normal; font-family: var(--font-data); }
+.moment-cell[data-condition="failure"] .moment-cell__value { color: var(--state-failure); }
+.moment-cell[data-condition="pressure"] .moment-cell__value { color: var(--state-pressure); }
+.moment-rail__change { margin: var(--space-1) var(--space-3) 0; color: var(--atlas-cloud); font-size: 0.8125rem; }
+
+.recommendation { padding: var(--space-4) var(--shell-pad); border-bottom: var(--rule); background: var(--surface-sunken); }
+.recommendation[hidden] { display: none; }
+.rec { border: 1px solid var(--state-selection); border-radius: var(--radius-panel); padding: var(--space-4); box-shadow: var(--shadow-level2); animation: rec-in var(--motion-panel) var(--ease-atlas); }
+@keyframes rec-in { from { transform: translateY(8px); opacity: .45; } }
+.rec__head { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.rec__headline { margin: 0; flex: 1; font-family: var(--font-plate); font-size: 1.125rem; letter-spacing: .03em; text-transform: uppercase; }
+.rec__facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-1) var(--space-4); margin: 0; }
+.rec__facts dt { color: var(--atlas-cloud); font-size: var(--size-utility); text-transform: uppercase; }
+.rec__facts dd { margin: 0; font-family: var(--font-data); }
+.rec__outcomes { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin: var(--space-4) 0; }
+.rec__outcome { border-top: var(--rule); padding-top: var(--space-3); }
+.rec__outcome[data-estimate="true"] { border-top-color: var(--state-selection); }
+.rec__note, .rec__delta { color: var(--atlas-cloud); font-size: .8125rem; }
+
+.story__beats { display: grid; grid-template-columns: repeat(11, minmax(72px, 1fr)); gap: 1px; padding: 0; margin: 0 0 var(--space-4); list-style: none; overflow-x: auto; }
+.story__beat { min-width: 72px; padding: var(--space-2); border-top: 2px solid var(--atlas-rule); color: var(--atlas-cloud); font-size: var(--size-utility); }
+.story__beat[data-done="true"] { border-top-color: var(--state-normal); }
+.story__beat[aria-current="step"] { border-top-color: var(--state-selection); color: var(--atlas-fog); }
+.story__review { color: var(--state-pressure); }
+
+.cmp { display: grid; gap: var(--space-2); }
+.cmp__lane { display: grid; grid-template-columns: 32px minmax(130px, 1fr) repeat(3, minmax(90px, auto)); align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--rule); }
+.cmp__token { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid currentColor; color: var(--state-comparison); font-family: var(--font-plate); }
+
+.cockpit { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-2) var(--shell-pad); border-top: var(--rule-strong); background: var(--surface-sunken); }
+.cockpit[hidden] { display: none; }
+.cockpit__group { display: flex; align-items: center; gap: var(--space-2); padding-right: var(--space-3); border-right: var(--rule); }
+.story-progress { margin: 0; min-width: 210px; font-size: var(--size-utility); color: var(--atlas-cloud); }
+body[data-audience="on"] .head-tools, body[data-audience="on"] .source-switch, body[data-audience="on"] .rail, body[data-audience="on"] .mode-surface, body[data-audience="on"] .cockpit { display: none !important; }
+body[data-audience="on"] .stage-wrap { grid-template-columns: minmax(0, 1fr); }

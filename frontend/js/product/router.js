@@ -35,6 +35,7 @@ export function readLocation(loc = window.location) {
 
   if (params.get("workflow") === "guided-story" && state.mode === "presentation") {
     state.workflow = "guided-story";
+    state.source = "live_session";
   }
 
   const object = params.get("object");
@@ -56,22 +57,28 @@ export function readLocation(loc = window.location) {
 
 /** Write the current mode and moment back to the address bar without a reload. */
 export function writeLocation(state, { replace = false } = {}) {
+  const url = locationForState(state);
+  if (url === window.location.pathname + window.location.search) return;
+  window.history[replace ? "replaceState" : "pushState"]({ url }, "", url);
+}
+
+export function locationForState(state) {
   const path = MODE_ROUTE[state.mode] || "/";
+  const base = ROUTES[path] || ROUTES["/"];
   const params = new URLSearchParams();
   if (state.workflow) params.set("workflow", state.workflow);
-  if (state.mode === "rl" && state.rlView && state.rlView !== "decision") {
+  if (state.mode === "rl" && state.rlView
+      && state.rlView !== (base.rlView || "decision")) {
     params.set("view", state.rlView);
   }
-  if (state.source.kind !== "live_session") params.set("source", state.source.kind);
+  if (state.source.kind !== base.source) params.set("source", state.source.kind);
   if (state.selection.objectType && state.selection.objectId) {
     params.set("object", `${state.selection.objectType}:${state.selection.objectId}`);
   }
   if (state.selection.eventId) params.set("event", state.selection.eventId);
 
   const query = params.toString();
-  const url = query ? `${path}?${query}` : path;
-  if (url === window.location.pathname + window.location.search) return;
-  window.history[replace ? "replaceState" : "pushState"]({ url }, "", url);
+  return query ? `${path}?${query}` : path;
 }
 
 export function onNavigate(handler) {

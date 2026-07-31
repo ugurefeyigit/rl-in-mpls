@@ -109,9 +109,9 @@ python -m uvicorn server.main:app --port 8000
 
 | URL | What it is |
 |---|---|
-| `http://127.0.0.1:8000/study` | **V2 sealed evidence record** - the closed study, read-only |
-| `http://127.0.0.1:8000/present` | Presentation Mode — storytelling UI for a live audience |
-| `http://127.0.0.1:8000/` or `/advanced` | Engineering console — full telemetry |
+| `http://127.0.0.1:8000/present` | Unified application in **Presentation** mode |
+| `http://127.0.0.1:8000/` or `/advanced` | Unified application in **Network Information** mode |
+| `http://127.0.0.1:8000/study` | Unified application in **RL Information → Governed Study**, final evidence selected |
 | `http://127.0.0.1:8000/docs` | OpenAPI, always current |
 
 To serve manually with training disabled, as the demo launcher does:
@@ -218,17 +218,30 @@ Manual UI checks that the suite cannot cover are in
 
 ---
 
-## Presentation Mode
+## Unified three-mode application
 
-A second frontend at **`/present`**, for showing this to people who do not know
-what MPLS or RL is. It is a separate UI, not a reskin: city names instead of
-router IDs, five large KPI cards, a story timeline, an operator recommendation
-card with Approve/Reject, and a guided five-minute story driven entirely by
-real backend state.
+One build-free application now serves all four compatibility routes. It has
+exactly three primary modes: **Presentation**, **Network Information**, and
+**RL Information**. Guided Story is an eleven-beat workflow inside Presentation,
+not a fourth mode. Mode changes retain the selected source and object; source
+changes clear incompatible live state before loading the new record.
+
+The persistent source stamp distinguishes **LIVE**, **RECORDED**,
+**DEVELOPMENT**, and **FINAL EVIDENCE**. Recorded traces never appear live,
+development and final evidence render in mutually exclusive regions, and the
+final holdout is never offered as an interactive controller comparison.
+
+The topology reuses the proven pre-redesign left-to-right engineering
+schematic. City and role lead each fixed node plate, internal router IDs remain
+secondary, and the footer states that placement is not geographic and the
+scaled network is fictional. The simulator topology and routing semantics are
+unchanged.
 
 | Doc | Contents |
 |---|---|
-| [docs/PRESENTATION_MODE.md](docs/PRESENTATION_MODE.md) | What it shows, how to launch, keyboard shortcuts, scaling disclosure |
+| [docs/PRODUCT_UI.md](docs/PRODUCT_UI.md) | Modes, routes, sources, topology, unavailable-data rules |
+| [docs/PRESENTATION_MODE.md](docs/PRESENTATION_MODE.md) | Audience view, Guided Story, controls, comparison and evidence treatment |
+| [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) | Keyboard, focus, list alternative, reduced motion and responsive behavior |
 | [docs/PRESENTATION_SCRIPT.md](docs/PRESENTATION_SCRIPT.md) | The 20–25 minute script: what to say, what to click, where RL loses |
 | [docs/OPERATOR_ADVISOR.md](docs/OPERATOR_ADVISOR.md) | propose / approve / reject, predicted vs actual, why proposals never mutate the engine |
 | [docs/CITY_DISPLAY_MAPPING.md](docs/CITY_DISPLAY_MAPPING.md) | The router → city table and the rule that internal IDs never change |
@@ -238,11 +251,6 @@ scenario keys are the contract shared by the pretrained model, the configs, the
 tests and the committed results; they are never renamed. The mapping lives in
 one place, `mplssim/display.py`, and reaches both frontends via
 `GET /api/display`.
-
-**Scaled national view.** Presentation Mode has an optional 10× display scale.
-It multiplies traffic volumes and link capacities only — utilization, delay,
-loss, SLA counts, actions and rewards are unchanged — and it keeps a banner on
-screen saying exactly that while it is on.
 
 **Terminology: "demand-interval SLA violations".** The SLA counters are not a
 count of unhappy services. They count *one per traffic demand per five-minute

@@ -11,8 +11,12 @@
 import { $, clear, svg } from "./dom.js";
 import { mbps, percent } from "./format.js";
 
-const PLATE_W = 15.5;
+const PLATE_W = 24;
 const PLATE_H = 6.2;
+
+export function atlasFrame(map) {
+  return [...(map?.viewbox || [0, 0, 135, 63])];
+}
 
 export class TopologyAtlas {
   constructor({ onSelect, onFocusChange }) {
@@ -27,13 +31,20 @@ export class TopologyAtlas {
     this.links = new Map();
     this.order = [];
     this.zoom = 1;
-    this.center = { x: 50, y: 50 };
+    this.frame = [0, 0, 135, 63];
+    this.center = { x: 67.5, y: 31.5 };
     this.selected = null;
   }
 
   /** Draw the fixed geometry once. */
   build(map) {
     this.map = map;
+    this.frame = atlasFrame(map);
+    this.center = {
+      x: this.frame[0] + this.frame[2] / 2,
+      y: this.frame[1] + this.frame[3] / 2,
+    };
+    this.root.setAttribute("viewBox", this.frame.join(" "));
     clear(this.linkLayer);
     clear(this.overlayLayer);
     clear(this.nodeLayer);
@@ -72,7 +83,7 @@ export class TopologyAtlas {
       this.links.set(link.id, { def: link, group, points });
     }
 
-    // Geographic reading order: west to east, then north to south.
+    // Stable schematic reading order: left to right, then top to bottom.
     this.order = [...map.nodes].sort((p, q) => (p.x - q.x) || (p.y - q.y))
       .map((n) => n.id);
 
@@ -279,13 +290,22 @@ export class TopologyAtlas {
   setZoom(zoom, center = this.center) {
     this.zoom = Math.min(4, Math.max(0.6, zoom));
     this.center = center;
-    const size = 100 / this.zoom;
-    const x = Math.max(0, Math.min(100 - size, center.x - size / 2));
-    const y = Math.max(0, Math.min(100 - size, center.y - size / 2));
-    this.root.setAttribute("viewBox", `${x} ${y} ${size} ${size}`);
+    const [frameX, frameY, frameWidth, frameHeight] = this.frame;
+    const width = frameWidth / this.zoom;
+    const height = frameHeight / this.zoom;
+    const x = Math.max(frameX, Math.min(frameX + frameWidth - width, center.x - width / 2));
+    const y = Math.max(frameY, Math.min(frameY + frameHeight - height, center.y - height / 2));
+    this.root.setAttribute("viewBox", `${x} ${y} ${width} ${height}`);
   }
 
-  resetView() { this.setZoom(1, { x: 50, y: 50 }); }
+  resetView() {
+    this.zoom = 1;
+    this.center = {
+      x: this.frame[0] + this.frame[2] / 2,
+      y: this.frame[1] + this.frame[3] / 2,
+    };
+    this.root.setAttribute("viewBox", this.frame.join(" "));
+  }
 
   fitTo(objectId) {
     const node = this.nodes.get(objectId)?.def;
@@ -296,6 +316,7 @@ export class TopologyAtlas {
 
 function plateAnchor(node) {
   switch (node.label_anchor) {
+    case "center": return { x: node.x - PLATE_W / 2, y: node.y - PLATE_H / 2 };
     case "left": return { x: node.x + 1.4, y: node.y - PLATE_H / 2 };
     case "right": return { x: node.x - PLATE_W - 1.4, y: node.y - PLATE_H / 2 };
     case "above": return { x: node.x - PLATE_W / 2, y: node.y - PLATE_H - 1.6 };

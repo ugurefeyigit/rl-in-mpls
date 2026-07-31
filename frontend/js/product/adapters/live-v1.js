@@ -36,6 +36,11 @@ async function post(path, body) {
 
 export const kind = "live_session";
 
+/** Match the status schema returned by /api/simulation/status. */
+export function hasActiveSession(status) {
+  return Boolean(status?.session_id);
+}
+
 export const api = {
   capabilities: () => get("/api/product/capabilities"),
   contracts: () => get("/api/product/contracts"),
@@ -46,6 +51,8 @@ export const api = {
 
   snapshot: (algorithm) =>
     get(algorithm ? `/api/simulation/snapshot?algorithm=${algorithm}` : "/api/simulation/snapshot"),
+  moment: (algorithm) =>
+    get(algorithm ? `/api/simulation/moment?algorithm=${algorithm}` : "/api/simulation/moment"),
   decision: (algorithm) =>
     get(algorithm ? `/api/simulation/decision?algorithm=${algorithm}` : "/api/simulation/decision"),
   timeline: () => get("/api/simulation/timeline"),

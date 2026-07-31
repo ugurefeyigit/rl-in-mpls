@@ -265,6 +265,37 @@ def test_run_until_next_event(client):
     assert out["status"]["t_min"] >= 60, "should reach the scripted failure at t=60"
 
 
+def test_run_until_failure_and_recovery_follow_real_scenario_events(client):
+    start(client, scenario="demo_evening", algorithms=["greedy"])
+
+    failed = client.post(
+        "/api/simulation/run-until", json={"condition": "failure"}
+    )
+    assert failed.status_code == 200
+    assert failed.json()["status"]["t_min"] >= 195
+    engine = srv.STATE["session"].runners[0].eng
+    assert engine.link_up["L20"] is False
+
+    recovered = client.post(
+        "/api/simulation/run-until", json={"condition": "recovery"}
+    )
+    assert recovered.status_code == 200
+    assert recovered.json()["status"]["t_min"] >= 240
+    assert engine.link_up["L20"] is True
+
+
+@pytest.mark.parametrize("seed", [1001, 1002, 1003, 1004, 1005])
+def test_live_session_refuses_frozen_holdout_seeds_without_replacing_session(client, seed):
+    original = start(client, seed=42)
+    response = client.post("/api/simulation/start", json={
+        "scenario": "demo_evening", "algorithms": ["greedy"],
+        "seed": seed, "autostart": False,
+    })
+    assert response.status_code == 400
+    assert "holdout" in response.json()["detail"].lower()
+    assert status(client)["session_id"] == original["session_id"]
+
+
 def test_events_endpoint_records_lifecycle(client):
     start(client)
     client.post("/api/simulation/step")

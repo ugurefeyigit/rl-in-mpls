@@ -21,7 +21,7 @@ const initial = {
   workflow: null,
   rlView: "decision",
 
-  source: { kind: "live_session", availability: {}, provenance: null },
+  source: { kind: "live_session", availability: {}, provenance: null, revision: 0 },
 
   context: {
     environmentVersion: "v1",
@@ -40,7 +40,7 @@ const initial = {
 
   selection: { objectType: null, objectId: null, eventId: null, actionId: null },
   playback: { state: "idle", speed: "1x", running: false, awaitingDecision: false },
-  story: { active: false, beat: 0, reviewBeat: null, bookmarks: [] },
+  story: { active: false, auto: false, beat: 0, reviewBeat: null, bookmarks: [] },
   filters: { classes: [], conditions: [], search: "" },
   ui: { audienceView: false, fullscreen: false, openDrawer: null, explainDepth: "presentation",
         topologyList: false, zoom: 1 },
@@ -99,13 +99,18 @@ export function createStore() {
       if (state.source.kind === kind) return;
       state = {
         ...state,
-        source: { kind, availability, provenance: null },
+        source: { kind, availability, provenance: null,
+                  revision: (state.source.revision || 0) + 1 },
         // Live-only artifacts cannot survive a move to a recorded or frozen record.
         data: { ...state.data, snapshot: null, previousSnapshot: null,
-                decision: null, recommendation: null, counterfactual: null },
+                decision: null, timeline: null, comparison: null,
+                recommendation: null, counterfactual: null, schema: null },
+        context: structuredClone(initial.context),
+        playback: structuredClone(initial.playback),
+        story: structuredClone(initial.story),
         selection: { objectType: null, objectId: null, eventId: null, actionId: null },
       };
-      notify(new Set(["source", "data", "selection"]));
+      notify(new Set(["source", "data", "context", "playback", "story", "selection"]));
     },
 
     select(objectType, objectId) {
@@ -124,7 +129,7 @@ export function createStore() {
      */
     acceptSnapshot(snapshot) {
       const provenance = snapshot?.provenance;
-      if (!provenance) return false;
+      if (provenance?.source_kind !== "live_session" || provenance.live !== true) return false;
       const current = state.context;
       const sameRun = current.sessionId === provenance.session_id
         && current.generation === provenance.generation;
@@ -169,4 +174,13 @@ export function createStore() {
       return true;
     },
   };
+}
+
+export function captureSource(state) {
+  return { kind: state.source.kind, revision: state.source.revision || 0 };
+}
+
+export function isCurrentSource(state, token) {
+  return state.source.kind === token.kind
+    && (state.source.revision || 0) === token.revision;
 }

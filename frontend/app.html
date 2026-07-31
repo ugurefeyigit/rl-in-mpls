@@ -13,6 +13,14 @@
 <link rel="stylesheet" href="/static/css/responsive.css">
 </head>
 <body data-mode="network" data-source="live_session" data-audience="off">
+<!--
+THESIS: One stable national backbone is the shared object; this refuses disconnected dashboard pages.
+OWN-WORLD: Matte basalt drafting field, mineral rules, condensed city plates, and semantic route rails.
+STORY: Read the incident, inspect the policy decision, then deepen the same moment without losing context.
+FIRST VIEWPORT: Provenance ledger and fixed Turkey topology dominate; the current decision sits directly below.
+FORM: Dispatch Atlas, approved design authority 3bb791e; stable geometry and restrained causal motion.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
 
 <!-- Authored icon set: one 1.5px outlined family, square terminals. Every use
      carries a text label or an accessible name; no glyph carries meaning alone. -->
@@ -107,12 +115,15 @@
     <span class="conn__dot" aria-hidden="true"></span>
     <span id="conn-text">Connecting</span>
   </p>
+  <button type="button" class="chip session-primary" id="btn-session-primary">
+    Start live session
+  </button>
 </div>
 
 <main id="main" class="shell-main">
 
   <!-- Presentation moment rail. Fixed cells: values change, geometry does not. -->
-  <section class="moment-rail" id="moment-rail" aria-label="Current moment">
+  <section class="moment-rail" id="moment-rail" aria-label="Current moment" hidden>
     <div class="moment-rail__row" id="moment-primary"></div>
     <p class="moment-rail__change" id="moment-change">Waiting for the first completed interval.</p>
   </section>
@@ -133,10 +144,10 @@
       </div>
 
       <div class="atlas" id="atlas" role="application"
-           aria-label="Curated national backbone topology. Arrow keys move between cities.">
-        <svg id="atlas-svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"
+           aria-label="Fixed engineering backbone schematic. Arrow keys move between cities.">
+        <svg id="atlas-svg" viewBox="0 0 135 63" preserveAspectRatio="xMidYMid meet"
              role="img" aria-labelledby="atlas-svg-title atlas-svg-desc">
-          <title id="atlas-svg-title">Curated national backbone topology</title>
+          <title id="atlas-svg-title">Fixed engineering backbone schematic</title>
           <desc id="atlas-svg-desc">Eighteen cities joined by thirty-two links. An
             equivalent list is available through the List view control.</desc>
           <g id="atlas-links"></g>
@@ -152,7 +163,13 @@
       </div>
 
       <footer class="stage__foot">
-        <ul class="legend" id="atlas-legend" aria-label="Topology legend"></ul>
+        <ul class="legend" id="atlas-legend" aria-label="Topology legend">
+          <li><span class="legend__line" data-kind="normal" aria-hidden="true"></span>Normal</li>
+          <li><span class="legend__line" data-kind="pressure" aria-hidden="true"></span>Pressure</li>
+          <li><span class="legend__line" data-kind="failed" aria-hidden="true"></span>Failed</li>
+          <li><span class="legend__line" data-kind="current" aria-hidden="true"></span>Current path</li>
+          <li><span class="legend__line" data-kind="alternate" aria-hidden="true"></span>Alternate path</li>
+        </ul>
         <p class="disclaimer" id="atlas-disclaimer"></p>
       </footer>
     </section>
@@ -200,6 +217,9 @@
     <p class="story-progress" id="story-progress">Guided Story is not running.</p>
     <button type="button" class="ctl" id="btn-story-next">Next</button>
     <button type="button" class="ctl" id="btn-story-toggle">Start Guided Story <kbd>G</kbd></button>
+    <button type="button" class="ctl" id="btn-story-auto" aria-pressed="false" disabled>
+      Auto story
+    </button>
   </div>
 
   <div class="cockpit__group" role="group" aria-label="Decision">
