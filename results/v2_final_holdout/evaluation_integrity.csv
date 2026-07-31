@@ -1,0 +1,10 @@
+policy_id,algorithm,training_root,episodes,unique_seeds,unique_scenarios,all_episodes_truncated,any_episode_terminated,all_reward_component_sums_exact,invalid_action_attempts_total,mask_disagreements_total,reward_mismatches_total,nonfinite_values_total,solver_convergence_failures_total,protected_safety_failures_total,all_checks_passed
+root42_maskable_ppo,maskable_ppo,42,35,5,7,True,False,True,0,0,0,0,0,0,True
+root42_masked_bandit,masked_bandit,42,35,5,7,True,False,True,0,0,0,0,0,0,True
+root314159_maskable_ppo,maskable_ppo,314159,35,5,7,True,False,True,0,0,0,0,0,0,True
+root314159_masked_bandit,masked_bandit,314159,35,5,7,True,False,True,0,0,0,0,0,0,True
+root271828_maskable_ppo,maskable_ppo,271828,35,5,7,True,False,True,0,0,0,0,0,0,True
+root271828_masked_bandit,masked_bandit,271828,35,5,7,True,False,True,0,0,0,0,0,0,True
+baseline_static,static,baseline,35,5,7,True,False,True,0,0,0,0,0,0,True
+baseline_greedy,greedy,baseline,35,5,7,True,False,True,0,0,0,0,0,0,True
+baseline_cspf,cspf,baseline,35,5,7,True,False,True,0,0,0,0,0,0,True

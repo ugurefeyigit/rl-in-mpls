@@ -1,125 +1,140 @@
-# Next-stage handoff: V2 final-holdout decision gate
+# V2 study closeout: final holdout complete
 
-## Decision
+## Final decision
 
-The three-root continuity study is complete. The masked contextual bandit beat
-MaskablePPO on all three preregistered training roots. Mean selected-policy
-return across roots was 25.74 for the bandit and 16.70 for PPO; greedy, the
-strongest baseline, remained at 6.47.
+The governed V2 study is complete and closed. The masked contextual bandit
+advantage generalized to the single untouched final holdout. Across the three
+continuity-selected roots, mean holdout return was **18.221** for the bandit and
+**9.036** for MaskablePPO, an advantage of **9.185**. Greedy was the strongest
+repository baseline at **-2.327**.
 
-Recommendation: authorize the untouched final holdout as the next and only
-scientific stage, with the procedure still frozen and no tuning. Do not redesign
-the learners before that gate.
+The bandit beat PPO on all three training roots and in six of seven scenarios.
+PPO retained a small 1.107-point advantage in `deceptive_local_optimum`; this is
+preserved as a negative result against an across-the-board bandit claim.
+
+The final evidence provides no positive support for a need for temporal
+planning in this frozen task: the explicitly myopic learner remains stronger.
+This does not establish that planning is generally irrelevant. No further
+tuning, checkpoint selection, or redesign recommendation is made from holdout
+performance.
 
 ## Repository and scientific identity
 
 - Branch: `feat/rl-environment-v2`
-- Report parent and continuation training source:
-  `6a8a4068b98bf9a71dead6e547595b4bbd755689`
+- Final-holdout evaluation source:
+  `f7ed0f407c50c5472ecff89f977bc656439a8c49`
 - Seed-42 scientific training source:
   `ca64b62fe29e45ab61aa86d642799aec5a4c25e1`
-- Approved tooling ancestor:
+- Continuation training/evaluation source:
+  `6a8a4068b98bf9a71dead6e547595b4bbd755689`
+- Approved ancestor:
   `859fdb2e0c5005b4eabd4ac1c3c8e48d2c0e31ac`
 - Signed-off environment pin:
   `dca533b5c6fa9953307d01470c23cac512eb2961`
 - Environment: `MplsTeEnvV2`, observation 604, actions 69
-- The final pushed report commit is the commit containing this handoff; obtain
-  its full SHA with `git log -1 --format=%H` after pulling.
 
-The continuation source differs from the seed-42 scientific source only through
-committed reports and two tested governance repairs: activation of the two
-remaining preregistered roots and admission of those roots during checkpoint
-selection. Environment, learners, hyperparameters, masks, rewards, scenarios,
-evaluation, and checkpoint selection semantics did not change.
+The pre-existing unstaged generated change to
+`results/environment_v2_validation/manifest.json` was preserved and excluded
+from all commits.
 
-## Three-root result
+## Final holdout result
 
-| Root | Bandit | PPO | Advantage | Bandit checkpoint | PPO checkpoint |
+| Training root | Bandit | PPO | Bandit advantage | Bandit checkpoint | PPO checkpoint |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 42 | 22.654 | 13.453 | 9.201 | 250k | 250k |
-| 314159 | 29.800 | 16.159 | 13.641 | 300k | 350k |
-| 271828 | 24.769 | 20.484 | 4.285 | 400k | 150k |
+| 42 | 16.128 | 6.568 | 9.560 | 250k | 250k |
+| 314159 | 20.546 | 8.297 | 12.250 | 300k | 350k |
+| 271828 | 17.988 | 12.242 | 5.746 | 400k | 150k |
 
-The bandit advantage persists 3/3. This provides no positive evidence that
-temporal planning is necessary: the myopic learner won every root. Safety was
-preserved, and learned-policy churn remained substantially below greedy.
+| Method | Return | Delivery | SLA intervals | Reroutes/hour | Moved Mbps |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| masked_bandit | 18.221 | 0.9492 | 174.94 | 2.148 | 1,602.86 |
+| maskable_ppo | 9.036 | 0.9459 | 208.17 | 2.148 | 1,291.00 |
+| greedy | -2.327 | 0.9444 | 200.34 | 4.913 | 9,963.93 |
+| cspf | -28.339 | 0.9347 | 249.57 | 0.636 | 683.18 |
+| static | -101.851 | 0.8998 | 353.43 | 0.366 | 205.87 |
 
-## Integrity and tests
+Bandit utilization, congestion, delay, loss, reversal, and flap metrics were
+better than PPO overall. Bandit moved more bandwidth than PPO but far less than
+greedy. Bandit and PPO both averaged about 2.148 reroutes/hour; bandit averaged
+1.58 reversals and 0.0930 flaps/demand versus PPO's 2.00 and 0.1176. This is
+acceptable churn within the frozen comparison.
 
-- Focused learning/compatibility suite: 71 passed
-- Definition-freeze/pin subset: 14 passed, 110 deselected
-- CUDA was exercised through PyTorch parameters, gradients, backward, and Adam
-  state on the NVIDIA GeForce RTX 4070 Laptop GPU.
-- Every accepted learner completed exactly 400,000 aggregate transitions with
-  16 environments and eight 50,000-transition checkpoints.
-- All 48 checkpoint payloads and sidecars passed validation.
-- Every learner ledger contains 1,392 records and 1,392 unique seeds.
-- PPO and bandit ledgers are byte-identical within each root.
-- All training integrity counters are zero.
-- All 525 final episodes have exact reward sums, normal truncation, no
-  termination, and zero invalid actions, mask disagreements, solver failures,
-  or protected safety failures.
-- Evaluation scenarios are the approved seven and evaluation seeds are
-  101–105 only.
-- **Final holdout seeds 1001–1005 were not constructed, evaluated, inspected,
-  debugged, selected, or tuned with.**
+Protected and unprotected disconnection accounting was identical across every
+method. FRR disconnections and restorations were also identical. All methods
+had zero rejected TE requests. The gains therefore preserve the governed
+safety envelope.
 
-## Compact evidence
+## One-shot authorization and integrity
 
-Read:
+- Final seeds: 1001, 1002, 1003, 1004, 1005 only.
+- Scenarios: the seven frozen scenarios only.
+- Six fixed continuity-selected learner checkpoints; no sweep or reselection.
+- Static, greedy, and CSPF ran through the repository implementations once.
+- Exactly 35 episodes per checkpoint or baseline; 315 total.
+- Exactly 315 compressed full-step artifacts and 315 episode summaries.
+- Deterministic inference with authoritative masks.
+- All episodes reached normal truncation; no abnormal termination.
+- Zero invalid actions, mask disagreements, reward mismatches, non-finite
+  values, solver convergence failures, or protected safety failures.
+- Every step passed the exact 12-component reward sum check. The largest
+  residual after separately aggregating episode components was 1.7053e-13.
+- All six payload hashes, sidecar hashes, source SHAs, roots, algorithms, and
+  transitions were independently revalidated after completion.
+- The final evaluation ran exactly once. No episode was retried, omitted, or
+  selectively repeated.
 
-- `results/v2_three_root_continuity/REPORT.md`
-- `results/v2_three_root_continuity/manifest.json`
-- `results/v2_three_root_continuity/comparison_metrics_by_root.csv`
-- `results/v2_three_root_continuity/aggregate_metrics.csv`
-- `results/v2_three_root_continuity/scenario_metrics.csv`
-- `results/v2_three_root_continuity/reward_components.csv`
-- `results/v2_three_root_continuity/action_distribution.csv`
-- `results/v2_three_root_continuity/checkpoint_selection.csv`
-- `results/v2_three_root_continuity/learning_curves.csv`
-- `results/v2_three_root_continuity/training_summary.csv`
-- `results/v2_three_root_continuity/training_integrity.csv`
-- `results/v2_three_root_continuity/evaluation_integrity.csv`
+No training, tuning, checkpoint selection, checkpoint reselection, policy
+debugging, or algorithm redesign used holdout results.
 
-The continuity manifest contains exact commands, run paths, checkpoint hashes,
-ledger hashes, failures, superseded runs, runtimes, source SHAs, and the
-explicit holdout confirmation.
+## Authorization-tooling repair
 
-## Full artifacts
+The original gate rejected holdout seeds unconditionally and required the
+evaluation checkout SHA to equal each checkpoint's training SHA. That made a
+single safe evaluation across the two approved source identities impossible.
+Before holdout access, commit `f7ed0f4` added an evaluation-only workflow with:
 
-Seed 42 remains under:
+- an immutable six-checkpoint registry;
+- exact payload, sidecar, root, algorithm, transition, and source binding;
+- descendant-only cross-source loading;
+- an allowlist restricted to evaluation, governance, tests, and compact
+  results, with scientific-definition changes rejected;
+- an explicit complete final-holdout seed mode;
+- no checkpoint, seed, or scenario selection inputs;
+- fail-closed new output directories and no retry path.
 
-`C:\Users\ugure\OneDrive\Masaüstü\rl_in_mpls\.worktrees\seed42`
+The repair was committed and pushed before the final evaluation. Verification
+before holdout access was 81 focused learning/compatibility tests passed,
+14 freeze/pin tests passed (110 deselected), and 440 full-suite tests passed.
 
-Accepted continuation artifacts remain under:
+## Runtime and artifacts
 
-`C:\Users\ugure\OneDrive\Masaüstü\rl_in_mpls\.worktrees\continuity_v2`
+The one-shot evaluation used CUDA on the NVIDIA GeForce RTX 4070 Laptop GPU.
+Total runner wall time was 152.093 seconds. Learner peak allocated GPU memory
+ranged from 13,386,752 to 16,926,720 bytes.
 
-- `runs/v2/seed314159_maskable_ppo_final_r2`
-- `runs/v2/seed314159_masked_bandit_final_r2`
-- `runs/v2/seed314159_comparison_final_r2`
-- `runs/v2/seed271828_maskable_ppo_final`
-- `runs/v2/seed271828_masked_bandit_final`
-- `runs/v2/seed271828_comparison_final`
+Compact evidence:
 
-Preserved failed/superseded evidence:
+- `results/v2_final_holdout/FINAL_HOLDOUT_REPORT.md`
+- `results/v2_final_holdout/manifest.json`
+- `results/v2_final_holdout/per_root_metrics.csv`
+- `results/v2_final_holdout/aggregate_metrics.csv`
+- `results/v2_final_holdout/scenario_metrics.csv`
+- `results/v2_final_holdout/reward_components.csv`
+- `results/v2_final_holdout/action_distribution.csv`
+- `results/v2_final_holdout/evaluation_integrity.csv`
+- `results/v2_final_holdout/checkpoint_provenance.csv`
 
-- Seed42 worktree:
-  `runs/v2/seed314159_maskable_ppo_final.stdout.log`
-- Continuity worktree:
-  `runs/v2/seed314159_maskable_ppo_final`
-- Continuity worktree:
-  `runs/v2/seed314159_masked_bandit_final`
-- Continuity worktree:
-  `runs/v2/seed314159_comparison_final`
+Full artifacts:
 
-No checkpoint, model binary, replay buffer, TensorBoard data, raw step log, or
-large dataset is committed.
+`C:\Users\ugure\OneDrive\Masaüstü\rl_in_mpls\.worktrees\final_holdout_v2\runs\v2\final_holdout_20260731_f7ed0f4`
 
-## Final-holdout gate
+This directory contains compressed step evidence and episode summaries. It is
+outside Git. No checkpoint, model binary, replay buffer, TensorBoard data, raw
+training log, compressed episode log, or large dataset is committed.
 
-If authorized, the next task must use the already frozen final-holdout
-procedure without altering definitions, learners, hyperparameters, checkpoint
-selection, or metrics. It must not use the holdout for tuning, debugging,
-checkpoint selection, or repeated redesign cycles. Until explicit authorization
-is given, the final holdout remains closed.
+## Closeout
+
+There is no next governed V2 experiment stage in this study. The final report
+and this handoff are the stop condition. Preserve all worktrees, failed and
+superseded earlier runs, selected checkpoints, final-holdout artifacts, and the
+unstaged validation-manifest change.
