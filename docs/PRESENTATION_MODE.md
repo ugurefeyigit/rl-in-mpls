@@ -163,3 +163,77 @@ The header button renders a summary card from live state: final scores, peak
 utilization, SLA totals, delivered ratio, route changes and flaps for both
 controllers, plus the full story timeline and the disclaimer. Use the browser's
 "Save as PDF" destination.
+
+
+---
+
+## The third surface: `/study`
+
+Presentation Mode and the engineering console both drive a **live** simulation
+session. The study surface does not: it is a read-only record of the **closed**
+V2 study, served from the committed evidence files.
+
+| Surface | Drives a session | Data source |
+|---|---|---|
+| `/` and `/advanced` | yes | live `SimSession` |
+| `/present` | yes | live `SimSession` |
+| `/study` | **no** | `results/v2_*` via `/api/v2/*` |
+
+Use it when the question is *what did the study find and can I trust it*, rather
+than *what does the controller do right now*.
+
+### What it shows
+
+1. **Verdict** - the frozen conclusions, including both halves of the planning
+   statement, which always appear together.
+2. **Final holdout** - the five-method aggregate and the per-root learner
+   comparison. Learner rows are the mean of three training-root means; baselines
+   have no training root and ran once.
+3. **Scenarios** - the seven-scenario comparison. The one scenario PPO wins
+   points its bar the other way, so the negative result is the most visible thing
+   on the chart rather than a footnote.
+4. **Operations and churn** - delivery, SLA, utilization, congestion, delay,
+   loss, reroutes, reversals, flaps, moved bandwidth, dwell, TE changes, FRR,
+   disconnections, restorations, the 12-component reward breakdown with its
+   exact-sum residual, and the action distribution.
+5. **Development** - a visually distinct region with a permanent
+   *development / continuity - not holdout evidence* ribbon, carrying the
+   learning curves and checkpoint selection. Nothing here may be averaged with
+   the holdout, and the two never arrive from the same API route.
+6. **Provenance** - safety and integrity counters, the six checkpoints with their
+   payload and sidecar hashes and source bindings, runtime and device, artifact
+   locations, and the invalidated / superseded / failed / repaired run
+   disclosures behind progressive disclosure.
+7. **Recorded replay** - preserved episodes played back from the traces the
+   one-shot evaluation wrote.
+
+### Two figures that look like one
+
+Where two published statistics share a name, both are shown with their grain
+named. **No-op share** has a pooled-step form (87.09% bandit) and an
+episode-mean form (82.10%); the final-holdout report quotes the pooled one.
+**Wall time** has a whole-runner form (152.093 s, including baselines and setup)
+and a six-checkpoint-evaluations form (115.213 s). Neither pair is
+interchangeable. See [V2_EVIDENCE_AUDIT.md](V2_EVIDENCE_AUDIT.md).
+
+### Replay is recorded, never live
+
+Every replay payload is marked `kind: "recorded_replay"` and `live: false`, and
+the page refuses to render anything that is not. Replay never runs a controller
+or evaluates a checkpoint.
+
+The step traces are large and live outside Git. Set `V2_FULL_ARTIFACTS` to the
+directory named in `results/v2_final_holdout/manifest.json` under
+`full_artifact_path`. Without it the catalogue still lists all 315 episodes and
+explains how to configure the path.
+
+The traces carry aggregate utilization rather than per-link utilization, so
+replay shows the real per-interval operational record - reward, actions, busiest
+link, delay, loss, SLA - and deliberately does not animate a topology it has no
+data for.
+
+### If nothing loads
+
+A missing or inconsistent artifact is reported as an outage, not as zeros: the
+section says what failed and why, and the page shows its empty state. That is
+the intended behaviour - the surface will not render an approximate number.

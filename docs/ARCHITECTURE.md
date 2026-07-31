@@ -3,11 +3,14 @@
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │ frontend/ (static, no build step)                                      │
-│   Cytoscape.js topology · ECharts metrics · decision tape · tables     │
+│   index.html   Cytoscape topology · ECharts · decision tape (live)     │
+│   present.html Presentation Mode (live)                                │
+│   study.html   V2 sealed evidence record (read-only, no session)       │
 │         ▲ REST (fetch)                  ▲ WebSocket /ws/telemetry      │
 ├─────────┴───────────────────────────────┴──────────────────────────────┤
 │ server/ (FastAPI, one process)                                         │
 │   main.py    REST + WS endpoints, training-job subprocess control      │
+│   evidence_api.py  GET-only /api/v2/* over the frozen V2 evidence      │
 │   session.py SimSession → AlgoRunner(s): paced stepping, decisions,    │
 │              explanations, counterfactuals, paired compare mode        │
 │   db.py      SQLite run summaries                                      │
@@ -22,6 +25,11 @@
 │   baselines/ static SP · greedy utilization · CSPF reopt · random      │
 │   rl/        MplsTeEnv (Gymnasium, masked Discrete actions), reward    │
 │   experiments/ paired episode runner + summary metrics                 │
+│   evidence/  read-only access to the CLOSED V2 study:                  │
+│              identity.py frozen study constants (no I/O)               │
+│              loader.py   fail-closed schema/identity/integrity checks  │
+│              claims.py   every scientific calculation, one place       │
+│              replay.py   recorded step traces, never an evaluation     │
 ├────────────────────────────────────────────────────────────────────────┤
 │ scripts/   train.py · evaluate.py · make_figures.py · demo.py          │
 │ configs/   topology · traffic_classes · scenarios · reward ·           │
@@ -81,3 +89,45 @@ npm or a CDN. Cytoscape.js + ECharts are vendored under `frontend/vendor/`;
 the app is plain ES modules served by FastAPI. Cytoscape.js was chosen for
 first-class network-graph styling (per-edge data-driven color/width, overlay
 classes for LSP highlighting) without a framework dependency.
+
+
+## The read-only evidence path
+
+The governed V2 study is closed. Its artifacts under `results/v2_*` are immutable
+inputs, and one component reads them:
+
+```
+results/v2_final_holdout/*.csv,*.json ─┐
+results/v2_three_root_continuity/*     ├─► mplssim/evidence/loader.py
+results/v2_seed42/*                    ┘        │  validates schema, study
+                                                │  identity and integrity;
+                                                │  raises rather than degrades
+                                                ▼
+                                        mplssim/evidence/claims.py
+                                                │  root-aware aggregation,
+                                                │  scenario comparison,
+                                                │  reward reconciliation
+                                                ▼
+                                        server/evidence_api.py  (GET only)
+                                                ▼
+                                        frontend/study.html
+```
+
+Three properties hold by construction and are covered by tests:
+
+1. **Read-only.** Nothing on this path opens a file under `results/` or `runs/`
+   for writing, imports a learner, constructs an environment, or loads a
+   checkpoint. `tests/test_evidence_loader.py` and `tests/test_evidence_api.py`
+   assert the absence of writes to governed paths.
+2. **Fail closed.** A missing file, a missing column, a wrong episode count, a
+   foreign source SHA, an unexpected seed set or a failed integrity flag raises.
+   The API turns that into a 503 with a named cause rather than serving zeros.
+3. **One place for arithmetic.** The API and the frontend do no scientific
+   calculation. Aggregation is root-aware — the aggregate is the unweighted mean
+   of the three training-root means, never a pool of the 105 episodes — and
+   development and final-holdout evidence are separate types with no operation
+   that combines them.
+
+Recorded replay reads the preserved step traces named in the holdout manifest.
+Their location is configurable via `V2_FULL_ARTIFACTS`; when unset, the catalogue
+still lists every episode and reports it unavailable.

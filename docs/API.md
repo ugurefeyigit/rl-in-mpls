@@ -3,6 +3,46 @@
 Interactive OpenAPI docs are always available at `http://127.0.0.1:8000/docs`.
 All bodies are JSON. Errors return `{"detail": "..."}` with 4xx status.
 
+## V2 study evidence (read-only)
+
+The governed V2 study is closed. These routes read the committed compact
+artifacts under `results/v2_*` and the preserved step traces. Every one is a
+**GET**; there is deliberately no route that can train, tune, evaluate a
+checkpoint, reselect one, sweep, or reopen the final holdout.
+
+Every payload carries `stage` — `final_holdout` or `development` — plus the
+source SHA and the artifact path it was read from. Final-holdout and development
+evidence never arrive from the same route, so no client can average them.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/v2/study` | Status, identity, seeds, scenarios, and the frozen conclusions |
+| GET | `/api/v2/final-holdout` | One-shot result: episode accounting, learner comparison, five-method aggregate, safety, churn, runtime, both no-op grains |
+| GET | `/api/v2/final-holdout/scenarios` | Seven-scenario comparison, root-averaged, with baselines |
+| GET | `/api/v2/final-holdout/reward-components` | 12-component breakdown and the exact-sum residuals |
+| GET | `/api/v2/final-holdout/actions` | All 621 action rows plus no-op share at both grains |
+| GET | `/api/v2/final-holdout/integrity` | Safety counters and integrity status |
+| GET | `/api/v2/final-holdout/provenance` | Six checkpoints, hashes, source bindings, runtime |
+| GET | `/api/v2/development/continuity` | Three-root continuity results and learning curves |
+| GET | `/api/v2/development/seed42` | Seed-42 pilot results and checkpoint curve |
+| GET | `/api/v2/disclosures` | Invalidated, superseded, failed and repaired runs |
+| GET | `/api/v2/replay/index` | Catalogue of all 315 recorded episodes, with per-episode availability |
+| GET | `/api/v2/replay/episode` | `?policy_id=&scenario=&seed=` — one recorded episode's provenance and step sequence |
+
+**Errors.** Unlike the live-session routes, these return a structured detail:
+`{"detail": {"error": "IntegrityError", "message": "..."}}`. An unreadable or
+inconsistent artifact is a **503**, never a page of zeros. An out-of-study
+request — a non-holdout seed, an unknown scenario or policy — is a **400**.
+
+**Replay availability.** The recorded step traces are large and live outside Git.
+Set `V2_FULL_ARTIFACTS` to the directory named in
+`results/v2_final_holdout/manifest.json` under `full_artifact_path`. Without it,
+`/api/v2/replay/index` still lists all 315 episodes with `available: false` and
+`/api/v2/replay/episode` returns 503 with the configuration hint.
+
+Replay is a tape player. Every payload is marked `kind: "recorded_replay"` and
+`live: false`, and the `/study` page refuses to render anything that is not.
+
 ## Static information
 
 | Method | Path | Description |

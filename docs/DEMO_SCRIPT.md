@@ -1,5 +1,11 @@
 # Demonstration script
 
+> Two different demos live here. The **live simulation** demo below shows a
+> controller acting on a network in real time. The **evidence** demo at the end
+> shows what the closed V2 study actually found. For a technical audience, run
+> the evidence demo - it is the one with a defensible claim behind it.
+
+
 ## 5-minute version
 
 Preparation: `python scripts/demo.py` (session is created paused at 17:00,
@@ -73,3 +79,56 @@ approval gate, hard constraint checker always on (docs/REPORT.md
 
 **Q: One lucky seed?** The demo seed is fixed and disclosed; all claims come
 from 5-seed paired evaluation with CIs (results/eval_stats.csv).
+
+
+---
+
+## The V2 evidence demo (4 minutes, nothing runs)
+
+No training, no evaluation, no checkpoint loading. Everything is read from the
+committed evidence files.
+
+```bash
+python -m uvicorn server.main:app --port 8000
+```
+
+Open `http://127.0.0.1:8000/study`.
+
+1. **[0:00] Frame the question.** "V1 showed RL could beat static and heuristic
+   routing. That does not tell you *why*. The gain could be planning, or it could
+   just be a strong learned reaction. V2 separated those: MaskablePPO, which
+   optimises a discounted return, against a contextual bandit that is explicitly
+   myopic - same observation, same action mask, same budget, no notion of the
+   future at all."
+2. **[0:40] The verdict.** Read the top row. "The myopic learner won: 18.221
+   against 9.036. Greedy, the strongest conventional baseline, is at -2.327. This
+   ran once, on seeds nobody had touched, over 315 episodes."
+3. **[1:20] The honest half.** Point at the last two findings. "This does not
+   positively support a need for temporal planning *in this formulation*. It is
+   also not evidence that planning is generally irrelevant to traffic
+   engineering. Those two sentences always travel together."
+4. **[2:00] Scenarios - show where it loses.** Scroll to the divergence chart.
+   "Six of seven scenarios go to the bandit. One bar points the other way: PPO is
+   better in the deceptive local optimum by 1.107. That result is preserved
+   rather than buried - it is the check against an across-the-board claim."
+5. **[2:40] Churn, honestly.** Operations section. "Both learners reroute at the
+   same rate. The bandit reverses and flaps less - but it moves *more* bandwidth
+   than PPO. That is a real cost and it is in the table. Greedy moves eight times
+   as much."
+6. **[3:10] Why you should believe it.** Provenance section. "Six checkpoints,
+   each bound by payload hash to the source that trained it and to the single
+   source that evaluated it. Every safety counter zero. Every step passed the
+   exact 12-component reward-sum check." Then expand a disclosure: "and here is
+   the run we threw away - a seeding bug that gave the PPO workers sixteen
+   different roots. It is preserved, disclosed, and contributed to nothing."
+7. **[3:40] Replay.** Load an episode. "This is recorded playback of a trace the
+   one-shot evaluation wrote. It does not run a controller."
+
+**If someone asks whether you tuned on the holdout:** the manifest asserts
+training, tuning, checkpoint selection, sweep and debugging are all false, and
+the evidence loader refuses to serve the data if any of them is not. The holdout
+workflow accepts no selection input at all.
+
+Deeper answers, including the awkward question about the authorization gate being
+repaired shortly before the holdout ran, are in
+[TECHNICAL_DEFENSE.md](TECHNICAL_DEFENSE.md) section 7 and section 9.

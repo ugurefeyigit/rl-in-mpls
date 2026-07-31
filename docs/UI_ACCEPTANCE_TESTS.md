@@ -165,3 +165,36 @@ constant, websocket reconnect, no-training-on-launch, benchmark honesty).
 | C4 | Published results untouched | `git status` shows nothing modified under `results/` or `models/` |
 | C5 | Keyboard focus visible | Tab through both pages — focus ring on every control |
 | C6 | Reduced motion respected | Enable OS "reduce motion" → no entry animations |
+
+
+---
+
+## `/study` - the V2 evidence record
+
+Automated coverage is in `tests/test_study_ui.py` and `tests/test_evidence_api.py`
+(element ids, vendored-assets-only, no hardcoded scientific literal, no mutating
+endpoint, recorded-replay marking, development labelling, reduced motion, visible
+focus). The checks below are the ones a suite cannot make.
+
+| # | Check | Expected |
+|---|---|---|
+| S1 | Open `/study` with the server running | Seal band states the study is closed; all seven sections populate; no error banner |
+| S2 | Compare the aggregate table against `results/v2_final_holdout/aggregate_metrics.csv` | Every displayed figure matches the file; rounding only, never a different value |
+| S3 | Read the verdict findings aloud | The "does not positively support" sentence and the "not evidence that planning is generally irrelevant" sentence both appear |
+| S4 | Look at the scenario chart | Exactly one bar points left, labelled as a PPO win; its margin matches the table |
+| S5 | Scroll into the development region | Ribbon reads *development / continuity - not holdout evidence*; region is visually distinct in greyscale as well as in colour |
+| S6 | Check the spine while scrolling | The development entry carries its own marker; the current section is indicated by more than colour |
+| S7 | Expand every disclosure | Invalidated, superseded, failed and repaired appear as four distinct statuses; each says it was not used in reported results |
+| S8 | Compare the two no-op columns | Pooled and episode-mean values differ, and each states its grain |
+| S9 | Compare the two runtime rows | Whole-runner and six-checkpoint figures differ, and each states its grain |
+| S10 | Start the server with `V2_FULL_ARTIFACTS` unset | Replay catalogues all 315 episodes, the Load button is disabled, and the panel explains how to configure the path |
+| S11 | Set `V2_FULL_ARTIFACTS` and load an episode | Recorded chip is visible; the readout says recorded playback, not a live evaluation; the recorded return matches the frozen episode summary |
+| S12 | Change controller, scenario and seed, then load | Provenance updates to the selected controller's root, checkpoint and training source |
+| S13 | Rename a file under `results/v2_final_holdout/` and reload | Sections report an outage with a named cause; no section shows zeros or blanks pretending to be data |
+| S14 | Tab through the page from the top | Skip link appears first; every control is reachable; focus is always visible |
+| S15 | Resize from a wide window down to a phone width | No horizontal page scrollbar at any width; wide tables scroll inside their own container; charts never paint wider than their box |
+| S16 | Enable the OS reduced-motion setting and reload | Charts appear without animation; smooth scrolling is off |
+| S17 | Print or save as PDF | The spine and replay controls are hidden; chapters do not break mid-table |
+
+**S13 is the important one.** The surface is allowed to be unavailable. It is not
+allowed to be approximately right.

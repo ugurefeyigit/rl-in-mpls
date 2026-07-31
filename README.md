@@ -5,20 +5,67 @@
 > granted to use, copy, modify or redistribute it without written permission.
 > See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-An interactive engineering experiment answering one question honestly:
+An interactive engineering experiment answering two questions honestly.
 
-> **Can an RL controller make better MPLS traffic-engineering decisions than
-> conventional static or heuristic routing when traffic demand changes over time?**
+**V1 asked:** can an RL controller make better MPLS traffic-engineering
+decisions than conventional static or heuristic routing when demand changes over
+time?
 
-A flow-level simulation of an 18-router MPLS backbone is driven by either a
-trained MaskablePPO agent or conventional controllers (static shortest path,
-utilization-aware greedy, CSPF-style periodic reoptimization). All
-controllers face byte-identical seeded traffic, so every comparison is
-paired. A live NOC-style dashboard shows the topology, LSPs, decisions,
-reward breakdowns and metrics in real time.
+**V2 asked the sharper question:** does *planning* explain the gain? A
+MaskablePPO agent, which optimises a discounted return, was compared against a
+**masked contextual bandit** that is explicitly myopic - same observation, same
+action mask, same budget, but no notion of the future at all.
+
+A flow-level simulation of an 18-router MPLS backbone is driven by these learners
+or by conventional controllers (static shortest path, utilization-aware greedy,
+CSPF-style periodic reoptimization). All controllers face byte-identical seeded
+traffic, so every comparison is paired. A live NOC-style dashboard shows the
+topology, LSPs, decisions, reward breakdowns and metrics in real time.
 
 **This is a simulation study, not a production controller.** Limitations are
-listed below and in [docs/REPORT.md](docs/REPORT.md).
+listed below, in [docs/TECHNICAL_DEFENSE.md](docs/TECHNICAL_DEFENSE.md) and in
+[docs/REPORT.md](docs/REPORT.md).
+
+---
+
+## The V2 result - closed and sealed
+
+The governed V2 study is **complete**. Its final holdout ran **exactly once** on
+seeds no one had touched, over **315 episodes** (35 per learner checkpoint or
+baseline).
+
+| Method | Holdout return |
+|---|---:|
+| Masked contextual bandit | **18.221** |
+| MaskablePPO | 9.036 |
+| Utilization-aware greedy | -2.327 |
+| CSPF periodic reopt | -28.339 |
+| Static shortest path | -101.851 |
+
+The bandit's advantage was **9.185** return points. It won **all three** training
+roots and **six of seven** scenarios; PPO kept a **1.107**-point lead in
+`deceptive_local_optimum`, preserved as a negative result against an
+across-the-board claim. All safety and integrity checks passed. Both learners
+averaged about **2.148 reroutes/hour**; the bandit had fewer reversals and flaps
+but moved more bandwidth than PPO.
+
+> **The frozen evidence does not positively support a need for temporal planning
+> in this formulation** - the explicitly myopic learner remained stronger.
+>
+> **This is not evidence that planning is generally irrelevant to MPLS or traffic
+> engineering.** It is a result about these frozen learners, scenarios, reward and
+> observation design only.
+
+No training, tuning, sweep, reselection, redesign, retry or policy debugging used
+holdout results. Browse the whole record, including the invalidated run and the
+full chain of custody, at **`/study`**.
+
+| Doc | Contents |
+|---|---|
+| [docs/TECHNICAL_DEFENSE.md](docs/TECHNICAL_DEFENSE.md) | Problem framing, methodology, roots and selection, the invalidated run, limitations |
+| [docs/V2_EVIDENCE_AUDIT.md](docs/V2_EVIDENCE_AUDIT.md) | Independent reconciliation of every published figure against the frozen files |
+| [docs/V3_RESEARCH_BACKLOG.md](docs/V3_RESEARCH_BACKLOG.md) | Ideas only - **unapproved and unevaluated**, supported by no V2 evidence |
+| [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) | What a release must verify, and known limitations |
 
 ---
 
@@ -62,6 +109,7 @@ python -m uvicorn server.main:app --port 8000
 
 | URL | What it is |
 |---|---|
+| `http://127.0.0.1:8000/study` | **V2 sealed evidence record** - the closed study, read-only |
 | `http://127.0.0.1:8000/present` | Presentation Mode — storytelling UI for a live audience |
 | `http://127.0.0.1:8000/` or `/advanced` | Engineering console — full telemetry |
 | `http://127.0.0.1:8000/docs` | OpenAPI, always current |
@@ -87,7 +135,42 @@ docker compose up --build    # http://127.0.0.1:8000
 The compose service sets `ALLOW_TRAINING=false`; override it in
 `docker-compose.yml` if you intend to train inside the container.
 
+## Reproducible demonstration of the V2 result
+
+No training, evaluation or checkpoint loading is involved - everything is read
+from the committed evidence.
+
+```bash
+python -m uvicorn server.main:app --port 8000
+```
+
+Then open `http://127.0.0.1:8000/study`. Every figure on that page is read from
+`results/v2_*` at request time; the page stores none of them, and a test rejects
+any scientific literal in its markup.
+
+To also replay the preserved per-step traces, point the server at them first.
+They are large and live outside Git, in the experiment worktree named in
+`results/v2_final_holdout/manifest.json` under `full_artifact_path`. On
+PowerShell:
+
+```bash
+$env:V2_FULL_ARTIFACTS="<full_artifact_path from the manifest>"; python -m uvicorn server.main:app --port 8000
+```
+
+Without it, the replay section still catalogues all 315 episodes and tells you
+how to configure the path. Replay is recorded playback - it never runs a
+controller or evaluates a checkpoint, and the page refuses any payload not marked
+as recorded.
+
+The same evidence is available as JSON under `/api/v2/*`; see
+[docs/API.md](docs/API.md).
+
 ## Training
+
+> Training is **V1/V3 tooling only**. The governed V2 study is closed: do not
+> train, tune, resume, reselect or re-evaluate a V2 learner. Any new learner
+> belongs to a separately preregistered V3 study - see
+> [docs/V3_RESEARCH_BACKLOG.md](docs/V3_RESEARCH_BACKLOG.md).
 
 ```bash
 python scripts/train.py                    # full run (configs/training.yaml, ~40 min CPU)
@@ -114,10 +197,21 @@ deltas) and per-step traces for the figure scripts.
 python -m pytest tests/ -q
 ```
 
-78 tests: engine invariants, gymnasium checker, API end-to-end, session state
-machine, correctness fixes, and the presentation contract (page smoke, element
-IDs, no external assets, display-scale agreement between Python and JS,
-websocket reconnect, no-training-on-launch, benchmark honesty).
+The suite covers engine invariants, the gymnasium checker, API end-to-end, the
+session state machine, correctness fixes, the V2 environment/reward/transition
+definitions, V1-to-V2 compatibility, the freeze/pin gates, the presentation
+contract (page smoke, element IDs, no external assets, display-scale agreement
+between Python and JS, websocket reconnect, no-training-on-launch, benchmark
+honesty), and the read-only V2 evidence layer:
+
+```bash
+python -m pytest tests/test_evidence_loader.py tests/test_evidence_claims.py tests/test_evidence_replay.py tests/test_evidence_api.py tests/test_study_ui.py -q
+```
+
+Those five files reconcile every published V2 figure against the frozen files,
+prove the loader fails closed on a missing, malformed, foreign or
+integrity-failing artifact, and assert that nothing on the evidence path ever
+opens a governed path for writing.
 
 Manual UI checks that the suite cannot cover are in
 [docs/UI_ACCEPTANCE_TESTS.md](docs/UI_ACCEPTANCE_TESTS.md).
@@ -188,11 +282,13 @@ allowed to fail. Interventions report back from the server's `changed` flag, so
 configs/      topology.yaml · traffic_classes.yaml · scenarios.yaml ·
               reward.yaml · training.yaml · baselines.yaml
 mplssim/      simulation core, RL env, baselines, experiment runner,
-              display.py (the single city/scenario/label registry)
+              display.py (the single city/scenario/label registry),
+              evidence/ (read-only access to the closed V2 study)
 server/       FastAPI app, live session manager, event log, SQLite persistence
 frontend/     build-free UIs (Cytoscape.js + ECharts, vendored — no CDN, no npm)
               index.html + js/app.js        engineering console
               present.html + js/present.js  Presentation Mode
+              study.html   + js/study.js    V2 sealed evidence record
               js/display.js · js/fmt.js     shared labels and number formatting
 scripts/      train.py · evaluate.py · make_figures.py · demo.py
 tests/        pytest suite (unit + gymnasium checker + API e2e + presentation)
@@ -233,6 +329,11 @@ retrain before loading a model trained under different shapes.
 
 ## Honest limitations (read before presenting)
 
+The bullets below describe **V1**, whose published numbers come from
+`results/eval_stats.csv`. The V2 study's own limitations - three training roots,
+five holdout seeds, one topology, one reward design, scenario-dominated variance -
+are in [docs/TECHNICAL_DEFENSE.md](docs/TECHNICAL_DEFENSE.md) section 8.
+
 - **Flow-level abstraction** — no packets, no TCP dynamics; delay/loss are
   documented analytic functions of utilization (`mplssim/sim/models.py`).
 - **Instant control plane** — reroutes take effect at the next interval; no
@@ -246,11 +347,11 @@ retrain before loading a model trained under different shapes.
 - The demo scenario/seed was **chosen to be illustrative**; aggregate claims
   rely on the multi-seed evaluation only.
 - **RL does not win everywhere, and the losses are not small.** On the
-  published 5-seed evaluation it wins the Normal National Traffic Day
+  published V1 5-seed evaluation it wins the Normal National Traffic Day
   (153.8 vs greedy 149.9) and the Hidden Shared Bottleneck (72.9 vs 70.0), and
   loses the reactive incidents clearly — Major Live Event Traffic Surge
   (−94.6 vs greedy −79.2) and Ankara–Kayseri Backbone Failure (−76.9 vs −46.1).
-- **Route churn is the agent's real weakness.** On a normal day it makes 288
+- **Route churn was the V1 agent's real weakness.** On a normal day it makes 288
   route changes to greedy's 70, of which 264 are flaps — traffic moved back to
   a path it just left. The reward function does not charge enough for this, and
   no operations team would accept it. Both UIs surface a churn warning rather
