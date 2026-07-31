@@ -84,9 +84,10 @@ def run_evaluation_episode(
     scenario: str,
     seed: int,
     policy: Any | None,
+    evaluation_mode: str = "continuity",
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Run one full deterministic V2 episode and return steps plus summary."""
-    validate_evaluation_seeds([seed])
+    validate_evaluation_seeds([seed], evaluation_mode=evaluation_mode)
     if algorithm not in BASELINE_ALGORITHMS + LEARNER_ALGORITHMS:
         raise ValueError(f"unknown V2 evaluation algorithm {algorithm!r}")
     if algorithm in LEARNER_ALGORITHMS and policy is None:
@@ -232,6 +233,8 @@ def run_evaluation_episode(
         "noop_frequency": int(action_counts[0]) / len(frame),
         "invalid_action_attempts": env.integrity.invalid_action_attempts,
         "mask_disagreements": env.integrity.mask_disagreements,
+        "reward_mismatches": env.integrity.reward_mismatches,
+        "nonfinite_values": env.integrity.nonfinite_values,
         "solver_iterations_mean": float(
             frame["flow_solver_iterations_max"].mean()),
         "solver_iterations_max": int(
@@ -284,13 +287,18 @@ def load_policy_checkpoint(
     algorithm: str,
     requested_device: str,
     require_clean_source: bool = True,
+    final_holdout_checkpoint_source_sha: str | None = None,
+    expected_payload_sha256: str | None = None,
 ) -> tuple[Any, dict[str, Any]]:
     """Validate a learner checkpoint before constructing its inference policy."""
     if algorithm not in LEARNER_ALGORITHMS:
         raise ValueError(f"{algorithm!r} is not a learner checkpoint type")
     metadata = validate_checkpoint_sidecar(
         payload_path, expected_algorithm=algorithm,
-        require_clean_source=require_clean_source)
+        require_clean_source=require_clean_source,
+        final_holdout_checkpoint_source_sha=final_holdout_checkpoint_source_sha,
+        expected_payload_sha256=expected_payload_sha256,
+    )
     device = resolve_device(requested_device).torch_device
     if algorithm == "masked_bandit":
         from mplssim.experiments.masked_bandit import MaskedContextualBandit
@@ -309,9 +317,14 @@ def evaluate_algorithm_matrix(
     seeds: list[int],
     output_directory: Path,
     write_steps: bool,
+    evaluation_mode: str = "continuity",
 ) -> pd.DataFrame:
     """Evaluate one learner checkpoint or baseline over a paired matrix."""
-    validate_evaluation_seeds(seeds)
+    validate_evaluation_seeds(
+        seeds,
+        evaluation_mode=evaluation_mode,
+        require_complete=evaluation_mode == "final_holdout",
+    )
     output = create_run_directory(Path(output_directory))
     if write_steps:
         (output / "steps").mkdir(exist_ok=True)
@@ -323,6 +336,7 @@ def evaluate_algorithm_matrix(
                 scenario=scenario,
                 seed=int(seed),
                 policy=policy,
+                evaluation_mode=evaluation_mode,
             )
             summaries.append(summary)
             if write_steps:

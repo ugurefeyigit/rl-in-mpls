@@ -28,6 +28,16 @@ MEANINGFUL_CHECKPOINT_INTERVAL = 50_000
 RUN_PURPOSES = ("meaningful", "smoke", "benchmark")
 _FULL_SHA_RE = re.compile(r"[0-9a-f]{40}")
 _CHECKPOINT_RE = re.compile(r"checkpoint_(\d+)\.(?:zip|pt)")
+_FINAL_HOLDOUT_ALLOWED_CHANGED_FILES = frozenset({
+    "NEXT_STAGE_HANDOFF.md",
+    "configs/experiments/learning_v2.yaml",
+    "mplssim/experiments/evaluation_v2.py",
+    "mplssim/experiments/learning_common.py",
+    "scripts/compare_v2.py",
+    "scripts/final_holdout_v2.py",
+    "tests/test_learning_v2.py",
+    "tests/test_v1_v2_compatibility.py",
+})
 
 
 def load_learning_config(path: Path = LEARNING_CONFIG_PATH) -> dict[str, Any]:
@@ -71,11 +81,29 @@ def validate_run_purpose(
             "and a 50000-transition checkpoint interval")
 
 
-def validate_evaluation_seeds(seeds: list[int] | tuple[int, ...]) -> None:
-    """Permit continuity seeds and reject holdout access before construction."""
+def validate_evaluation_seeds(
+    seeds: list[int] | tuple[int, ...],
+    *,
+    evaluation_mode: str = "continuity",
+    require_complete: bool = False,
+) -> None:
+    """Admit only the configured seed set for the explicit evaluation mode."""
     cfg = load_learning_config()
     holdout = set(int(x) for x in cfg["holdout_seeds"])
     requested = [int(x) for x in seeds]
+    if evaluation_mode not in {"continuity", "final_holdout"}:
+        raise ValueError(f"unsupported evaluation mode: {evaluation_mode!r}")
+    if len(requested) != len(set(requested)):
+        raise ValueError(f"{evaluation_mode} evaluation seeds must not contain duplicates")
+    if evaluation_mode == "final_holdout":
+        outside = sorted(set(requested) - holdout)
+        if outside:
+            raise ValueError(f"evaluation seeds must be final holdout seeds: {outside}")
+        if require_complete and set(requested) != holdout:
+            raise ValueError(
+                "complete final holdout requires every configured holdout seed "
+                f"exactly once: {sorted(holdout)}")
+        return
     forbidden = sorted(set(requested) & holdout)
     if forbidden:
         raise ValueError(f"forbidden holdout seed(s): {forbidden}")
@@ -83,8 +111,36 @@ def validate_evaluation_seeds(seeds: list[int] | tuple[int, ...]) -> None:
     outside = sorted(set(requested) - continuity)
     if outside:
         raise ValueError(f"evaluation seeds must be continuity seeds: {outside}")
-    if len(requested) != len(set(requested)):
-        raise ValueError("continuity evaluation seeds must not contain duplicates")
+
+
+def validate_final_holdout_changed_paths(paths: list[str] | tuple[str, ...]) -> None:
+    """Reject cross-source evaluation if any scientific implementation changed."""
+    for raw_path in paths:
+        path = str(raw_path).replace("\\", "/")
+        if path.startswith("results/") or path in _FINAL_HOLDOUT_ALLOWED_CHANGED_FILES:
+            continue
+        raise RuntimeError(
+            f"scientific source change blocks final holdout evaluation: {path}")
+
+
+def validate_final_holdout_source_compatibility(
+    checkpoint_source_sha: str,
+    evaluation_source_sha: str,
+    *,
+    checkpoint_is_ancestor: bool,
+    changed_paths: list[str] | tuple[str, ...],
+) -> None:
+    """Permit only descendant evaluation tooling with no scientific-code drift."""
+    for label, value in (
+        ("checkpoint", checkpoint_source_sha),
+        ("evaluation", evaluation_source_sha),
+    ):
+        if _FULL_SHA_RE.fullmatch(value) is None:
+            raise RuntimeError(f"{label} source is not a full SHA: {value!r}")
+    if not checkpoint_is_ancestor:
+        raise RuntimeError(
+            "checkpoint source is not an ancestor of the final-holdout checkout")
+    validate_final_holdout_changed_paths(changed_paths)
 
 
 def create_run_directory(path: Path) -> Path:
@@ -434,6 +490,8 @@ def validate_checkpoint_sidecar(
     *,
     expected_algorithm: str,
     require_clean_source: bool = True,
+    final_holdout_checkpoint_source_sha: str | None = None,
+    expected_payload_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Fail closed on checkpoint hash, algorithm, environment, or pin drift."""
     from mplssim.experiments.v2_factory import (
@@ -477,14 +535,52 @@ def validate_checkpoint_sidecar(
     current_source = git_metadata()
     validate_source_identity(
         current_source, require_clean=require_clean_source)
-    if stored_source["git_commit"] != current_source["git_commit"]:
-        raise ValueError(
-            "checkpoint source SHA does not match the current checkout")
     actual_hash = sha256_file(payload)
     if actual_hash != metadata.get("payload_sha256"):
         raise ValueError(
             f"checkpoint SHA-256 mismatch: stored "
             f"{metadata.get('payload_sha256')}, actual {actual_hash}")
+    if final_holdout_checkpoint_source_sha is None:
+        if stored_source["git_commit"] != current_source["git_commit"]:
+            raise ValueError(
+                "checkpoint source SHA does not match the current checkout")
+    else:
+        if expected_payload_sha256 is None:
+            raise ValueError(
+                "final-holdout cross-source validation requires an expected payload hash")
+        if stored_source["git_commit"] != final_holdout_checkpoint_source_sha:
+            raise ValueError(
+                "checkpoint source SHA does not match the expected final-holdout source")
+        if actual_hash != expected_payload_sha256:
+            raise ValueError(
+                "checkpoint SHA-256 does not match the expected final-holdout payload")
+        ancestor = subprocess.run(
+            [
+                "git", "merge-base", "--is-ancestor",
+                final_holdout_checkpoint_source_sha,
+                current_source["git_commit"],
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        changed = subprocess.run(
+            [
+                "git", "diff", "--name-only",
+                f"{final_holdout_checkpoint_source_sha}..{current_source['git_commit']}",
+            ],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        validate_final_holdout_source_compatibility(
+            final_holdout_checkpoint_source_sha,
+            current_source["git_commit"],
+            checkpoint_is_ancestor=ancestor.returncode == 0,
+            changed_paths=changed.stdout.splitlines(),
+        )
     assert_training_pin()
     validate_environment_metadata(
         metadata["environment_record"]["environment"])

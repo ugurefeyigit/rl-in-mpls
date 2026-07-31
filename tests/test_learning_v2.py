@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
+import ast
 import gzip
 import json
 import copy
@@ -49,6 +50,25 @@ def test_task_seed_policy_allows_preregistered_roots_and_continuity_only() -> No
         validate_evaluation_seeds([1001])
     with pytest.raises(ValueError, match="continuity"):
         validate_evaluation_seeds([999])
+
+
+def test_final_holdout_seed_gate_requires_explicit_complete_workflow() -> None:
+    """Holdout seeds open only for the complete, explicitly named final matrix."""
+    from mplssim.experiments.learning_common import validate_evaluation_seeds
+
+    holdout = [1001, 1002, 1003, 1004, 1005]
+    validate_evaluation_seeds(
+        holdout, evaluation_mode="final_holdout", require_complete=True)
+    with pytest.raises(ValueError, match="forbidden holdout"):
+        validate_evaluation_seeds(holdout)
+    with pytest.raises(ValueError, match="complete final holdout"):
+        validate_evaluation_seeds(
+            holdout[:-1], evaluation_mode="final_holdout", require_complete=True)
+    with pytest.raises(ValueError, match="final holdout seeds"):
+        validate_evaluation_seeds(
+            [101], evaluation_mode="final_holdout", require_complete=False)
+    with pytest.raises(ValueError, match="evaluation mode"):
+        validate_evaluation_seeds(holdout, evaluation_mode="checkpoint_selection")
 
 
 def test_run_directory_must_be_new(tmp_path: Path) -> None:
@@ -449,6 +469,68 @@ def test_checkpoint_sidecar_binds_filename_transition_and_source(
             require_clean_source=False)
 
 
+def test_checkpoint_sidecar_cross_source_mode_is_explicit_and_hash_bound(
+    tmp_path: Path,
+) -> None:
+    """Only the final workflow may load an ancestor-bound checkpoint by hash."""
+    from mplssim.experiments.learning_common import (
+        sha256_file,
+        validate_checkpoint_sidecar,
+        verified_environment_record,
+        write_checkpoint_sidecar,
+    )
+
+    training_source = "ca64b62fe29e45ab61aa86d642799aec5a4c25e1"
+    payload = tmp_path / "checkpoint_000050000.pt"
+    payload.write_bytes(b"cross-source final holdout checkpoint")
+    sidecar = write_checkpoint_sidecar(
+        payload,
+        algorithm="masked_bandit",
+        aggregate_transitions=50_000,
+        environment_record=verified_environment_record(42, require_clean=False),
+        run_config={
+            "algorithm": "masked_bandit",
+            "environment_version": "v2",
+            "root_seed": 42,
+            "aggregate_transitions": 400_000,
+            "checkpoint_interval": 50_000,
+            "purpose": "meaningful",
+        },
+        device={"requested": "cpu", "resolved": "cpu"},
+    )
+    metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+    metadata["source"]["git_commit"] = training_source
+    metadata["source"]["git_dirty"] = False
+    metadata["environment_record"]["source"] = copy.deepcopy(metadata["source"])
+    sidecar.write_text(json.dumps(metadata, indent=1), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="does not match the current checkout"):
+        validate_checkpoint_sidecar(
+            payload,
+            sidecar,
+            expected_algorithm="masked_bandit",
+            require_clean_source=False,
+        )
+    validated = validate_checkpoint_sidecar(
+        payload,
+        sidecar,
+        expected_algorithm="masked_bandit",
+        require_clean_source=False,
+        final_holdout_checkpoint_source_sha=training_source,
+        expected_payload_sha256=sha256_file(payload),
+    )
+    assert validated["source"]["git_commit"] == training_source
+    with pytest.raises(ValueError, match="expected final-holdout payload"):
+        validate_checkpoint_sidecar(
+            payload,
+            sidecar,
+            expected_algorithm="masked_bandit",
+            require_clean_source=False,
+            final_holdout_checkpoint_source_sha=training_source,
+            expected_payload_sha256="0" * 64,
+        )
+
+
 def test_meaningful_checkpoint_metadata_rejects_smoke_or_unknown_root() -> None:
     """Checkpoint selection accepts every active preregistered 400k root."""
     from scripts.compare_v2 import validate_meaningful_checkpoint_metadata
@@ -718,6 +800,8 @@ def test_deterministic_evaluation_runs_the_governed_full_horizon() -> None:
     assert summary["truncated"] is True
     assert all(policy.deterministic_flags)
     assert summary["invalid_action_attempts"] == 0
+    assert summary["reward_mismatches"] == 0
+    assert summary["nonfinite_values"] == 0
     assert summary["reward_component_sum_exact"] is True
 
 
@@ -747,6 +831,257 @@ def test_evaluation_refuses_holdout_before_environment_construction() -> None:
     with pytest.raises(ValueError, match="forbidden holdout"):
         run_evaluation_episode(
             algorithm="static", scenario="full_day", seed=1001, policy=None)
+
+
+def test_final_holdout_matrix_rejects_partial_seed_set_before_output(
+    tmp_path: Path,
+) -> None:
+    """A partial final matrix must fail before an output directory or env exists."""
+    from mplssim.experiments.evaluation_v2 import evaluate_algorithm_matrix
+
+    output = tmp_path / "partial-final-holdout"
+    with pytest.raises(ValueError, match="complete final holdout"):
+        evaluate_algorithm_matrix(
+            algorithm="static",
+            policy=None,
+            scenarios=["full_day"],
+            seeds=[1001, 1002, 1003, 1004],
+            output_directory=output,
+            write_steps=False,
+            evaluation_mode="final_holdout",
+        )
+    assert not output.exists()
+
+
+def test_final_holdout_registry_is_fixed_and_exposes_no_selection_inputs() -> None:
+    """The one-shot workflow must evaluate only the six preregistered choices."""
+    import scripts.final_holdout_v2 as final_holdout
+
+    expected = [
+        (42, "maskable_ppo", 250_000,
+         "d34cc77ded05b064fa2a39dbe5c5ccc3126c9e6cf85e36c1b507127c987f5676",
+         "ca64b62fe29e45ab61aa86d642799aec5a4c25e1"),
+        (42, "masked_bandit", 250_000,
+         "c15097700eac518ee259cba67e34e4fba1716881ab3dd912188b55da0c79bf49",
+         "ca64b62fe29e45ab61aa86d642799aec5a4c25e1"),
+        (314159, "maskable_ppo", 350_000,
+         "0af41be78102617b103c3e21ebb0ba26ae251f2626ff50b30c0887fdb1320489",
+         "6a8a4068b98bf9a71dead6e547595b4bbd755689"),
+        (314159, "masked_bandit", 300_000,
+         "fd474430e9f5ed60d09d82e3d08390151f54c8c0ca10b5abd98fe11d5d2c8433",
+         "6a8a4068b98bf9a71dead6e547595b4bbd755689"),
+        (271828, "maskable_ppo", 150_000,
+         "40d0f9b7fe92449e6e8bfe2bcb44604ac2a5002c0f2a662dbad6cf70c219fb79",
+         "6a8a4068b98bf9a71dead6e547595b4bbd755689"),
+        (271828, "masked_bandit", 400_000,
+         "d9c31430ad4320ae238f6d3aa833614edc120f7411c5a3e99372c85707116e73",
+         "6a8a4068b98bf9a71dead6e547595b4bbd755689"),
+    ]
+    actual = [
+        (spec.training_root, spec.algorithm, spec.checkpoint_transition,
+         spec.payload_sha256, spec.training_source_sha)
+        for spec in final_holdout.FINAL_HOLDOUT_CHECKPOINTS
+    ]
+    assert actual == expected
+
+    option_strings = {
+        option
+        for action in final_holdout.build_parser()._actions
+        for option in action.option_strings
+    }
+    assert not option_strings & {"--checkpoint", "--seeds", "--scenarios"}
+    parsed = ast.parse(inspect.getsource(final_holdout))
+    referenced_names = {
+        node.id for node in ast.walk(parsed) if isinstance(node, ast.Name)}
+    assert "select_checkpoint" not in referenced_names
+
+
+def test_final_holdout_cross_source_gate_rejects_scientific_changes() -> None:
+    """Cross-source loading may span only enumerated governance/evaluation files."""
+    from mplssim.experiments.learning_common import (
+        validate_final_holdout_changed_paths,
+    )
+
+    validate_final_holdout_changed_paths([
+        "NEXT_STAGE_HANDOFF.md",
+        "configs/experiments/learning_v2.yaml",
+        "mplssim/experiments/learning_common.py",
+        "mplssim/experiments/evaluation_v2.py",
+        "scripts/compare_v2.py",
+        "scripts/final_holdout_v2.py",
+        "tests/test_learning_v2.py",
+        "results/v2_three_root_continuity/manifest.json",
+    ])
+    for forbidden in (
+        "mplssim/rl/reward_v2.py",
+        "mplssim/rl/env_v2.py",
+        "mplssim/experiments/masked_bandit.py",
+        "mplssim/experiments/trainers_v2.py",
+    ):
+        with pytest.raises(RuntimeError, match="scientific source change"):
+            validate_final_holdout_changed_paths([forbidden])
+
+
+def test_final_holdout_source_compatibility_requires_ancestor_and_exact_shas() -> None:
+    """An unrelated checkout cannot claim comparability with a training source."""
+    from mplssim.experiments.learning_common import (
+        validate_final_holdout_source_compatibility,
+    )
+
+    training = "ca64b62fe29e45ab61aa86d642799aec5a4c25e1"
+    evaluation = "6f5d4337431223b91a0dcaf6140ead07e306eaf1"
+    validate_final_holdout_source_compatibility(
+        training,
+        evaluation,
+        checkpoint_is_ancestor=True,
+        changed_paths=["scripts/final_holdout_v2.py"],
+    )
+    with pytest.raises(RuntimeError, match="not an ancestor"):
+        validate_final_holdout_source_compatibility(
+            training,
+            evaluation,
+            checkpoint_is_ancestor=False,
+            changed_paths=[],
+        )
+    with pytest.raises(RuntimeError, match="full SHA"):
+        validate_final_holdout_source_compatibility(
+            "ca64b62",
+            evaluation,
+            checkpoint_is_ancestor=True,
+            changed_paths=[],
+        )
+
+
+def test_final_holdout_checkpoint_metadata_is_bound_to_registry() -> None:
+    """Hash, source, root, algorithm, and transition drift must fail closed."""
+    from scripts.final_holdout_v2 import (
+        FINAL_HOLDOUT_CHECKPOINTS,
+        validate_final_holdout_checkpoint_metadata,
+    )
+
+    spec = FINAL_HOLDOUT_CHECKPOINTS[0]
+    metadata = {
+        "algorithm": spec.algorithm,
+        "aggregate_transitions": spec.checkpoint_transition,
+        "payload_sha256": spec.payload_sha256,
+        "source": {"git_commit": spec.training_source_sha},
+        "run_config": {
+            "algorithm": spec.algorithm,
+            "environment_version": "v2",
+            "root_seed": spec.training_root,
+            "aggregate_transitions": 400_000,
+            "checkpoint_interval": 50_000,
+            "purpose": "meaningful",
+        },
+    }
+    validate_final_holdout_checkpoint_metadata(
+        metadata, spec, actual_payload_sha256=spec.payload_sha256)
+    mutations = (
+        ("payload_sha256", "0" * 64),
+        ("aggregate_transitions", spec.checkpoint_transition + 50_000),
+        ("algorithm", "masked_bandit"),
+    )
+    for field, value in mutations:
+        changed = copy.deepcopy(metadata)
+        changed[field] = value
+        with pytest.raises(ValueError, match="final-holdout checkpoint"):
+            validate_final_holdout_checkpoint_metadata(
+                changed, spec, actual_payload_sha256=spec.payload_sha256)
+    changed = copy.deepcopy(metadata)
+    changed["source"]["git_commit"] = "0" * 40
+    with pytest.raises(ValueError, match="final-holdout checkpoint"):
+        validate_final_holdout_checkpoint_metadata(
+            changed, spec, actual_payload_sha256=spec.payload_sha256)
+    changed = copy.deepcopy(metadata)
+    changed["run_config"]["root_seed"] = 7
+    with pytest.raises(ValueError, match="final-holdout checkpoint"):
+        validate_final_holdout_checkpoint_metadata(
+            changed, spec, actual_payload_sha256=spec.payload_sha256)
+
+
+def test_final_holdout_compact_tables_include_rewards_actions_and_integrity() -> None:
+    """Compact evidence must retain the required operational and audit views."""
+    from scripts.final_holdout_v2 import build_compact_tables
+
+    row = {
+        "policy_id": "root42_maskable_ppo",
+        "algorithm": "maskable_ppo",
+        "training_root": 42,
+        "scenario": "full_day",
+        "seed": 1001,
+        "operational_return": 3.0,
+        "reward_components": {"delivery": 4.0, "max_util": -1.0},
+        "action_distribution": {"0": 2, "3": 1},
+        "episode_length": 3,
+        "truncated": True,
+        "terminated": False,
+        "reward_component_sum_exact": True,
+        "invalid_action_attempts": 0,
+        "mask_disagreements": 0,
+        "reward_mismatches": 0,
+        "nonfinite_values": 0,
+        "solver_convergence_failures": 0,
+        "protected_safety_failures": 0,
+    }
+    for column in (
+        "offered_gbit_total", "delivered_gbit_total", "delivered_ratio_mean",
+        "sla_violations_demand_intervals",
+        "protected_disconnection_demand_intervals",
+        "unprotected_disconnection_demand_intervals", "max_utilization_peak",
+        "max_utilization_mean", "link_utilization_mean",
+        "congested_link_intervals", "overload_ratio_mean", "delay_ms_mean",
+        "delay_ms_max", "loss_ratio_mean", "accepted_te_changes",
+        "reroutes_per_hour", "te_reversals", "flaps_per_demand",
+        "moved_mbps_total", "dwell_active_demand_intervals",
+        "dwell_remaining_mean", "rejected_te_requests", "frr_changes",
+        "frr_disconnections", "recovery_restorations", "noop_frequency",
+        "solver_iterations_mean", "solver_iterations_max",
+        "mean_decision_time_ms", "mean_mask_time_ms", "wall_time_seconds",
+    ):
+        row[column] = 0.0
+    tables = build_compact_tables(pd.DataFrame([row]))
+    assert set(tables) == {
+        "per_root_metrics", "aggregate_metrics", "scenario_metrics",
+        "reward_components", "action_distribution", "evaluation_integrity",
+    }
+    assert int(tables["per_root_metrics"].iloc[0]["episodes"]) == 1
+    assert int(tables["action_distribution"].query("action == 0").iloc[0]["count"]) == 2
+    assert int(tables["action_distribution"].query("action == 3").iloc[0]["count"]) == 1
+    assert bool(tables["evaluation_integrity"].iloc[0]["all_checks_passed"])
+    reward = tables["reward_components"].iloc[0]
+    assert reward["delivery_mean"] == 4.0
+    assert reward["max_util_mean"] == -1.0
+    assert reward["max_abs_reward_residual"] == 0.0
+
+
+def test_final_holdout_evidence_requires_exactly_315_paired_episodes() -> None:
+    """No learner, baseline, scenario, or holdout seed may be omitted or repeated."""
+    from scripts.final_holdout_v2 import (
+        FINAL_HOLDOUT_CHECKPOINTS,
+        validate_complete_final_evidence,
+    )
+
+    scenarios = [
+        "full_day", "evening_peak", "flash_crowd", "link_failure",
+        "deceptive_local_optimum", "ood_double_failure", "overload_stress",
+    ]
+    seeds = [1001, 1002, 1003, 1004, 1005]
+    policies = [
+        f"root{spec.training_root}_{spec.algorithm}"
+        for spec in FINAL_HOLDOUT_CHECKPOINTS
+    ] + ["baseline_static", "baseline_greedy", "baseline_cspf"]
+    rows = [
+        {"policy_id": policy, "scenario": scenario, "seed": seed}
+        for policy in policies
+        for scenario in scenarios
+        for seed in seeds
+    ]
+    evidence = pd.DataFrame(rows)
+    validate_complete_final_evidence(evidence, scenarios=scenarios, seeds=seeds)
+    assert len(evidence) == 315
+    with pytest.raises(RuntimeError, match="315"):
+        validate_complete_final_evidence(
+            evidence.iloc[:-1], scenarios=scenarios, seeds=seeds)
 
 
 def test_policy_loader_validates_sidecar_before_bandit_inference(
@@ -785,6 +1120,58 @@ def test_policy_loader_validates_sidecar_before_bandit_inference(
     )
     assert action.shape == (1,)
     assert metadata["aggregate_transitions"] == 50_000
+
+
+def test_policy_loader_accepts_only_explicit_final_holdout_source_binding(
+    tmp_path: Path,
+) -> None:
+    """Cross-source policy construction must carry the approved source and hash."""
+    from mplssim.experiments.evaluation_v2 import load_policy_checkpoint
+    from mplssim.experiments.learning_common import (
+        sha256_file,
+        verified_environment_record,
+        write_checkpoint_sidecar,
+    )
+
+    training_source = "ca64b62fe29e45ab61aa86d642799aec5a4c25e1"
+    bandit = _tiny_bandit(epsilon=0.0)
+    payload = tmp_path / "checkpoint_000050000.pt"
+    bandit.save(payload)
+    sidecar = write_checkpoint_sidecar(
+        payload,
+        algorithm="masked_bandit",
+        aggregate_transitions=50_000,
+        environment_record=verified_environment_record(42, require_clean=False),
+        run_config={
+            "algorithm": "masked_bandit",
+            "environment_version": "v2",
+            "root_seed": 42,
+            "aggregate_transitions": 400_000,
+            "checkpoint_interval": 50_000,
+            "purpose": "meaningful",
+        },
+        device={"requested": "cpu", "resolved": "cpu"},
+    )
+    metadata = json.loads(sidecar.read_text(encoding="utf-8"))
+    metadata["source"]["git_commit"] = training_source
+    metadata["source"]["git_dirty"] = False
+    metadata["environment_record"]["source"] = copy.deepcopy(metadata["source"])
+    sidecar.write_text(json.dumps(metadata, indent=1), encoding="utf-8")
+
+    restored, loaded = load_policy_checkpoint(
+        payload,
+        algorithm="masked_bandit",
+        requested_device="cpu",
+        require_clean_source=False,
+        final_holdout_checkpoint_source_sha=training_source,
+        expected_payload_sha256=sha256_file(payload),
+    )
+    assert restored.predict(
+        np.zeros((1, 3), dtype=np.float32),
+        np.array([[True, False, True, False]]),
+        deterministic=True,
+    ).shape == (1,)
+    assert loaded["source"]["git_commit"] == training_source
 
 
 def test_evaluation_matrix_persists_steps_and_episode_summary(
