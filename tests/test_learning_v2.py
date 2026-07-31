@@ -471,6 +471,7 @@ def test_checkpoint_sidecar_binds_filename_transition_and_source(
 
 def test_checkpoint_sidecar_cross_source_mode_is_explicit_and_hash_bound(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Only the final workflow may load an ancestor-bound checkpoint by hash."""
     from mplssim.experiments.learning_common import (
@@ -503,6 +504,15 @@ def test_checkpoint_sidecar_cross_source_mode_is_explicit_and_hash_bound(
     metadata["source"]["git_dirty"] = False
     metadata["environment_record"]["source"] = copy.deepcopy(metadata["source"])
     sidecar.write_text(json.dumps(metadata, indent=1), encoding="utf-8")
+
+    # Exercise the historical one-shot workflow at its actual evaluation SHA.
+    # Post-study presentation commits must remain outside that loader allowlist.
+    from mplssim.experiments import v2_factory
+    monkeypatch.setattr(v2_factory, "git_metadata", lambda: {
+        "git_commit": "f7ed0f407c50c5472ecff89f977bc656439a8c49",
+        "git_branch": "feat/rl-environment-v2",
+        "git_dirty": False,
+    })
 
     with pytest.raises(ValueError, match="does not match the current checkout"):
         validate_checkpoint_sidecar(
@@ -913,6 +923,8 @@ def test_final_holdout_cross_source_gate_rejects_scientific_changes() -> None:
         "results/v2_three_root_continuity/manifest.json",
     ])
     for forbidden in (
+        "CURRENT_SYSTEM_BASELINE.md",
+        "frontend/study.html",
         "mplssim/rl/reward_v2.py",
         "mplssim/rl/env_v2.py",
         "mplssim/experiments/masked_bandit.py",
@@ -1124,6 +1136,7 @@ def test_policy_loader_validates_sidecar_before_bandit_inference(
 
 def test_policy_loader_accepts_only_explicit_final_holdout_source_binding(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Cross-source policy construction must carry the approved source and hash."""
     from mplssim.experiments.evaluation_v2 import load_policy_checkpoint
@@ -1157,6 +1170,15 @@ def test_policy_loader_accepts_only_explicit_final_holdout_source_binding(
     metadata["source"]["git_dirty"] = False
     metadata["environment_record"]["source"] = copy.deepcopy(metadata["source"])
     sidecar.write_text(json.dumps(metadata, indent=1), encoding="utf-8")
+
+    # Keep this regression bound to the pushed one-shot evaluation source. The
+    # current post-study checkout is intentionally not authorized to load it.
+    from mplssim.experiments import v2_factory
+    monkeypatch.setattr(v2_factory, "git_metadata", lambda: {
+        "git_commit": "f7ed0f407c50c5472ecff89f977bc656439a8c49",
+        "git_branch": "feat/rl-environment-v2",
+        "git_dirty": False,
+    })
 
     restored, loaded = load_policy_checkpoint(
         payload,

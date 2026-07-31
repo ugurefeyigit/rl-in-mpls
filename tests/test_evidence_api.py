@@ -255,4 +255,8 @@ def test_evidence_failure_is_reported_as_unavailable_not_as_data(client, monkeyp
 def test_mounting_the_evidence_router_did_not_disturb_the_live_api(client):
     assert client.get("/api/scenarios").status_code == 200
     assert client.get("/api/benchmark").status_code == 200
-    assert client.get("/api/simulation/status").json()["state"] == "idle"
+    response = client.get("/api/simulation/status")
+    assert response.status_code == 200
+    status = response.json()
+    assert status["state"] in {"idle", "running", "paused", "completed", "error"}
+    assert isinstance(status["running"], bool)

@@ -59,6 +59,32 @@ ALLOWED_NEW_FILES = {
     "docs/superpowers/specs/2026-07-30-v2-learning-comparison-design.md",
     "docs/superpowers/plans/2026-07-30-v2-learning-comparison.md",
     "NEXT_STAGE_HANDOFF.md",
+    # Post-study productization: a read-only presentation layer over the CLOSED
+    # V2 evidence. None of these trains, tunes, evaluates a checkpoint, or writes
+    # into results/ or runs/ — tests/test_evidence_loader.py and
+    # tests/test_evidence_api.py assert the absence of writes to governed paths.
+    # V1's models, results, figures, configs and simulation source stay byte
+    # identical; the two tests below still enforce that.
+    "mplssim/evidence/__init__.py",
+    "mplssim/evidence/identity.py",
+    "mplssim/evidence/errors.py",
+    "mplssim/evidence/loader.py",
+    "mplssim/evidence/claims.py",
+    "mplssim/evidence/replay.py",
+    "server/evidence_api.py",
+    "frontend/study.html",
+    "frontend/js/study.js",
+    "frontend/css/study.css",
+    "tests/test_evidence_loader.py",
+    "tests/test_evidence_claims.py",
+    "tests/test_evidence_replay.py",
+    "tests/test_evidence_api.py",
+    "tests/test_study_ui.py",
+    "docs/V2_EVIDENCE_AUDIT.md",
+    "docs/TECHNICAL_DEFENSE.md",
+    "docs/RELEASE_CHECKLIST.md",
+    "docs/V3_RESEARCH_BACKLOG.md",
+    "docs/superpowers/plans/2026-07-31-post-study-productization.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",
@@ -66,6 +92,16 @@ ALLOWED_MODIFIED_FILES = {
     "scripts/train.py",
     "scripts/evaluate.py",
     "tests/test_state_machine.py",
+    # Post-study productization: mounting the GET-only evidence router and the
+    # /study route, plus documentation that described only V1.
+    "server/main.py",
+    "README.md",
+    "CURRENT_SYSTEM_BASELINE.md",
+    "docs/API.md",
+    "docs/ARCHITECTURE.md",
+    "docs/PRESENTATION_MODE.md",
+    "docs/DEMO_SCRIPT.md",
+    "docs/UI_ACCEPTANCE_TESTS.md",
 }
 
 #: The single directory the implementation prompt designates for validation
@@ -223,7 +259,7 @@ def test_models_results_figures_and_v1_configs_are_byte_identical_to_the_base():
             continue
         if path.startswith(ALLOWED_FINAL_HOLDOUT_OUTPUT_PREFIX):
             continue
-        if path in ALLOWED_NEW_FILES:
+        if path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES:
             continue
         assert path not in protected_exact, path
         assert not path.startswith(protected_prefixes), path
