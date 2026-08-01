@@ -11,7 +11,7 @@ below, not from `81ac145`.
 | Base commit | `81ac1451e83954542af52b8dcdd2a928f1aa58e2` (`feat/three-mode-ui-implementation`) |
 | Worktree | `.claude/worktrees/rl-mpls-ui-part1-c51fff` |
 | Upstream | `origin/claude/rl-mpls-ui-part1-c51fff` |
-| Pushed commit | _see § 12_ |
+| Pushed commit | `119cf25` |
 | Tree status after commit | clean |
 
 No existing worktree was reused, deleted or repurposed. `.worktrees/seed42`,
@@ -339,5 +339,5 @@ evidence.
   no misleading provenance, topology readable (§ 8).
 - V1 byte-identity test passes against the audited base.
 
-Pushed commit: recorded in `git log -1` on
-`origin/claude/rl-mpls-ui-part1-c51fff`.
+Pushed commit: `119cf25` on `origin/claude/rl-mpls-ui-part1-c51fff`.
+Working tree clean after the commit.
