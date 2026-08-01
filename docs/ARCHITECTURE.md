@@ -152,3 +152,30 @@ Three properties hold by construction and are covered by tests:
 Recorded replay reads the preserved step traces named in the holdout manifest.
 Their location is configurable via `V2_FULL_ARTIFACTS`; when unset, the catalogue
 still lists every episode and reports it unavailable.
+
+
+## Live V2 (Part 1)
+
+`MplsTeEnvV2` is the live default. One session runs one environment version;
+mixing versions in a paired comparison is refused, because the same action
+number addresses a different candidate path in each.
+
+- `mplssim/product/checkpoints_v2.py` — the immutable six-checkpoint registry
+  (pre-holdout continuity selection), its SHA-256 payload and sidecar hashes,
+  and the fail-closed loader. Verification is artifact presence → payload and
+  sidecar hashes → sidecar declaring V2, the expected root and transition →
+  the stored environment identity validating against the live environment. Any
+  failure raises `CheckpointUnavailable`; V1 is never substituted.
+- `mplssim/product/live_v2.py` — `EngineV2View`, a read-only product-shaped view
+  over the frozen `SimulationEngineV2`. It translates only the names the product
+  layer reads under a V1 spelling (offered traffic, TE dwell, the route-change
+  log) and refuses to emulate what V2 does not have, such as a manual traffic
+  multiplier. `mplssim/sim/engine_v2.py` is not edited.
+- `server/session.py` — `AlgoRunnerV2`. Every V2 controller, learner or baseline,
+  drives a real `MplsTeEnvV2`; a baseline only supplies the action integer, so
+  the mask, the validator reason and the twelve reward components come from the
+  governed environment in every lane.
+
+The default training root is 42: the study's primary seed-42 scientific root,
+first in the registered root order. It is chosen by fixed identity, never from
+final-holdout performance.

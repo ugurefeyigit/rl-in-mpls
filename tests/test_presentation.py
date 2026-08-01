@@ -36,9 +36,8 @@ PRODUCT_IDS = [
     "mode-nav", "mode-presentation", "mode-network", "mode-rl",
     "provenance-stamp", "context-ledger", "stage", "atlas-svg",
     "topology-list", "moment-rail", "timeband", "mode-surface",
-    "panel-presentation", "panel-network", "panel-rl", "cockpit",
-    "btn-playpause", "btn-step", "btn-next-event", "btn-story-toggle",
-    "btn-propose", "btn-approve", "btn-reject", "btn-fullscreen",
+    "panel-presentation", "panel-network", "panel-rl", "control-panel",
+    "btn-audience", "btn-audience-exit", "btn-fullscreen",
     "recommendation", "drawer-explain", "drawer-help", "error-banner",
 ]
 
@@ -121,7 +120,7 @@ def test_ws_reconnect_does_not_duplicate_handling(client: TestClient):
     """
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["static"], "seed": 5,
-        "autostart": False, "model_tag": None})
+        "autostart": False, "environment": "v1", "model_tag": None})
 
     with client.websocket_connect("/ws/telemetry") as ws:
         assert ws.receive_json()["type"] == "tick"      # snapshot on connect
@@ -149,7 +148,7 @@ def test_ws_receives_intervention_out_of_band(client: TestClient):
     """Interventions broadcast immediately without advancing the clock."""
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["static"], "seed": 5,
-        "autostart": False, "model_tag": None})
+        "autostart": False, "environment": "v1", "model_tag": None})
     with client.websocket_connect("/ws/telemetry") as ws:
         ws.receive_json()
         client.post("/api/simulation/step")
@@ -168,7 +167,7 @@ def test_presentation_launch_never_touches_training(client: TestClient):
     STATE["training"] = None
     r = client.post("/api/simulation/start", json={
         "scenario": "demo_evening", "algorithms": ["static"], "seed": 42,
-        "autostart": False, "model_tag": None, "interface_mode": "present",
+        "autostart": False, "environment": "v1", "model_tag": None, "interface_mode": "present",
         "advisor": True})
     assert r.status_code == 200
     assert r.json()["interface_mode"] == "present"

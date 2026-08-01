@@ -17,7 +17,7 @@ from fastapi.testclient import TestClient
 
 from mplssim.evidence import identity
 from mplssim.factory import get_topology, get_traffic_config
-from mplssim.product import catalog, contracts, display_map, fingerprint, schemas
+from mplssim.product import catalog, checkpoints_v2, contracts, display_map, fingerprint, schemas
 from server.main import STATE, app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,7 +34,7 @@ def live(client):
     """A paused two-runner V1 session; no model load, so it stays fast."""
     r = client.post("/api/simulation/start", json={
         "scenario": "link_failure", "algorithms": ["static", "greedy"],
-        "seed": 42, "autostart": False, "model_tag": None})
+        "seed": 42, "autostart": False, "environment": "v1", "model_tag": None})
     assert r.status_code == 200
     client.post("/api/simulation/step")
     yield client
@@ -58,17 +58,34 @@ def test_unavailable_policies_carry_a_reason_and_are_not_silently_swapped(client
             assert policy["checkpoint_id"] is None
 
 
-def test_v2_live_demonstration_is_unavailable_without_a_bound_checkpoint(
+def test_v2_live_demonstration_fails_closed_without_the_frozen_artifacts(
         client, monkeypatch):
-    monkeypatch.delenv(catalog.V2_LIVE_CHECKPOINTS_ENV, raising=False)
+    """No artifact root means unavailable with a reason — never a V1 fallback."""
+    monkeypatch.setattr(checkpoints_v2, "artifact_root", lambda: None)
+    checkpoints_v2._load_cached.cache_clear()
     body = client.get("/api/product/capabilities").json()
-    v2 = [p for p in body["live_policies"] if p["environment_version"] == "v2"]
-    assert v2, "the V2 learners must still be described, as unavailable"
-    for policy in v2:
+    learners = [p for p in body["live_policies"]
+                if p["environment_version"] == "v2" and p["family"] == "learner"]
+    assert learners, "the V2 learners must still be described, as unavailable"
+    for policy in learners:
         assert policy["available"] is False
+        assert policy["checkpoint_id"] is None
         assert catalog.V2_LIVE_CHECKPOINTS_ENV in policy["unavailable_reason"]
-    v2_env = next(e for e in body["environments"] if e["version"] == "v2")
-    assert v2_env["live_available"] is False
+    checkpoints_v2._load_cached.cache_clear()
+
+
+def test_v2_learners_are_available_only_against_the_governed_hashes(client):
+    body = client.get("/api/product/capabilities").json()
+    registry = body["checkpoint_registry"]
+    assert registry["default_training_root"] == 42
+    assert "holdout" in registry["default_training_root_rule"].lower()
+    assert registry["selection"].startswith("pre-holdout")
+    assert len(registry["checkpoints"]) == 6
+    for row in registry["checkpoints"]:
+        assert len(row["payload_sha256"]) == 64
+        assert len(row["sidecar_sha256"]) == 64
+        assert row["training_root"] in (42, 314159, 271828)
+        assert row["algorithm"] in ("masked_bandit", "maskable_ppo")
 
 
 def test_no_catalog_entry_calls_a_bandit_score_a_probability(client):
@@ -82,7 +99,9 @@ def test_no_catalog_entry_calls_a_bandit_score_a_probability(client):
         assert "probabilit" not in bandit[field].lower()
         assert "confidence" not in bandit[field].lower()
     assert "immediate-reward estimate" in bandit["output_description"].lower()
-    assert "confidence" not in json.dumps(bandit).lower()
+    # The entry may deny being a probability, but must never assert confidence.
+    assert "is a confidence" not in json.dumps(bandit).lower()
+    assert "confidence that" not in json.dumps(bandit).lower()
 
 
 def test_ppo_output_is_declared_as_probabilities(client):
@@ -356,7 +375,7 @@ def test_snapshot_metrics_separate_current_from_previous(live):
 def test_snapshot_reports_no_metrics_rather_than_zero_before_the_first_step(client):
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["static"], "seed": 7,
-        "autostart": False, "model_tag": None})
+        "autostart": False, "environment": "v1", "model_tag": None})
     metrics = client.get("/api/simulation/snapshot").json()["metrics"]
     assert metrics["available"] is False
     assert "nothing to report" in metrics["reason"]
@@ -383,7 +402,7 @@ def test_decision_pipeline_lists_every_stage(live):
 def test_mask_reasons_come_from_the_validator_not_from_the_boolean(client):
     client.post("/api/simulation/start", json={
         "scenario": "link_failure", "algorithms": ["rl"], "seed": 42,
-        "autostart": False, "model_tag": "ppo_te"})
+        "autostart": False, "environment": "v1", "model_tag": "ppo_te"})
     client.post("/api/simulation/step")
     grid = client.get("/api/simulation/decision").json()["mask"]
     assert grid["available"] is True
@@ -398,7 +417,7 @@ def test_mask_reasons_come_from_the_validator_not_from_the_boolean(client):
 def test_action_grid_covers_the_whole_space_with_no_op_separated(client):
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["rl"], "seed": 42,
-        "autostart": False, "model_tag": "ppo_te"})
+        "autostart": False, "environment": "v1", "model_tag": "ppo_te"})
     grid = client.get("/api/simulation/decision").json()["mask"]
     assert grid["actions"][0]["type"] == "noop"
     assert grid["actions"][0]["valid"] is True
@@ -415,7 +434,7 @@ def test_a_baseline_runner_reports_no_action_space_rather_than_a_fake_one(live):
 def test_policy_output_labels_match_the_declared_semantics(client):
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["rl"], "seed": 42,
-        "autostart": False, "model_tag": "ppo_te"})
+        "autostart": False, "environment": "v1", "model_tag": "ppo_te"})
     client.post("/api/simulation/step")
     output = client.get("/api/simulation/decision").json()["policy_output"]
     assert output["semantics"] == "probabilities"
@@ -437,7 +456,7 @@ def test_reward_reports_its_own_exact_sum_state(live):
 def test_changed_feature_ranking_is_never_called_causal(client):
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["rl"], "seed": 42,
-        "autostart": False, "model_tag": "ppo_te"})
+        "autostart": False, "environment": "v1", "model_tag": "ppo_te"})
     client.post("/api/simulation/step")
     observation = client.get("/api/simulation/decision").json()["observation"]
     assert observation["available"] is True
@@ -451,7 +470,7 @@ def test_changed_feature_ranking_is_never_called_causal(client):
 def test_timeline_separates_frr_protection_from_te_actions(client):
     client.post("/api/simulation/start", json={
         "scenario": "link_failure", "algorithms": ["greedy"], "seed": 42,
-        "autostart": False, "model_tag": None})
+        "autostart": False, "environment": "v1", "model_tag": None})
     client.post("/api/simulation/run-until",
                 json={"condition": "end", "max_steps": 40})
     body = client.get("/api/simulation/timeline").json()
@@ -468,7 +487,7 @@ def test_timeline_separates_frr_protection_from_te_actions(client):
 def test_timeline_event_ids_are_stable_across_reads(client):
     client.post("/api/simulation/start", json={
         "scenario": "link_failure", "algorithms": ["greedy"], "seed": 42,
-        "autostart": False, "model_tag": None})
+        "autostart": False, "environment": "v1", "model_tag": None})
     client.post("/api/simulation/run-until",
                 json={"condition": "end", "max_steps": 20})
     first = [e["id"] for e in client.get("/api/simulation/timeline").json()["events"]]
@@ -488,7 +507,7 @@ def test_paired_runners_prove_they_share_one_experiment(live):
 def test_a_single_runner_session_is_not_a_failed_comparison(client):
     client.post("/api/simulation/start", json={
         "scenario": "full_day", "algorithms": ["static"], "seed": 3,
-        "autostart": False, "model_tag": None})
+        "autostart": False, "environment": "v1", "model_tag": None})
     body = client.get("/api/simulation/comparison").json()
     assert body["comparison"] is False
     assert body["matched"] is None
@@ -578,14 +597,32 @@ def test_the_product_layer_writes_nothing_under_results_or_runs(live):
     assert before == after
 
 
+#: `checkpoints_v2.py` loads a frozen learner for inference, which needs the two
+#: learner classes. That single module is allowed to name them; nothing else in
+#: the product layer is, and no product module may start training with them.
+_INFERENCE_LOADER = "checkpoints_v2.py"
+
+
 def test_the_product_modules_never_import_training_code():
     banned = ("trainers_v2", "evaluation_v2", "sb3_contrib", "stable_baselines",
               "masked_bandit", "learning_common")
     for module in (ROOT / "mplssim" / "product").glob("*.py"):
         text = module.read_text(encoding="utf-8")
+        if module.name == _INFERENCE_LOADER:
+            continue
         for name in banned:
             assert f"import {name}" not in text, f"{module.name} imports {name}"
             assert f"from mplssim.experiments.{name}" not in text, module.name
+
+
+def test_no_product_module_can_start_training_or_write_a_checkpoint():
+    """The inference loader may construct a learner; it may never train one."""
+    banned_calls = (".learn(", ".train(", "total_timesteps", ".save(",
+                    "write_checkpoint_sidecar", "optimizer.step")
+    for module in (ROOT / "mplssim" / "product").glob("*.py"):
+        text = module.read_text(encoding="utf-8")
+        for call in banned_calls:
+            assert call not in text, f"{module.name} contains {call}"
 
 
 def test_the_evidence_api_stays_get_only_and_unchanged(client):

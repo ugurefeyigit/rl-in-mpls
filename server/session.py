@@ -37,6 +37,8 @@ import numpy as np
 
 from mplssim.baselines import make_baseline
 from mplssim.factory import engine_config_from_training, make_engine
+from mplssim.product import checkpoints_v2
+from mplssim.product.live_v2 import EngineV2View
 from mplssim.rl.env import MplsTeEnv
 from mplssim.rl.reward import compute_reward
 from mplssim.sim.engine import SimulationEngine
@@ -44,6 +46,28 @@ from server.events import log_event
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEED_SECONDS = {"1x": 2.0, "5x": 0.4, "20x": 0.1, "fast": 0.0}
+
+#: The truthful live default. V2 is the governed study environment; V1 remains
+#: reachable only by asking for it explicitly, and is never substituted when a
+#: V2 artifact is missing.
+DEFAULT_ENVIRONMENT = "v2"
+ENVIRONMENTS: tuple[str, ...] = ("v1", "v2")
+
+#: Controllers each environment can actually run. `rl` is the V1 generic
+#: controller slot driven by a V1 checkpoint tag; V2's learners are named for
+#: what they are.
+V1_ALGORITHMS: tuple[str, ...] = ("rl", "static", "greedy", "cspf", "random")
+V2_ALGORITHMS: tuple[str, ...] = (
+    "masked_bandit", "maskable_ppo", "greedy", "cspf", "static")
+V2_BASELINES: tuple[str, ...] = ("greedy", "cspf", "static")
+
+
+def algorithms_for(environment: str) -> tuple[str, ...]:
+    if environment == "v1":
+        return V1_ALGORITHMS
+    if environment == "v2":
+        return V2_ALGORITHMS
+    raise ValueError(f"environment must be one of {list(ENVIRONMENTS)}")
 
 _MODEL_CACHE: dict[str, Any] = {}
 
@@ -107,16 +131,37 @@ class SessionConfig:
     safety_filter: bool
     speed: str
     interface_mode: str = "advanced"   # "advanced" | "present"
-    advisor: bool = False              # operator-advisor mode (RL runner only)
+    advisor: bool = False              # operator-advisor mode (learner runner only)
+    environment: str = DEFAULT_ENVIRONMENT
+    #: V2 only: which continuity-selected training root the checkpoints come
+    #: from. Never inferred from performance; see checkpoints_v2.DEFAULT_ROOT_RULE.
+    training_root: int = checkpoints_v2.DEFAULT_ROOT
+
+    @property
+    def execution(self) -> str:
+        """`advisor` pauses for approval; `automatic` lets the policy act."""
+        return "advisor" if self.advisor else "automatic"
 
 
 class AlgoRunner:
     """One algorithm bound to one engine within a session."""
 
+    environment_version = "v1"
+    checkpoint = None
+
+    @property
+    def checkpoint_id(self) -> str | None:
+        return self.model_tag if self.algorithm == "rl" else None
+
+    @property
+    def output_semantics(self) -> str:
+        return "probabilities" if self.algorithm == "rl" else "none"
+
     def __init__(self, cfg: SessionConfig, algorithm: str) -> None:
         self.algorithm = algorithm
         self.safety_filter = cfg.safety_filter
         self.model = None
+        self.model_tag = cfg.model_tag or "ppo_te"
         self.env: MplsTeEnv | None = None
         self.controller = None
         if algorithm == "rl":
@@ -238,9 +283,13 @@ class AlgoRunner:
         }
         if probs is not None:
             top = np.argsort(-probs)[:5]
-            decision["action_probability"] = round(float(probs[action]), 4)
+            # Field names stay semantics-neutral: the same shape carries V1/V2
+            # PPO probabilities and V2 bandit immediate-reward estimates, and
+            # only `output_semantics` says which one a number is.
+            decision["output_value"] = round(float(probs[action]), 4)
+            decision["output_semantics"] = "probabilities"
             decision["top_actions"] = [
-                {"action": int(a), "prob": round(float(probs[a]), 4),
+                {"action": int(a), "value": round(float(probs[a]), 4),
                  "desc": self._action_desc(int(a))}
                 for a in top if probs[a] > 1e-4
             ]
@@ -327,6 +376,219 @@ class AlgoRunner:
         return decision
 
 
+class AlgoRunnerV2:
+    """One controller bound to one frozen-V2 episode within a session.
+
+    Every V2 runner — learner or baseline — drives a real :class:`MplsTeEnvV2`.
+    A baseline only supplies the action integer; the transition, the
+    authoritative mask, the validator reason and the twelve reward components
+    all come from the governed environment, so a baseline lane and a learner
+    lane are scored by exactly the same code.
+    """
+
+    environment_version = "v2"
+
+    def __init__(self, cfg: SessionConfig, algorithm: str) -> None:
+        from mplssim.experiments.evaluation_v2 import choose_baseline_action
+        from mplssim.experiments.v2_factory import make_env_v2
+
+        if algorithm not in V2_ALGORITHMS:
+            raise ValueError(
+                f"{algorithm!r} cannot run in the V2 environment. Available: "
+                f"{', '.join(V2_ALGORITHMS)}.")
+        self.algorithm = algorithm
+        self.safety_filter = cfg.safety_filter
+        self.training_root = int(cfg.training_root)
+        self.checkpoint: checkpoints_v2.LoadedCheckpoint | None = None
+        self.controller = None
+        self._choose_baseline_action = choose_baseline_action
+
+        if algorithm in checkpoints_v2.LEARNER_ALGORITHMS:
+            # Fail closed here, before a session exists: an unavailable or
+            # incompatible checkpoint must never degrade into a V1 run.
+            self.checkpoint = checkpoints_v2.load(algorithm, self.training_root)
+        else:
+            self.controller = make_baseline(algorithm, seed=cfg.seed)
+
+        self.env = make_env_v2(scenario=cfg.scenario, root_seed=cfg.seed)
+        obs, _ = self.env.reset(options={"episode_seed": cfg.seed})
+        self.eng = EngineV2View(self.env.eng)
+        self._env_obs = obs
+        # Only a learner consumes an observation vector. A baseline reads engine
+        # state directly, and claiming otherwise would fake an inspector panel.
+        self._obs = obs if self.checkpoint is not None else None
+        self._prior_obs = None
+        self._last_raw_reward = 0.0
+        self.model = self.checkpoint.policy if self.checkpoint else None
+        self.last_decision: dict[str, Any] | None = None
+        self.cumulative_reward = 0.0
+        self.history: list[dict[str, Any]] = []
+
+    # -------------------------------------------------------------- identity
+    @property
+    def checkpoint_id(self) -> str | None:
+        return self.checkpoint.entry.id if self.checkpoint else None
+
+    @property
+    def output_semantics(self) -> str:
+        return self.checkpoint.output_semantics if self.checkpoint else "none"
+
+    def provenance(self) -> dict[str, Any] | None:
+        return self.checkpoint.provenance() if self.checkpoint else None
+
+    # ------------------------------------------------------------- decisions
+    def _predict(self, mask: np.ndarray) -> tuple[int, list[float | None] | None]:
+        if self.checkpoint is not None:
+            action = self.checkpoint.predict(self._env_obs, mask)
+            return action, self.checkpoint.action_scores(self._env_obs, mask)
+        action = self._choose_baseline_action(self.controller, self.eng, mask)
+        return int(action), None
+
+    def _action_desc(self, action: int) -> str:
+        if action == 0:
+            return "no TE change"
+        d_idx, p_idx = divmod(action - 1, self.env.k)
+        demand = self.eng.demands[d_idx]
+        return (f"{demand.id} -> path {p_idx} "
+                f"({'>'.join(demand.candidate_paths[p_idx])})")
+
+    def step(self, counterfactual: bool = True,
+             action_override: int | None = None) -> dict[str, Any]:
+        env = self.env
+        mask = env.action_masks()
+        scores = None
+        if action_override is not None:
+            action = int(action_override)
+        else:
+            action, scores = self._predict(mask)
+
+        before_max_util = float(np.max(self.eng.link_util))
+        pre_state = self._pre_action_context(action)
+        self._prior_obs = self._obs
+        obs, reward, _terminated, truncated, info = env.step(action)
+        self._env_obs = obs
+        if self.checkpoint is not None:
+            self._obs = obs
+        self._last_raw_reward = float(reward)
+        self.cumulative_reward += float(reward)
+
+        interval = info["metrics"]
+        decision: dict[str, Any] = {
+            "algorithm": self.algorithm,
+            "environment_version": "v2",
+            "step": self.eng.step_count,
+            "t_min": self.eng.t_min,
+            "action": action,
+            "decoded": info["decoded_action"],
+            "reward": round(float(reward), 4),
+            "components": {k: round(float(v), 6)
+                           for k, v in info["reward_components"].items()},
+            "component_order": list(info["reward_component_order"]),
+            "cumulative_reward": round(self.cumulative_reward, 2),
+            "mask_valid_actions": int(mask.sum()),
+            "done": bool(truncated),
+            "accepted_te_changes": int(interval["accepted_te_changes"]),
+            "rejected_te_requests": int(interval["rejected_te_requests"]),
+            "te_reversals": int(interval["te_reversals"]),
+            "frr_changes": int(interval["frr_changes"]),
+            "recovery_restorations": int(interval["recovery_restorations"]),
+            "explanation": self._explain(action, info, before_max_util, pre_state),
+        }
+        if scores is not None:
+            decision["output_semantics"] = self.output_semantics
+            ranked = sorted(
+                ((i, v) for i, v in enumerate(scores) if v is not None),
+                key=lambda row: -row[1])[:5]
+            decision["output_value"] = (
+                None if scores[action] is None else round(float(scores[action]), 6))
+            decision["top_actions"] = [
+                {"action": int(i), "value": round(float(v), 6),
+                 "desc": self._action_desc(int(i))} for i, v in ranked]
+        self.history.append({
+            "step": interval["step"],
+            "t_min": interval["t_min"],
+            "reward": self._last_raw_reward,
+            "components": decision["components"],
+            "metrics": {k: v for k, v in interval.items() if k != "failed_links"},
+            "n_failed_links": len(interval["failed_links"]),
+        })
+        self.last_decision = decision
+        return decision
+
+    def _pre_action_context(self, action: int) -> dict[str, Any]:
+        if action == 0:
+            return {}
+        d_idx, p_idx = divmod(action - 1, self.env.k)
+        return {
+            "old_bottleneck": self.eng.path_bottleneck_util(
+                d_idx, int(self.eng.current_path[d_idx])),
+            "new_bottleneck": self.eng.projected_bottleneck_after_move(d_idx, p_idx),
+            "volume": float(self.eng.demand_volumes[d_idx]),
+        }
+
+    def _explain(self, action: int, info: dict[str, Any],
+                 before_max_util: float, pre: dict[str, Any]) -> str:
+        """Engineering interpretation from measured values only.
+
+        This is never the controller's internal reasoning; a bandit's head value
+        is an immediate-reward estimate and a PPO probability is a distribution
+        mass, and neither is a stated intention.
+        """
+        metrics = info["metrics"]
+        if action == 0:
+            if before_max_util < 0.8 and metrics["sla_violations"] == 0:
+                return (f"No TE change. Busiest link {before_max_util:.0%}, no SLA "
+                        f"violations this interval.")
+            return (f"No TE change despite busiest link {before_max_util:.0%} and "
+                    f"{metrics['sla_violations']} SLA violation(s). Alternatives "
+                    f"may be masked by dwell, a failed link or the protected "
+                    f"projected-utilization rule.")
+        decoded = info["decoded_action"]
+        if not decoded.get("accepted"):
+            return (f"TE request for {decoded.get('demand')} to candidate "
+                    f"{decoded.get('path_idx')} was rejected by the V2 validator: "
+                    f"{decoded.get('reason')}.")
+        demand = self.eng.demand_by_id[decoded["demand"]]
+        return (f"Moved {demand.cls.name} demand {demand.id} "
+                f"({demand.src}→{demand.dst}, {pre['volume']:.0f} Mbps) from "
+                f"candidate {decoded['from_path']} to candidate "
+                f"{decoded['path_idx']}. Old-path bottleneck {pre['old_bottleneck']:.0%}, "
+                f"projected gross bottleneck on the new path "
+                f"{pre['new_bottleneck']:.0%}. Busiest link {before_max_util:.0%} → "
+                f"{metrics['max_util']:.0%} over the interval, which also includes "
+                f"the demand change.")
+
+    # -------------------------------------------------------- counterfactual
+    def evaluate_action_vs_noop(self, action: int) -> dict[str, Any]:
+        """Cloned-engine one-interval lookahead. Never touches the live engine."""
+        keys = ("max_util", "mean_delay_ms", "loss_ratio", "sla_violations",
+                "delivered_ratio")
+        noop_engine = self.eng.clone()
+        noop_metrics = noop_engine.step_interval()
+        out: dict[str, Any] = {
+            "noop": {k: round(float(noop_metrics[k]), 4) for k in keys}}
+        if action > 0:
+            action_engine = self.eng.clone()
+            d_idx, p_idx = divmod(action - 1, self.env.k)
+            accepted, reason = action_engine.apply_action(d_idx, p_idx, source="rl")
+            action_metrics = action_engine.step_interval()
+            out["action"] = {k: round(float(action_metrics[k]), 4) for k in keys}
+            out["action_applied"] = accepted
+            out["action_reason"] = reason
+            out["delta_max_util"] = round(
+                float(action_metrics["max_util"] - noop_metrics["max_util"]), 4)
+        return out
+
+
+def make_runner(cfg: SessionConfig, algorithm: str):
+    """The one place an environment version selects a runner implementation."""
+    if cfg.environment == "v2":
+        return AlgoRunnerV2(cfg, algorithm)
+    if cfg.environment == "v1":
+        return AlgoRunner(cfg, algorithm)
+    raise ValueError(f"environment must be one of {list(ENVIRONMENTS)}")
+
+
 class SimSession:
     """A live session: one or two AlgoRunners on paired engines, an explicit
     state machine, and single-lock concurrency control."""
@@ -342,7 +604,7 @@ class SimSession:
         # "the session was reset underneath me" before it renders a delta.
         self.id = uuid4().hex[:12]
         self.sequence = 0
-        self.runners = [AlgoRunner(config, a) for a in config.algorithms]
+        self.runners = [make_runner(config, a) for a in config.algorithms]
         self.state = SessionState.IDLE
         self.speed = config.speed
         self.error_message: str | None = None
@@ -353,10 +615,15 @@ class SimSession:
         # operator-advisor state
         self.pending_proposal: dict[str, Any] | None = None
         self.advisor_history: list[dict[str, Any]] = []
+        #: Completed generations kept for later comparison. "Reset run" archives
+        #: the run it replaces instead of discarding it.
+        self.previous_runs: list[dict[str, Any]] = []
         log_event("session_created", scenario=config.scenario,
+                  environment=config.environment,
                   algorithm="+".join(config.algorithms), seed=config.seed,
-                  model_tag=config.model_tag, safety_filter=config.safety_filter,
-                  speed=config.speed, advisor=config.advisor)
+                  model_tag=config.model_tag, training_root=config.training_root,
+                  safety_filter=config.safety_filter,
+                  speed=config.speed, execution=config.execution)
 
     # ---------------------------------------------------------------- status
     @property
@@ -386,9 +653,20 @@ class SimSession:
             "scenario": self.config.scenario,
             "algorithms": list(self.config.algorithms),
             "seed": self.config.seed,
+            "environment": self.config.environment,
+            "training_root": (self.config.training_root
+                              if self.config.environment == "v2" else None),
             "model_tag": self.config.model_tag,
+            "controllers": [
+                {"algorithm": r.algorithm,
+                 "environment_version": r.environment_version,
+                 "checkpoint_id": r.checkpoint_id,
+                 "output_semantics": r.output_semantics}
+                for r in self.runners
+            ],
             "safety_filter": self.config.safety_filter,
             "advisor": self.config.advisor,
+            "execution": self.config.execution,
             "interface_mode": self.config.interface_mode,
             "speed": self.speed,
             "running": self.state == SessionState.RUNNING,
@@ -398,6 +676,7 @@ class SimSession:
             "t_min": eng.t_min,
             "hour": round((eng.scenario.start_hour + eng.t_min / 60.0) % 24.0, 3),
             "duration_min": eng.scenario.duration_min,
+            "retained_runs": len(self.previous_runs),
         }
 
     def payload(self, decisions: list[dict] | None = None,
@@ -436,6 +715,19 @@ class SimSession:
     async def _loop(self, generation: int) -> None:
         try:
             while True:
+                # Advisor execution never advances on its own. Resuming builds
+                # the next proposal and stops there; only approve or reject
+                # applies anything.
+                if self.config.advisor:
+                    async with self._lock:
+                        if self._generation != generation:
+                            return
+                        if self.state != SessionState.RUNNING:
+                            return
+                        if self.pending_proposal is not None:
+                            return
+                    await self.advisor_propose()
+                    return
                 async with self._lock:
                     if self._generation != generation:
                         return  # superseded by reset — exit silently
@@ -490,6 +782,12 @@ class SimSession:
         return self.status()
 
     async def step_manual(self) -> dict[str, Any]:
+        # In advisor execution a step is a *request for a recommendation*, not
+        # an application of one. The action is proposed and held; approve or
+        # reject is what advances the clock.
+        if self.config.advisor and self.pending_proposal is None and not self.done:
+            await self.advisor_propose()
+            return self.payload(kind="advisor")
         async with self._lock:
             if self.state == SessionState.RUNNING:
                 raise SessionError("pause the simulation before stepping manually")
@@ -515,11 +813,39 @@ class SimSession:
             log_event("speed_changed", speed=speed, **self._log_ctx())
         return self.status()
 
-    async def reset(self) -> dict[str, Any]:
-        """Cancel and await the loop, then rebuild the EXACT same experiment
-        (same SessionConfig — scenario, algorithms, model tag, seed, safety
-        filter, speed, interface mode) at time zero."""
+    def archive(self) -> dict[str, Any] | None:
+        """Snapshot the run about to be replaced, so it survives a reset run.
+
+        Holds measured history only — no model state, no evidence — and is never
+        promoted to a scientific record.
+        """
+        if not any(r.history for r in self.runners):
+            return None
+        return {
+            "generation": self._generation,
+            "environment": self.config.environment,
+            "scenario": self.config.scenario,
+            "seed": self.config.seed,
+            "training_root": self.config.training_root,
+            "steps": max(len(r.history) for r in self.runners),
+            "runs": [{
+                "algorithm": r.algorithm,
+                "checkpoint_id": r.checkpoint_id,
+                "cumulative_reward": round(float(r.cumulative_reward), 4),
+                "history": list(r.history),
+            } for r in self.runners],
+        }
+
+    async def reset(self, retain: bool = True) -> dict[str, Any]:
+        """Reset run: rebuild the EXACT same experiment at time zero.
+
+        Same SessionConfig — environment, scenario, seed, controllers,
+        checkpoint root, safety filter, speed, interface mode. The run being
+        replaced is archived when ``retain`` is set, so Part 2's comparison can
+        still read it. No model, checkpoint or evidence artifact is touched.
+        """
         async with self._lock:
+            archived = self.archive() if retain else None
             self._generation += 1
             task = self._loop_task
             self._loop_task = None
@@ -530,14 +856,39 @@ class SimSession:
             except asyncio.CancelledError:
                 pass
         async with self._lock:
-            self.runners = [AlgoRunner(self.config, a) for a in self.config.algorithms]
+            if archived is not None:
+                self.previous_runs.append(archived)
+            self.runners = [make_runner(self.config, a)
+                            for a in self.config.algorithms]
             self.state = SessionState.IDLE
             self.error_message = None
             self.pending_proposal = None
             self.advisor_history = []
-            log_event("session_reset", **self._log_ctx())
+            log_event("session_reset", retained=archived is not None,
+                      **self._log_ctx())
         await self.broadcast_snapshot(kind="reset")
         return self.status()
+
+    async def shutdown(self) -> None:
+        """Full reset: stop the loop and leave no runnable state behind.
+
+        The caller drops the session afterwards; nothing here mutates a model,
+        a checkpoint or any evidence artifact.
+        """
+        async with self._lock:
+            self._generation += 1
+            self.state = SessionState.IDLE
+            self.pending_proposal = None
+            task = self._loop_task
+            self._loop_task = None
+        if task is not None and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+        self.subscribers.clear()
+        log_event("session_shutdown", **self._log_ctx())
 
     # --------------------------------------------------------- interventions
     async def inject_failure(self, link_id: str) -> dict[str, Any]:
@@ -568,8 +919,14 @@ class SimSession:
                 "failed_links": [l for l, up in self.runners[0].eng.link_up.items()
                                  if not up]}
 
+    def _require_v1_traffic_override(self) -> None:
+        if self.config.environment != "v1":
+            from mplssim.product.live_v2 import UNSUPPORTED_INTERVENTION
+            raise SessionError(UNSUPPORTED_INTERVENTION)
+
     async def inject_burst(self, demand_id: str, factor: float,
                            duration_min: float) -> dict[str, Any]:
+        self._require_v1_traffic_override()
         async with self._lock:
             for r in self.runners:
                 r.eng.inject_burst(demand_id, factor, duration_min)
@@ -579,6 +936,7 @@ class SimSession:
         return {"ok": True}
 
     async def set_multiplier(self, factor: float) -> dict[str, Any]:
+        self._require_v1_traffic_override()
         async with self._lock:
             for r in self.runners:
                 r.eng.manual_multiplier = factor
@@ -638,29 +996,64 @@ class SimSession:
                       **self._log_ctx())
         if payload is not None:
             await self._broadcast(payload)
-        return {"steps": steps, "status": self.status()}
+        return {
+            "steps": steps,
+            "status": self.status(),
+            # A fast-forward is the operator delegating a stretch of intervals
+            # in one gesture. In advisor execution those intervals are not
+            # individually approved, and the response says so rather than
+            # letting the UI imply that each one was.
+            "approval_bypassed": bool(self.config.advisor),
+            "note": ("Fast-forward applied the controller's own actions for "
+                     "these intervals without individual approval."
+                     if self.config.advisor else
+                     "Fast-forward ran the controller normally."),
+        }
 
     # ---------------------------------------------------------------- advisor
-    def _rl_runner(self) -> AlgoRunner:
+    #: Controllers whose proposal is a genuine *policy recommendation*. A
+    #: rule-based baseline has no recommendation to approve; it either runs or
+    #: it does not.
+    _POLICY_ALGORITHMS: frozenset[str] = frozenset(
+        {"rl", *checkpoints_v2.LEARNER_ALGORITHMS})
+
+    def _policy_runner(self):
         for r in self.runners:
-            if r.algorithm == "rl":
+            if r.algorithm in self._POLICY_ALGORITHMS:
                 return r
-        raise SessionError("advisor mode requires an RL runner in the session")
+        raise SessionError(
+            "Advisor approval needs a learned policy in the session. "
+            f"{' and '.join(self.config.algorithms)} "
+            "propose moves from fixed rules, so there is nothing to approve.")
 
     async def advisor_propose(self) -> dict[str, Any]:
         """Generate a recommendation WITHOUT mutating the real engine, pause
-        the session, and await an operator decision."""
+        the session, and await an operator decision.
+
+        Only reachable in advisor execution. In automatic execution the policy
+        already acted, so there is nothing to propose and nothing to approve —
+        the completed decision is shown as an explanation instead.
+        """
         async with self._lock:
+            if not self.config.advisor:
+                raise SessionError(
+                    "This session runs the policy automatically, so there is no "
+                    "proposal awaiting approval. Start a session with "
+                    "manual/advisor execution to approve or reject each action.")
             if self.done or self.state == SessionState.COMPLETED:
                 raise SessionError("scenario finished")
             if self.pending_proposal is not None:
                 return self.pending_proposal  # idempotent
-            r = self._rl_runner()
+            r = self._policy_runner()
             mask = r.env.action_masks()
-            action, probs = r._predict(mask)
+            action, outputs = r._predict(mask)
             ok, reason = (True, "no-op") if action == 0 else \
                 r.eng.validate_action(*divmod(action - 1, r.env.k), source="rl")
             lookahead = await asyncio.to_thread(r.evaluate_action_vs_noop, action)
+            selected_output = None
+            if outputs is not None:
+                raw = outputs[action] if action < len(outputs) else None
+                selected_output = None if raw is None else round(float(raw), 6)
             proposal = {
                 "id": len(self.advisor_history) + 1,
                 "proposed_at": time.time(),
@@ -669,8 +1062,13 @@ class SimSession:
                 "action": action,
                 "is_noop": action == 0,
                 "decoded": None,
-                "action_probability": (round(float(probs[action]), 4)
-                                       if probs is not None else None),
+                "policy_id": r.algorithm,
+                "environment_version": r.environment_version,
+                "checkpoint_id": r.checkpoint_id,
+                # Named by the controller's declared semantics: a bandit head
+                # value is an immediate-reward estimate, never a probability.
+                "output_semantics": r.output_semantics,
+                "output_value": selected_output,
                 "safety_ok": ok,
                 "safety_reason": reason,
                 "lookahead": lookahead,
@@ -704,7 +1102,7 @@ class SimSession:
                 raise SessionError("no advisor recommendation is pending")
             proposal = self.pending_proposal
             self.pending_proposal = None
-            r = self._rl_runner()
+            r = self._policy_runner()
             applied_action = int(proposal["action"]) if approve else 0
             decisions = []
             for runner in self.runners:
@@ -743,4 +1141,11 @@ class SimSession:
             "pending": self.pending_proposal,
             "history": self.advisor_history[-20:],
             "enabled": self.config.advisor,
+            "execution": self.config.execution,
+            "explanation_only": not self.config.advisor,
+            "note": ("Automatic execution: the policy has already acted and the "
+                     "card below explains the completed decision."
+                     if not self.config.advisor else
+                     "Advisor execution: the proposed action is held until you "
+                     "approve or reject it."),
         }

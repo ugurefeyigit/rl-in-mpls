@@ -32,6 +32,8 @@ from mplssim.sim import models as m
 def provenance(session: Any, runner: Any) -> dict[str, Any]:
     profile = source_profile(SourceKind.LIVE_SESSION)
     engine = runner.eng
+    version = getattr(runner, "environment_version", "v1")
+    checkpoint = getattr(runner, "checkpoint", None)
     return {
         "source_kind": SourceKind.LIVE_SESSION.value,
         "label": profile.label,
@@ -42,13 +44,24 @@ def provenance(session: Any, runner: Any) -> dict[str, Any]:
         "generation": int(session.generation),
         "sequence": int(session.sequence),
         "step": int(engine.step_count),
-        "environment_version": "v1",
-        "environment_label": "V1",
+        "environment_version": version,
+        "environment_label": version.upper(),
+        "environment_class": ("mplssim.rl.env_v2.MplsTeEnvV2" if version == "v2"
+                              else "mplssim.rl.env.MplsTeEnv"),
         "scenario": session.config.scenario,
         "scenario_label": scenario_label(session.config.scenario),
         "seed": int(session.config.seed),
         "policy_id": runner.algorithm,
-        "checkpoint_id": session.config.model_tag if runner.algorithm == "rl" else None,
+        "policy_family": ("learner" if checkpoint is not None or
+                          runner.algorithm == "rl" else "baseline"),
+        "output_semantics": getattr(runner, "output_semantics", "none"),
+        "checkpoint_id": getattr(runner, "checkpoint_id", None),
+        "training_root": (int(session.config.training_root)
+                          if version == "v2" else None),
+        # A frozen governed checkpoint driving a live demonstration is still a
+        # live record. It is never rendered as study evidence.
+        "checkpoint_provenance": (checkpoint.provenance()
+                                  if checkpoint is not None else None),
         "safety_filter": bool(session.config.safety_filter),
     }
 
@@ -143,6 +156,11 @@ def _links(raw_links: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 # ----------------------------------------------------------------- demands
 def _demands(raw_demands: list[dict[str, Any]], engine: Any) -> list[dict[str, Any]]:
+    # V1 holds a reroute cooldown; V2 holds a minimum TE dwell. Different rules,
+    # so the label follows the engine rather than being fixed to V1's wording.
+    cooldown_label = ("V2 minimum TE dwell"
+                      if type(engine).__name__ == "EngineV2View"
+                      else "V1 reroute cooldown")
     out = []
     for row in raw_demands:
         cls = row["class"]
@@ -189,7 +207,7 @@ def _demands(raw_demands: list[dict[str, Any]], engine: Any) -> list[dict[str, A
             "path_changes": row["path_changes"],
             "last_reroute_step": row["last_reroute_step"],
             "cooldown_until_step": row["cooldown_until_step"],
-            "cooldown_label": "V1 reroute cooldown",
+            "cooldown_label": cooldown_label,
             "risk_rank": risk[0],
             "risk_label": risk[1],
             "candidates": candidates,
@@ -225,6 +243,17 @@ _METRIC_LABELS: dict[str, tuple[str, str]] = {
     "reroutes": ("TE reroutes this interval", "count"),
     "flaps": ("Flaps this interval", "count"),
     "frr_events": ("FRR protection moves this interval", "count"),
+    # V2 keeps controller, protection and recovery moves in separate counters.
+    # They are never summed into one "reroutes" number.
+    "accepted_te_changes": ("Controller TE changes this interval", "count"),
+    "rejected_te_requests": ("TE requests rejected this interval", "count"),
+    "te_reversals": ("TE reversals this interval", "count"),
+    "frr_changes": ("FRR protection moves this interval", "count"),
+    "frr_disconnections": ("FRR disconnections this interval", "count"),
+    "recovery_restorations": ("Restorations this interval", "count"),
+    "overload_ratio": ("Offered load above capacity", "share"),
+    "gross_max_util": ("Busiest link, gross offered", "share"),
+    "protected_disconnected_demands": ("Protected demands disconnected", "count"),
 }
 
 
@@ -312,11 +341,18 @@ def session_snapshot(session: Any, runner: Any) -> dict[str, Any]:
         "comparison": pairing.synchronization(session),
         "availability": {
             "link_telemetry": {"available": True, "reason": None},
-            "observations": {"available": True, "reason": None},
+            "observations": {
+                "available": getattr(runner, "_obs", None) is not None,
+                "reason": (None if getattr(runner, "_obs", None) is not None else
+                           f"{runner.algorithm} reads engine state directly and "
+                           f"never builds an observation vector."),
+            },
             "expected_telemetry": {
                 "available": True,
-                "reason": "The live V1 engine can be cloned, so a one-interval "
-                          "estimate is computable without touching the session.",
+                "reason": (
+                    f"The live {getattr(runner, 'environment_version', 'v1').upper()} "
+                    f"engine can be cloned, so a one-interval estimate is "
+                    f"computable without touching the session."),
             },
         },
     }

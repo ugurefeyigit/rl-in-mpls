@@ -44,9 +44,127 @@
 .cmp__lane { display: grid; grid-template-columns: 32px minmax(130px, 1fr) repeat(3, minmax(90px, auto)); align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--rule); }
 .cmp__token { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid currentColor; color: var(--state-comparison); font-family: var(--font-plate); }
 
-.cockpit { display: flex; flex-wrap: wrap; gap: var(--space-3); padding: var(--space-2) var(--shell-pad); border-top: var(--rule-strong); background: var(--surface-sunken); }
-.cockpit[hidden] { display: none; }
-.cockpit__group { display: flex; align-items: center; gap: var(--space-2); padding-right: var(--space-3); border-right: var(--rule); }
-.story-progress { margin: 0; min-width: 210px; font-size: var(--size-utility); color: var(--atlas-cloud); }
-body[data-audience="on"] .head-tools, body[data-audience="on"] .source-switch, body[data-audience="on"] .rail, body[data-audience="on"] .mode-surface, body[data-audience="on"] .cockpit { display: none !important; }
+/* --- the control panel ---------------------------------------------------
+ * One column, top to bottom, in the order a first-time user needs: what world,
+ * what situation, what seed, who decides, which controller, how fast, then go.
+ * Numbered headings exist so a newcomer can be told "start at 1".
+ */
+.control-panel {
+  border-right: var(--rule);
+  background: var(--surface-sunken);
+  padding: var(--space-4) var(--space-4) var(--space-6);
+  overflow-y: auto;
+  min-width: 0;
+}
+.control-panel[hidden] { display: none; }
+
+.cp__section { border-top: var(--rule); padding: var(--space-4) 0; }
+.cp__section:first-child { border-top: 0; padding-top: 0; }
+.cp__section--evidence { border-top: var(--rule-strong); }
+.cp__title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-plate);
+  font-size: 0.75rem;
+  letter-spacing: var(--track-utility);
+  text-transform: uppercase;
+  color: var(--atlas-cloud);
+}
+
+.cp__field { display: grid; gap: var(--space-1); margin-bottom: var(--space-3); }
+.cp__label {
+  font-size: var(--size-utility);
+  letter-spacing: var(--track-utility);
+  text-transform: uppercase;
+  color: var(--atlas-cloud);
+}
+.cp__field select, .cp__field input[type="number"] {
+  width: 100%;
+  min-height: 34px;
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-inset);
+  color: inherit;
+  border: 1px solid var(--atlas-rule);
+  border-radius: var(--radius-control, 2px);
+  font: inherit;
+}
+.cp__field select:focus-visible, .cp__field input:focus-visible {
+  outline: 2px solid var(--state-selection);
+  outline-offset: 1px;
+}
+.cp__field input[aria-invalid="true"] { border-color: var(--state-failure); }
+
+.cp__note { margin: 0; color: var(--atlas-cloud); font-size: 0.75rem; line-height: 1.45; }
+.cp__note--blocked { color: var(--state-failure); }
+.cp__status { margin: var(--space-2) 0 0; font-family: var(--font-data); font-size: 0.75rem; }
+
+.cp__choices { display: grid; gap: var(--space-2); }
+.cp__choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 var(--space-2);
+  align-items: start;
+  padding: var(--space-2);
+  border: 1px solid var(--atlas-rule);
+}
+.cp__choice:focus-within { border-color: var(--state-selection); }
+.cp__choice input { grid-row: span 2; margin-top: 2px; }
+.cp__choice-note { color: var(--atlas-cloud); font-size: 0.75rem; line-height: 1.45; }
+.cp__checkbox { display: flex; align-items: center; gap: var(--space-2); }
+
+.cp__transport { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-bottom: var(--space-2); }
+.cp__transport .ctl { flex: 1 1 auto; justify-content: center; }
+
+.cp__primary {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-inset);
+  color: var(--atlas-fog);
+  border: 1px solid var(--route-base);
+  font: inherit;
+  letter-spacing: var(--track-utility);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.cp__primary:hover:not(:disabled) { border-color: var(--state-selection); }
+.cp__primary:disabled { opacity: .45; cursor: not-allowed; }
+.ctl--danger { color: var(--state-failure); border-color: var(--state-failure); }
+
+.cp__evidence { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: grid; gap: var(--space-3); }
+.cp__evidence .ctl { width: 100%; justify-content: flex-start; }
+.cp__evidence .ctl[aria-current="true"] { border-color: var(--state-selection); }
+
+/* --- audience view -------------------------------------------------------
+ * The exit control is deliberately excluded from the hide rule below. There is
+ * always one visible way out, and Escape does the same thing.
+ */
+body[data-audience="on"] .head-tools,
+body[data-audience="on"] .source-switch,
+body[data-audience="on"] .rail,
+body[data-audience="on"] .mode-surface,
+body[data-audience="on"] .control-panel { display: none !important; }
 body[data-audience="on"] .stage-wrap { grid-template-columns: minmax(0, 1fr); }
+
+.audience-exit {
+  position: fixed;
+  z-index: 60;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-inset);
+  color: var(--atlas-fog);
+  border: 1px solid var(--state-selection);
+  box-shadow: var(--shadow-level2);
+  font: inherit;
+  letter-spacing: var(--track-utility);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.audience-exit[hidden] { display: none; }
+.audience-exit:focus-visible { outline: 2px solid var(--state-selection); outline-offset: 2px; }

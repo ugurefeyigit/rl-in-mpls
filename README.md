@@ -85,7 +85,10 @@ python scripts/demo.py
 Starts the backend **with the training endpoint disabled**, loads the
 pretrained agent (`models/ppo_te/`), creates the fixed demo session (evening
 peak → flash crowd → backbone failure → recovery; RL vs greedy side-by-side;
-seed 42, advisor mode, paused at t=0) and opens **Presentation Mode**. The demo
+seed 42, advisor execution, paused at t=0) and opens **Presentation Mode**,
+whose left control panel is the single place a run is configured and driven.
+The live default is the governed **V2** environment with the pre-holdout
+continuity-selected checkpoints; V1 remains reachable by asking for it. The demo
 seed is fixed for reproducibility — the multi-seed evidence lives in `results/`
 (see Evaluation).
 
@@ -110,6 +113,7 @@ python -m uvicorn server.main:app --port 8000
 | URL | What it is |
 |---|---|
 | `http://127.0.0.1:8000/present` | Unified application in **Presentation** mode |
+
 | `http://127.0.0.1:8000/` or `/advanced` | Unified application in **Network Information** mode |
 | `http://127.0.0.1:8000/study` | Unified application in **RL Information → Governed Study**, final evidence selected |
 | `http://127.0.0.1:8000/docs` | OpenAPI, always current |

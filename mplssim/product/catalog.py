@@ -19,6 +19,7 @@ from typing import Any
 
 from mplssim.evidence import identity, replay
 from mplssim.evidence.loader import default_root
+from mplssim.product import checkpoints_v2
 from mplssim.product.contracts import (
     ENVIRONMENTS, LIVE_DEMONSTRATION_LABEL, OutputSemantics, SourceKind,
     source_profile,
@@ -26,10 +27,12 @@ from mplssim.product.contracts import (
 
 ROOT = Path(__file__).resolve().parents[2]
 
-#: Where a V2 live-demonstration checkpoint binding would be configured. The
-#: governed study's checkpoints live outside Git; without this binding the
-#: product truthfully reports that no V2 controller can be run live here.
-V2_LIVE_CHECKPOINTS_ENV = "V2_LIVE_CHECKPOINTS"
+#: Optional override for where the frozen V2 training worktrees live.
+V2_LIVE_CHECKPOINTS_ENV = checkpoints_v2.ARTIFACT_ROOT_ENV
+
+#: The truthful live default. V1 stays reachable by explicit request but is
+#: never substituted for an unavailable or incompatible V2 artifact.
+DEFAULT_ENVIRONMENT = "v2"
 
 
 @dataclass(frozen=True)
@@ -72,34 +75,44 @@ def _v1_model_available(tag: str) -> bool:
     return (base / "best_model.zip").is_file() or (base / "final_model.zip").is_file()
 
 
-def _v2_checkpoint_root() -> Path | None:
-    configured = os.environ.get(V2_LIVE_CHECKPOINTS_ENV, "").strip()
-    if not configured:
-        return None
-    path = Path(configured)
-    return path if path.is_dir() else None
+def _v2_binding(policy_id: str,
+                training_root: int = checkpoints_v2.DEFAULT_ROOT,
+                ) -> tuple[bool, str | None, str | None]:
+    """Is a frozen V2 checkpoint verified and loadable for live inference?
 
-
-def _v2_binding(policy_id: str) -> tuple[bool, str | None, str | None]:
-    """Is a frozen V2 checkpoint bound for live *inference only* demonstration?
-
-    Returns `(available, checkpoint_id, reason)`. A bound checkpoint is loaded
-    for inference and writes no evidence: using one in a demonstration does not
-    create, modify or extend the governed study.
+    Returns `(available, checkpoint_id, reason)`. Availability is the complete
+    fail-closed check: the artifact exists, its payload and sidecar hash to the
+    governed registry values, the sidecar declares V2 and the expected training
+    root and transition, and the stored environment identity validates against
+    the live environment. A bound checkpoint is loaded for inference and writes
+    no evidence, so a demonstration never creates, modifies or extends the
+    closed study — it is still a {label} record.
     """
-    root = _v2_checkpoint_root()
-    if root is None:
-        return (False, None, (
-            f"No V2 live-demonstration checkpoint is bound. Set "
-            f"{V2_LIVE_CHECKPOINTS_ENV} to a directory holding the frozen "
-            f"governed checkpoints to enable a {LIVE_DEMONSTRATION_LABEL} run. "
-            f"The closed study's results are unaffected either way."))
-    candidates = sorted(root.glob(f"{policy_id}*"))
-    if not candidates:
-        return (False, None,
-                f"{V2_LIVE_CHECKPOINTS_ENV} is set but holds no checkpoint for "
-                f"{policy_id!r}.")
-    return (True, candidates[0].name, None)
+    try:
+        entry = checkpoints_v2.entry_for(policy_id, training_root)
+    except checkpoints_v2.CheckpointUnavailable as exc:
+        return (False, None, str(exc))
+    available, reason = checkpoints_v2.availability(entry)
+    return (available, entry.id if available else None, reason)
+
+
+_v2_binding.__doc__ = (_v2_binding.__doc__ or "").replace(
+    "{label}", LIVE_DEMONSTRATION_LABEL)
+
+
+def checkpoint_registry() -> dict[str, Any]:
+    """The frozen six-checkpoint continuity registry and its default rule."""
+    root = checkpoints_v2.artifact_root()
+    return {
+        "training_roots": list(checkpoints_v2.TRAINING_ROOTS),
+        "default_training_root": checkpoints_v2.DEFAULT_ROOT,
+        "default_training_root_rule": checkpoints_v2.DEFAULT_ROOT_RULE,
+        "default_policy": checkpoints_v2.DEFAULT_POLICY,
+        "selection": "pre-holdout continuity selection; never reselected",
+        "artifact_root_env": checkpoints_v2.ARTIFACT_ROOT_ENV,
+        "artifact_root": str(root) if root else None,
+        "checkpoints": checkpoints_v2.registry_rows(),
+    }
 
 
 def live_policies() -> list[PolicyCapability]:
@@ -108,15 +121,17 @@ def live_policies() -> list[PolicyCapability]:
 
     ppo_available = _v1_model_available("ppo_te")
     out.append(PolicyCapability(
-        id="rl", label="MaskablePPO (V1)", environment_version="v1", family="learner",
+        id="rl", label="MaskablePPO · V1 checkpoint ppo_te",
+        environment_version="v1", family="learner",
         output_semantics=OutputSemantics.PROBABILITIES,
         available=ppo_available,
         unavailable_reason=None if ppo_available else
         "models/ppo_te holds no best_model.zip or final_model.zip.",
         checkpoint_id="ppo_te" if ppo_available else None,
         exposes_entropy=False, exposes_value=False,
-        description="The installed V1 MaskablePPO checkpoint. Masked action "
-                    "probabilities are read from the policy distribution."))
+        description="The installed V1 MaskablePPO checkpoint. `rl` is V1's "
+                    "generic controller slot and `ppo_te` is the checkpoint tag "
+                    "it loads; they are not two different actors."))
 
     for pid, label, desc in (
         ("static", "Static shortest path",
@@ -134,17 +149,33 @@ def live_policies() -> list[PolicyCapability]:
             description=desc))
 
     for pid, label, semantics, desc in (
-        ("maskable_ppo", "MaskablePPO (V2)", OutputSemantics.PROBABILITIES,
-         "The governed study's PPO learner, run for demonstration only."),
-        ("masked_bandit", "Masked contextual bandit", OutputSemantics.SCORES,
+        ("masked_bandit", "Masked contextual bandit · V2", OutputSemantics.SCORES,
          "The governed study's bandit learner. Its per-action numbers are "
-         "immediate-reward estimates, not probabilities."),
+         "immediate-reward estimates. They are not probabilities and do "
+         "not express how sure the learner is."),
+        ("maskable_ppo", "MaskablePPO · V2", OutputSemantics.PROBABILITIES,
+         "The governed study's PPO learner. Masked action probabilities are "
+         "read from the policy distribution."),
     ):
         available, checkpoint_id, reason = _v2_binding(pid)
         out.append(PolicyCapability(
             id=pid, label=label, environment_version="v2", family="learner",
             output_semantics=semantics, available=available,
             unavailable_reason=reason, checkpoint_id=checkpoint_id,
+            description=desc))
+
+    for pid, label, desc in (
+        ("greedy", "Utilization-aware greedy",
+         "Moves the demand crossing the busiest link onto its least-loaded "
+         "candidate. Its request goes through the V2 mask and validator."),
+        ("cspf", "CSPF periodic reoptimization",
+         "Constrained shortest-path reoptimization on a fixed period."),
+        ("static", "Static shortest path",
+         "Never requests a TE change. Protection and recovery still act."),
+    ):
+        out.append(PolicyCapability(
+            id=pid, label=label, environment_version="v2", family="baseline",
+            output_semantics=OutputSemantics.NONE, available=True,
             description=desc))
     return out
 
@@ -196,6 +227,9 @@ def source_capabilities() -> list[dict[str, Any]]:
         rows.append({
             "kind": kind.value,
             "label": profile.label,
+            "plain_label": profile.plain_label,
+            "plain_summary": profile.plain_summary,
+            "group": profile.group,
             "pattern": profile.pattern,
             "icon": profile.icon,
             "description": profile.description,
@@ -228,12 +262,17 @@ def environment_capabilities() -> list[dict[str, Any]]:
             "live_unavailable_reason": None if runnable else (
                 "No controller with a bound checkpoint is available for this "
                 "environment version on this machine."),
-            "supports_clone_counterfactual": version == "v1",
+            "is_default": version == DEFAULT_ENVIRONMENT,
+            "supports_clone_counterfactual": True,
             "clone_reason": (
-                "The live V1 engine exposes clone(); a counterfactual is evaluated "
-                "on deep copies and the running session is left untouched."
-                if version == "v1" else
-                "No live V2 session can run here, so no V2 state exists to clone."),
+                f"The live {version.upper()} engine exposes clone(); a "
+                f"counterfactual is evaluated on deep copies and the running "
+                f"session is left untouched."),
+            "supports_manual_traffic_override": version == "v1",
+            "manual_traffic_reason": (
+                None if version == "v1" else
+                "The frozen V2 engine has no manual traffic multiplier or burst "
+                "injector, and this product will not fabricate one."),
         })
     return rows
 
@@ -246,6 +285,8 @@ def capability_catalog() -> dict[str, Any]:
         "guided_story_mode": "presentation",
         "sources": source_capabilities(),
         "environments": environment_capabilities(),
+        "default_environment": DEFAULT_ENVIRONMENT,
+        "checkpoint_registry": checkpoint_registry(),
         "live_policies": [p.as_dict() for p in live_policies()],
         "evidence_policies": evidence_policies(),
         "live_demonstration_label": LIVE_DEMONSTRATION_LABEL,

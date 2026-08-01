@@ -120,7 +120,22 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   </button>
 </div>
 
+<!-- Audience view hides the working chrome. This control is deliberately NOT
+     inside .head-tools, so the only way out can never be hidden by the same
+     rule that hides everything else. Escape leaves audience view too. -->
+<button type="button" class="audience-exit" id="btn-audience-exit" hidden>
+  <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+  <span>Exit audience view</span>
+  <kbd>Esc</kbd>
+</button>
+
 <main id="main" class="shell-main">
+
+  <!-- The one place a run is configured and driven. Persistent, left, and in
+       the order a first-time user needs it: what, then who, then go. -->
+  <aside class="control-panel" id="control-panel" aria-label="Run setup and controls" hidden></aside>
+
+  <div class="work" id="work">
 
   <!-- Presentation moment rail. Fixed cells: values change, geometry does not. -->
   <section class="moment-rail" id="moment-rail" aria-label="Current moment" hidden>
@@ -195,52 +210,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <div class="surface-panel" id="panel-network" data-mode="network" hidden></div>
     <div class="surface-panel" id="panel-rl" data-mode="rl" hidden></div>
   </section>
+  </div>
 </main>
-
-<footer class="cockpit" id="cockpit" aria-label="Presenter cockpit" hidden>
-  <div class="cockpit__group" role="group" aria-label="Playback">
-    <button type="button" class="ctl ctl--primary" id="btn-playpause">Play</button>
-    <button type="button" class="ctl" id="btn-step">Step</button>
-    <button type="button" class="ctl" id="btn-next-event">Next event</button>
-    <label class="ctl-field">
-      <span>Speed</span>
-      <select id="sel-speed">
-        <option value="1x">1x</option>
-        <option value="5x">5x</option>
-        <option value="20x">20x</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="cockpit__group" role="group" aria-label="Story">
-    <button type="button" class="ctl" id="btn-story-prev">Back</button>
-    <p class="story-progress" id="story-progress">Guided Story is not running.</p>
-    <button type="button" class="ctl" id="btn-story-next">Next</button>
-    <button type="button" class="ctl" id="btn-story-toggle">Start Guided Story <kbd>G</kbd></button>
-    <button type="button" class="ctl" id="btn-story-auto" aria-pressed="false" disabled>
-      Auto story
-    </button>
-  </div>
-
-  <div class="cockpit__group" role="group" aria-label="Decision">
-    <button type="button" class="ctl" id="btn-propose">Preview recommendation</button>
-    <button type="button" class="ctl ctl--accept" id="btn-approve" disabled>Approve</button>
-    <button type="button" class="ctl" id="btn-reject" disabled>Reject</button>
-  </div>
-
-  <div class="cockpit__group" role="group" aria-label="Jumps">
-    <button type="button" class="ctl" id="btn-bookmark-prev" aria-label="Previous incident bookmark">
-      <svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg><kbd>[</kbd>
-    </button>
-    <button type="button" class="ctl" id="btn-bookmark-next" aria-label="Next incident bookmark">
-      <svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg><kbd>]</kbd>
-    </button>
-    <button type="button" class="ctl" id="btn-questions" aria-expanded="false">Q&amp;A jumps</button>
-    <button type="button" class="ctl" id="btn-conclusion" aria-expanded="false">
-      Governed conclusion
-    </button>
-  </div>
-</footer>
 
 <!-- Drawers. Each traps focus while open and returns focus to its invoker. -->
 <div class="drawer" id="drawer-explain" role="dialog" aria-modal="true"

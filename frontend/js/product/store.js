@@ -38,6 +38,21 @@ const initial = {
     hour: null,
   },
 
+  // What the control panel will start. Kept separate from `context`, which
+  // describes the run that is actually loaded: editing a field must never look
+  // like the running session changed underneath the user.
+  setup: {
+    environment: "v2",
+    scenario: "demo_evening",
+    seed: 42,
+    execution: "automatic",
+    policyA: "masked_bandit",
+    compare: false,
+    policyB: "greedy",
+    trainingRoot: 42,
+    speed: "1x",
+  },
+
   selection: { objectType: null, objectId: null, eventId: null, actionId: null },
   playback: { state: "idle", speed: "1x", running: false, awaitingDecision: false },
   story: { active: false, auto: false, beat: 0, reviewBeat: null, bookmarks: [] },
@@ -46,10 +61,10 @@ const initial = {
         topologyList: false, zoom: 1 },
 
   data: {
-    capabilities: null, contracts: null, displayMap: null,
+    capabilities: null, contracts: null, displayMap: null, scenarios: {},
     snapshot: null, previousSnapshot: null, decision: null, timeline: null,
     comparison: null, recommendation: null, counterfactual: null,
-    schema: null, evidence: {}, replay: null,
+    advisor: null, schema: null, evidence: {}, replay: null,
   },
 
   connection: "connecting",

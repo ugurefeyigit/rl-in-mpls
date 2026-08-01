@@ -13,17 +13,22 @@ import { count, clock, percent } from "./format.js";
 
 export const STORY_SCENARIO = "demo_evening";
 export const STORY_SEED = 42;
+export const STORY_ENVIRONMENT = "v2";
+export const STORY_POLICY = "masked_bandit";
 export const STORY_COMPARATOR = "greedy";
 
+/** The story runs the governed V2 environment in advisor execution, because a
+ *  beat that asks you to approve an action must actually be able to hold it. */
 export function storySessionConfig() {
   return {
     scenario: STORY_SCENARIO,
-    algorithms: ["rl", STORY_COMPARATOR],
+    environment: STORY_ENVIRONMENT,
+    algorithms: [STORY_POLICY, STORY_COMPARATOR],
     seed: STORY_SEED,
-    model_tag: "ppo_te",
     safety_filter: true,
     speed: "1x",
     autostart: false,
+    execution: "advisor",
     advisor: true,
     interface_mode: "present",
   };
@@ -33,9 +38,9 @@ export function matchesStorySession(status) {
   return Boolean(status?.session_id
     && status.scenario === STORY_SCENARIO
     && status.seed === STORY_SEED
-    && status.model_tag === "ppo_te"
+    && status.environment === STORY_ENVIRONMENT
     && status.advisor === true
-    && status.algorithms?.join(",") === `rl,${STORY_COMPARATOR}`);
+    && status.algorithms?.join(",") === `${STORY_POLICY},${STORY_COMPARATOR}`);
 }
 
 /**
@@ -59,9 +64,18 @@ export const BEATS = [
     label: "Read the initial evening",
     advance: { kind: "step" },
     narrate: (ctx) =>
-      `At ${ctx.clock} the network is in ${ctx.phaseLabel.toLowerCase()}. The busiest ` +
-      `link is at ${percent(ctx.maxUtil, 0)} and ${count(ctx.slaViolations)} demand-` +
-      `interval SLA violation(s) were recorded this interval.`,
+      ctx.pendingRecommendation
+        ? `The story runs with advisor approval, so the first interval is not ` +
+          `applied until you accept it. ${ctx.policyLabel} has proposed an action ` +
+          `at ${ctx.clock}; the card beneath the map shows exactly what it would ` +
+          `move. Approve or reject it to run the interval.`
+        : (ctx.maxUtil === null
+          ? `No interval has completed yet, so there is nothing measured to read. ` +
+            `Approve the proposed action, or press Step, to run the first interval.`
+          : `At ${ctx.clock} the network is in ${ctx.phaseLabel.toLowerCase()}. The ` +
+            `busiest link is at ${percent(ctx.maxUtil, 0)} and ` +
+            `${count(ctx.slaViolations)} demand-interval SLA violation(s) were ` +
+            `recorded this interval.`),
   },
   {
     id: 3,
@@ -135,9 +149,14 @@ export const BEATS = [
     id: 9,
     label: "Demand surge and failure",
     advance: { kind: "runUntil", condition: "failure" },
+    // A fast-forward is one delegated gesture, not many approvals. The copy
+    // says so rather than letting the presenter imply each interval was
+    // individually approved.
     narrate: (ctx) =>
       ctx.failedLinks.length
-        ? `A link has failed: ${ctx.failedLabels.join(", ")}. The engine's built-in ` +
+        ? `Fast-forward ran these intervals with the controller acting on its ` +
+          `own; they were not approved one by one. A link has failed: ` +
+          `${ctx.failedLabels.join(", ")}. The engine's built-in ` +
           `fast reroute moved the affected paths immediately — that is protection, ` +
           `not a controller decision. What follows is the traffic-engineering ` +
           `response to the pressure the failure left behind.`
@@ -211,6 +230,7 @@ export function storyContext(state) {
     riskDemandState: atRisk?.risk_label || null,
     affectedNow: snapshot?.incident?.demands_at_risk?.length ?? 0,
     hasRecommendation: Boolean(state.data.recommendation),
+    pendingRecommendation: Boolean(state.data.recommendation?.pending),
     lastReward: decision?.reward?.available ? decision.reward.interval_reward : null,
     lastRewardText: decision?.reward?.available
       ? decision.reward.interval_reward.toFixed(3) : "—",

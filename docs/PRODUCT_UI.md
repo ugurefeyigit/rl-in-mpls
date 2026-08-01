@@ -15,12 +15,64 @@ views, not primary modes.
 
 ## Record types
 
-| Stamp | Executes | Link telemetry | Intended use |
-|---|---:|---:|---|
-| LIVE | yes | yes | Running V1 simulation and synchronized comparison |
-| RECORDED | no | no | Immutable V2 interval aggregates |
-| DEVELOPMENT | no | no | Selection-stage evidence, explicitly not holdout |
-| FINAL EVIDENCE | no | no | Frozen one-shot holdout conclusion |
+| Stamp | Plain wording in the setup path | Executes | Link telemetry | Intended use |
+|---|---|---:|---:|---|
+| LIVE | Live simulation | yes | yes | Running V2 (or explicitly V1) simulation and synchronized comparison |
+| RECORDED | Recorded episode playback | no | no | Immutable V2 interval aggregates |
+| DEVELOPMENT | Pilot and continuity results (before the holdout) | no | no | Selection-stage evidence, explicitly not holdout |
+| FINAL EVIDENCE | Final study result (frozen, read-only) | no | no | Frozen one-shot holdout conclusion |
+
+The bare stamp words are for the provenance ledger, where a projector-legible
+token matters. Everywhere a first-time user makes a choice, the plain wording is
+used instead, and the three evidence records live in a **Study evidence and
+results** region of the control panel — never beside the scenario or model
+pickers. None of them can be run, compared live or chosen as a model.
+
+## The control panel
+
+Presentation Mode has one persistent left column. Everything that configures or
+drives a run is there, top to bottom, in the order a newcomer needs it:
+
+1. Environment — **V2 by default**, the governed study environment.
+2. Scenario — a real repository scenario, by its display name.
+3. Seed — validated; frozen holdout seeds are refused with the reason.
+4. Execution — automatic, or manual/advisor approval.
+5. Controller A — a learner or a baseline that genuinely runs in that
+   environment. An unavailable one is disabled with its verification reason.
+6. Optional comparison and Controller B.
+7. Checkpoint root (V2) — 42 by default; see the neutral rule below.
+8. Speed, then Start run.
+9. Run it: play/pause, step, skip to next event, stop, **reset run**,
+   **full reset**.
+10. Approve or reject, only in advisor execution.
+11. Guided Story entry with manual and automatic pacing.
+
+Nothing that starts or steers a run lives in the header, a bottom bar or a
+drawer. The bottom presenter cockpit is gone.
+
+**Reset run** recreates the same environment, scenario, seed and controllers at
+step zero and retains the run it replaced. **Full reset** stops the runners,
+clears active and transient UI state, closes Guided Story and the advisor
+workflow, and returns to the initial configuration. Neither mutates a model, a
+checkpoint or any evidence artifact.
+
+**Audience view** hides the working chrome. Its exit control is deliberately
+rendered outside that chrome, is pinned visible at every viewport including
+fullscreen, and `Escape` always leaves audience view before it leaves
+fullscreen. Focus returns to the toggle that opened it. Nothing reloads.
+
+## Automatic execution versus advisor approval
+
+In automatic execution the policy acts. The card beneath the map explains a
+**completed decision**; there is no proposal, no approval affordance and no
+fabricated preview of something that already ran. In advisor execution the
+proposed action is held — `Step` produces a proposal rather than advancing the
+clock — and only Approve or Reject moves the run on. Automatic Guided Story
+playback stops at every recommendation and waits.
+
+A fast-forward (`Skip to next event`, and the Guided Story beats that use one)
+applies the controller's own actions for that stretch without individual
+approval, and both the API response and the story copy say so.
 
 Changing source clears incompatible live state and invalidates outstanding
 source requests. Late live responses cannot repopulate recorded or evidence

@@ -65,6 +65,8 @@ export const api = {
   resume: () => post("/api/simulation/resume"),
   step: () => post("/api/simulation/step"),
   reset: () => post("/api/simulation/reset"),
+  stop: () => post("/api/simulation/stop"),
+  retainedRuns: () => get("/api/simulation/retained-runs"),
   speed: (speed) => post("/api/simulation/speed", { speed }),
   runUntil: (condition, maxSteps = 300) =>
     post("/api/simulation/run-until", { condition, max_steps: maxSteps }),

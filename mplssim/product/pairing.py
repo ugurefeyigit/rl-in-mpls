@@ -20,6 +20,9 @@ def _runner_view(runner: Any) -> dict[str, Any]:
     engine = runner.eng
     return {
         "algorithm": runner.algorithm,
+        "environment_version": getattr(runner, "environment_version", "v1"),
+        "checkpoint_id": getattr(runner, "checkpoint_id", None),
+        "output_semantics": getattr(runner, "output_semantics", "none"),
         "step": int(engine.step_count),
         "exogenous_fingerprint": fingerprint.exogenous_fingerprint(engine),
         "full_fingerprint": fingerprint.full_fingerprint(engine),
@@ -35,13 +38,32 @@ def synchronization(session: Any) -> dict[str, Any]:
     interventions; the routing difference is the measurement.
     """
     runners = list(session.runners)
-    lanes = [_runner_view(r) for r in runners]
-    common = {
+    versions = {getattr(r, "environment_version", "v1") for r in runners}
+    # Two environment versions are two different problems: the same action
+    # number addresses a different candidate path. There is no fair comparison
+    # to render, and none is claimed. Checked before any engine is read, because
+    # a mismatched pair may not even share an engine shape.
+    identity = {
         "scenario": session.config.scenario,
         "seed": session.config.seed,
-        "environment_version": "v1",
-        "lanes": lanes,
+        "environment_version": session.config.environment,
+        "training_root": (int(session.config.training_root)
+                          if session.config.environment == "v2" else None),
     }
+    if len(versions) > 1:
+        return {**identity,
+                "lanes": [{"algorithm": r.algorithm,
+                           "environment_version": getattr(
+                               r, "environment_version", "v1")}
+                          for r in runners],
+                "comparison": True, "matched": False,
+                "reason": ("The two lanes run different environment versions, so "
+                           "the same action number does not mean the same move. "
+                           "No comparative verdict is shown."),
+                "mismatched_fields": ["environment_version"],
+                "proof": "environment identity"}
+
+    common = {**identity, "lanes": [_runner_view(r) for r in runners]}
     if len(runners) < 2:
         return {**common, "comparison": False, "matched": None,
                 "reason": "This session runs one controller. There is nothing to "

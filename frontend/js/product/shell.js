@@ -5,6 +5,7 @@
  * the source adapter passed in by main.js.
  */
 
+import { renderControlPanel } from "./control-panel.js";
 import { $, fill, isTypingTarget, trapFocus } from "./dom.js";
 import { renderExplain } from "./explain.js";
 import { renderHelp, renderQuestions } from "./help.js";
@@ -33,7 +34,8 @@ export function mountShell({ store, atlas, actions }) {
     $("mode-surface-title").textContent = state.mode === "presentation"
       ? "Presentation" : (state.mode === "network" ? "Network Information" : "RL Information");
     $("moment-rail").hidden = state.mode !== "presentation";
-    $("cockpit").hidden = state.mode !== "presentation" || state.ui.audienceView;
+    renderControlPanel(state, controlHandlers());
+    renderAudienceExit(state);
 
     renderProvenance(state);
     renderContextLedger(state);
@@ -95,24 +97,42 @@ export function mountShell({ store, atlas, actions }) {
 
   function renderButtons(state) {
     const session = state.data.snapshot?.session;
-    $("btn-playpause").textContent = session?.running ? "Pause" : (session ? "Play" : "Start live session");
     $("btn-session-primary").textContent = state.source.kind !== "live_session"
       ? "Switch to live session"
       : (session?.running ? "Pause live session" : (session ? "Resume live session" : "Start live session"));
-    $("btn-story-toggle").textContent = state.story.active ? "End Guided Story" : "Start Guided Story";
-    $("btn-story-auto").disabled = !state.story.active;
-    $("btn-story-auto").setAttribute("aria-pressed", state.story.auto ? "true" : "false");
-    $("btn-story-auto").textContent = state.story.auto ? "Pause auto story" : "Auto story";
-    $("story-progress").textContent = state.story.active
-      ? `Beat ${state.story.beat + 1}/11` : "Guided Story is not running.";
     $("btn-audience").setAttribute("aria-pressed", state.ui.audienceView ? "true" : "false");
     $("btn-fullscreen").setAttribute("aria-pressed", document.fullscreenElement ? "true" : "false");
-    const pending = Boolean(state.data.recommendation?.pending);
-    $("btn-approve").disabled = !pending;
-    $("btn-reject").disabled = !pending;
-    for (const id of ["btn-playpause", "btn-step", "btn-next-event", "btn-propose"]) {
-      $(id).disabled = state.source.kind !== "live_session";
-    }
+  }
+
+  /* Audience view hides the working chrome, so its exit must live outside that
+   * chrome. It renders whenever audience view is on, in every mode and in
+   * fullscreen, and Escape does the same thing without reloading. */
+  function renderAudienceExit(state) {
+    $("btn-audience-exit").hidden = !state.ui.audienceView;
+  }
+
+  function controlHandlers() {
+    return {
+      onSetup: actions.setup,
+      onStart: actions.startRun,
+      onPlayPause: actions.playPause,
+      onStep: actions.step,
+      onNextEvent: actions.nextEvent,
+      onPause: actions.pause,
+      onResetRun: actions.resetRun,
+      onFullReset: actions.fullReset,
+      onSpeed: actions.setSpeed,
+      onApprove: actions.approve,
+      onReject: actions.reject,
+      onToggleStory: actions.toggleStory,
+      onToggleStoryAuto: actions.toggleStoryAuto,
+      onStoryNext: actions.storyNext,
+      onStoryPrevious: actions.storyPrevious,
+      onStoryRestart: actions.storyRestart,
+      onOpenEvidence: actions.openEvidence,
+      onOpenConclusion: () => { actions.openConclusion(); },
+      onOpenQuestions: () => openDrawer("drawer-questions"),
+    };
   }
 
   function networkHandlers() {
@@ -180,34 +200,21 @@ export function mountShell({ store, atlas, actions }) {
     $("btn-reset-view").addEventListener("click", () => atlas.resetView());
     $("btn-explain").addEventListener("click", (event) => openDrawer("drawer-explain", event.currentTarget));
     $("btn-help").addEventListener("click", (event) => openDrawer("drawer-help", event.currentTarget));
-    $("btn-questions").addEventListener("click", (event) => openDrawer("drawer-questions", event.currentTarget));
-    $("btn-conclusion").addEventListener("click", (event) => {
-      actions.loadEvidence(); openDrawer("drawer-conclusion", event.currentTarget);
-    });
     document.querySelectorAll("[data-close]").forEach((button) =>
       button.addEventListener("click", () => closeDrawer()));
     document.querySelectorAll("[data-depth]").forEach((button) => button.addEventListener("click", () => {
       store.patch({ ui: { explainDepth: button.dataset.depth } });
     }));
     $("btn-audience").addEventListener("click", actions.toggleAudience);
+    $("btn-audience-exit").addEventListener("click", () => {
+      actions.exitAudience();
+      $("btn-audience").focus();
+    });
     $("btn-fullscreen").addEventListener("click", actions.toggleFullscreen);
-    $("btn-playpause").addEventListener("click", actions.playPause);
     $("btn-session-primary").addEventListener("click", () => {
       if (store.state.source.kind !== "live_session") actions.setSource("live_session");
       else actions.playPause();
     });
-    $("btn-step").addEventListener("click", actions.step);
-    $("btn-next-event").addEventListener("click", actions.nextEvent);
-    $("sel-speed").addEventListener("change", (event) => actions.setSpeed(event.target.value));
-    $("btn-story-toggle").addEventListener("click", actions.toggleStory);
-    $("btn-story-auto").addEventListener("click", actions.toggleStoryAuto);
-    $("btn-story-next").addEventListener("click", actions.storyNext);
-    $("btn-story-prev").addEventListener("click", actions.storyPrevious);
-    $("btn-propose").addEventListener("click", actions.propose);
-    $("btn-approve").addEventListener("click", actions.approve);
-    $("btn-reject").addEventListener("click", actions.reject);
-    $("btn-bookmark-prev").addEventListener("click", () => actions.jumpBookmark(-1));
-    $("btn-bookmark-next").addEventListener("click", () => actions.jumpBookmark(1));
     document.addEventListener("fullscreenchange", render);
     document.addEventListener("keydown", onKeyDown);
   }
@@ -221,8 +228,15 @@ export function mountShell({ store, atlas, actions }) {
       return;
     }
     if (event.key === "Escape") {
-      if (store.state.ui.openDrawer) closeDrawer();
-      else if (document.fullscreenElement) document.exitFullscreen();
+      // Order matters: a drawer first, then audience view, then fullscreen.
+      // Audience view must always be escapable, including while fullscreen.
+      if (store.state.ui.openDrawer) { closeDrawer(); return; }
+      if (store.state.ui.audienceView) {
+        actions.exitAudience();
+        $("btn-audience").focus();
+        return;
+      }
+      if (document.fullscreenElement) document.exitFullscreen();
       return;
     }
     if (event.key === " ") { event.preventDefault(); actions.playPause(); }

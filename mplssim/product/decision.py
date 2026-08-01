@@ -28,9 +28,16 @@ from mplssim.product.contracts import (
 )
 
 
-def _semantics_for(algorithm: str) -> OutputSemantics:
+def _semantics_for(runner: Any) -> OutputSemantics:
+    """The controller's *declared* output semantics, never inferred from shape."""
+    declared = getattr(runner, "output_semantics", None)
+    if declared:
+        for semantics in OutputSemantics:
+            if semantics.value == declared:
+                return semantics
+    version = getattr(runner, "environment_version", "v1")
     for policy in live_policies():
-        if policy.id == algorithm and policy.environment_version == "v1":
+        if policy.id == runner.algorithm and policy.environment_version == version:
             return policy.output_semantics
     return OutputSemantics.NONE
 
@@ -50,7 +57,7 @@ def observation_state(runner: Any) -> dict[str, Any]:
     current = np.asarray(obs, dtype=float)
     payload: dict[str, Any] = {
         "available": True,
-        "environment_version": "v1",
+        "environment_version": getattr(runner, "environment_version", "v1"),
         "dim": int(current.size),
         "values": [round(float(v), 6) for v in current],
     }
@@ -143,13 +150,16 @@ def action_grid(runner: Any) -> dict[str, Any]:
         "valid_count": int(mask.sum()),
         "selected_action": selected,
         "actions": rows,
-        "reason_source": "mplssim.sim.engine.SimulationEngine.validate_action",
+        "reason_source": (
+            "mplssim.sim.engine_v2.SimulationEngineV2.validate_te_action"
+            if getattr(runner, "environment_version", "v1") == "v2"
+            else "mplssim.sim.engine.SimulationEngine.validate_action"),
     }
 
 
 # ------------------------------------------------------------- policy output
 def policy_output(runner: Any) -> dict[str, Any]:
-    semantics = _semantics_for(runner.algorithm)
+    semantics = _semantics_for(runner)
     base = {
         "policy_id": runner.algorithm,
         "semantics": semantics.value,
@@ -172,17 +182,17 @@ def policy_output(runner: Any) -> dict[str, Any]:
                 "top": [], "selected": None, "runner_up": None, "noop": None,
                 "entropy": None, "value": None}
 
-    ordered = sorted(top, key=lambda r: -r["prob"])
+    ordered = sorted(top, key=lambda r: -r["value"])
     selected_action = decision.get("action")
-    by_action = {r["action"]: r["prob"] for r in ordered}
+    by_action = {r["action"]: r["value"] for r in ordered}
     runner_up = next((r for r in ordered if r["action"] != selected_action), None)
     return {
         **base,
         "available": True,
         "top": ordered,
         "selected": {"action": selected_action,
-                     "value": decision.get("action_probability")},
-        "runner_up": ({"action": runner_up["action"], "value": runner_up["prob"]}
+                     "value": decision.get("output_value")},
+        "runner_up": ({"action": runner_up["action"], "value": runner_up["value"]}
                       if runner_up else None),
         "noop": {"action": 0, "value": by_action.get(0)} if 0 in by_action else
                 {"action": 0, "value": None,
@@ -191,8 +201,12 @@ def policy_output(runner: Any) -> dict[str, Any]:
         "entropy_reason": "The live runner does not expose distribution entropy.",
         "value": None,
         "value_reason": "The live runner does not expose the value estimate.",
-        "distribution_note": "Probabilities cover the valid masked distribution only. "
-                             "Invalid actions carry no probability bar.",
+        "distribution_note": (
+            "Immediate-reward estimates for each valid action. They are not "
+            "probabilities, not confidence and do not sum to one."
+            if semantics is OutputSemantics.SCORES else
+            "Probabilities cover the valid masked distribution only. "
+            "Invalid actions carry no probability bar."),
     }
 
 
@@ -243,7 +257,7 @@ def reward_state(runner: Any, environment_version: str = "v1") -> dict[str, Any]
         return _unavailable("No interval has been rewarded yet.")
     components = decision.get("components") or {}
     order = (V1_REWARD_COMPONENTS if environment_version == "v1"
-             else tuple(components))
+             else tuple(decision.get("component_order") or components))
     ordered = [{"name": name, "value": components.get(name)}
                for name in order if name in components]
     ordered += [{"name": name, "value": value}
@@ -262,7 +276,9 @@ def reward_state(runner: Any, environment_version: str = "v1") -> dict[str, Any]
         "residual": residual,
         "exact_sum": abs(residual) <= 5e-4,
         "cumulative_reward": decision.get("cumulative_reward"),
-        "note": ("V1 reward terms. These are not the governed study's 12 V2 "
+        "note": ("The governed study's exact 12 V2 reward components."
+                 if environment_version == "v2" else
+                 "V1 reward terms. These are not the governed study's 12 V2 "
                  "components and are never padded to look like them."),
     }
 
@@ -276,7 +292,8 @@ def decision_payload(session: Any, runner: Any) -> dict[str, Any]:
     grid = action_grid(runner)
     output = policy_output(runner)
     selected = selected_action(runner)
-    reward = reward_state(runner)
+    version = getattr(runner, "environment_version", "v1")
+    reward = reward_state(runner, version)
     return {
         "provenance": serialize.provenance(session, runner),
         "pipeline": list(_PIPELINE_STAGES),
@@ -285,9 +302,19 @@ def decision_payload(session: Any, runner: Any) -> dict[str, Any]:
         "mask": grid,
         "policy_output": output,
         "selected_action": selected,
+        "execution": {
+            "mode": session.config.execution,
+            "policy_acted": session.config.execution == "automatic",
+            "note": ("The policy acted automatically; this is an explanation of a "
+                     "completed decision, not a proposal awaiting approval."
+                     if session.config.execution == "automatic" else
+                     "Advisor execution holds the proposed action until an "
+                     "operator approves or rejects it."),
+        },
         "safety": {
             "safety_filter": bool(session.config.safety_filter),
-            "validator": "SimulationEngine.validate_action",
+            "validator": ("SimulationEngineV2.validate_te_action" if version == "v2"
+                          else "SimulationEngine.validate_action"),
             "environment_rejection": selected.get("rejection_source") == "environment",
             "operator_rejection": False,
             "reason": selected.get("validator_reason"),

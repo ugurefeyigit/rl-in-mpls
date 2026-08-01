@@ -24,17 +24,22 @@ export function renderRecommendation(state) {
 
   const policy = policyLabel(state);
   const decoded = proposal.decoded;
-  const semantics = outputSemantics(state);
+  const semantics = outputSemantics(state, proposal);
 
+  // Wording follows what actually happened. A completed automatic decision is
+  // never described as a suggestion awaiting approval.
+  const proposed = proposal.kind === "proposal";
   const headline = decoded
-    ? `${policy} suggests moving ${decoded.demandLabel}`
-    : `${policy} suggests no TE change`;
+    ? (proposed ? `${policy} proposes moving ${decoded.demandLabel}`
+                : `${policy} moved ${decoded.demandLabel}`)
+    : (proposed ? `${policy} proposes no TE change`
+                : `${policy} made no TE change`);
 
   const rows = [];
   if (decoded) {
     rows.push(["Demand", `${decoded.demand} · ${decoded.classLabel} · ${mbps(decoded.volumeMbps)}`]);
     rows.push(["Old path", decoded.fromLabel]);
-    rows.push(["Proposed", decoded.toLabel]);
+    rows.push([proposed ? "Proposed path" : "New path", decoded.toLabel]);
   } else {
     rows.push(["Action", "0 · no TE change"]);
   }
@@ -48,7 +53,9 @@ export function renderRecommendation(state) {
       proposal.safetyOk
         ? tag("Valid", "normal")
         : tag("Invalid", "failure"),
-      proposal.pending ? tag("Preview only", "selection") : null,
+      proposal.pending
+        ? tag("Awaiting your approval", "selection")
+        : tag(proposed ? "Resolved" : "Completed decision", "normal"),
     ]),
 
     el("dl", { class: "rec__facts" }, rows.flatMap(([term, value]) => [
@@ -78,6 +85,7 @@ export function renderRecommendation(state) {
     ]),
 
     el("p", { class: "rec__note", text: semantics.description }),
+    el("p", { class: "rec__note", text: proposal.executionNote }),
   ]);
 
   fill(host, card);
@@ -125,12 +133,14 @@ function policyLabel(state) {
   return policy?.label || id || "The selected policy";
 }
 
-function outputSemantics(state) {
+function outputSemantics(state, proposal = null) {
   const id = state.context.policyId;
   const policy = state.data.capabilities?.live_policies?.find(
     (p) => p.id === id && p.environment_version === state.context.environmentVersion);
   return {
-    id: policy?.output_semantics || "none",
+    // The controller's declared semantics wins. A bandit head value is an
+    // immediate-reward estimate whichever surface renders it.
+    id: proposal?.outputSemantics || policy?.output_semantics || "none",
     label: policy?.output_label || "Per-action output",
     description: policy?.output_description
       || "This controller exposes no per-action numbers.",
@@ -167,10 +177,76 @@ export function proposalFromAdvisor(proposal, snapshot, { record = null } = {}) 
       : "Outcome estimate unavailable for this action.",
     observed: record?.actual || null,
     reward: record?.reward ?? null,
-    outputValue: proposal.action_probability,
+    outputValue: proposal.output_value,
+    outputSemantics: proposal.output_semantics || null,
     safetyOk: proposal.safety_ok,
     safetyReason: proposal.safety_reason,
+    kind: "proposal",
+    executionNote: record
+      ? `You ${record.approved ? "approved" : "rejected"} this recommendation. `
+        + `${record.approved ? "The action was applied." : "No TE change was applied."}`
+      : "Nothing has been applied. The run is held until you approve or reject.",
   };
+}
+
+/**
+ * Build the card model for a decision the policy already made. There is no
+ * proposal here and nothing to approve, so no approval affordance is offered
+ * and no simulated outcome is invented: the observed values are the outcome.
+ */
+export function explanationFromDecision(decision, snapshot) {
+  const selected = decision?.selected_action;
+  if (!selected?.available || selected.kind !== "single_action") return null;
+  const decoded = selected.decoded && selected.decoded.type === "te_request"
+    ? {
+        demand: selected.decoded.demand,
+        demandLabel: demandLabel(selected.decoded, snapshot),
+        classLabel: demandClass(selected.decoded, snapshot),
+        volumeMbps: demandVolume(selected.decoded, snapshot),
+        fromLabel: pathLabel(selected.decoded.demand, selected.decoded.from_path, snapshot),
+        toLabel: pathLabel(selected.decoded.demand, selected.decoded.path_idx, snapshot),
+      }
+    : null;
+  const metrics = snapshot?.metrics;
+  const values = metrics?.available ? metrics.values : {};
+  return {
+    action: selected.action,
+    pending: false,
+    decoded,
+    grounding: selected.explanation || "Measured path pressure and mask state only.",
+    before: null,
+    expected: null,
+    expectedReason: "Outcome estimate unavailable: the action already ran, so the "
+      + "observed outcome below is the outcome.",
+    observed: {
+      max_util: values.max_util?.value,
+      mean_delay_ms: values.mean_delay_ms?.value,
+      loss_ratio: values.loss_ratio?.value,
+      sla_violations: values.sla_violations?.value,
+    },
+    reward: decision?.reward?.available ? decision.reward.interval_reward : null,
+    outputValue: decision?.policy_output?.selected?.value ?? null,
+    outputSemantics: decision?.policy_output?.semantics || null,
+    safetyOk: selected.accepted !== false,
+    safetyReason: selected.validator_reason || "ok",
+    kind: "explanation",
+    executionNote: decision?.execution?.note
+      || "The policy acted automatically. This explains a completed decision.",
+  };
+}
+
+function demandClass(decoded, snapshot) {
+  return (snapshot?.demands || []).find((d) => d.id === decoded.demand)?.class_label || "";
+}
+
+function demandVolume(decoded, snapshot) {
+  return (snapshot?.demands || []).find((d) => d.id === decoded.demand)?.offered_mbps;
+}
+
+function pathLabel(demandId, pathIdx, snapshot) {
+  const demand = (snapshot?.demands || []).find((d) => d.id === demandId);
+  const candidate = (demand?.candidates || []).find((c) => c.path_idx === pathIdx);
+  return candidate?.path_label || `candidate ${pathIdx}`;
 }
 
 function beforeTelemetry(snapshot) {

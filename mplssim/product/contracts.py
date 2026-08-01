@@ -49,6 +49,13 @@ class SourceProfile:
     link_telemetry_reason: str
     required_fields: tuple[str, ...]
     description: str
+    #: Wording for people who have not read the study. The bare ledger stamp is
+    #: for the provenance rail; the setup path uses these instead.
+    plain_label: str = ""
+    plain_summary: str = ""
+    #: Live simulation choices belong beside the scenario and model controls.
+    #: Evidence never does — it is a finished record, not a thing you can run.
+    group: str = "live"
 
 
 _SOURCE_PROFILES: dict[SourceKind, SourceProfile] = {
@@ -64,6 +71,10 @@ _SOURCE_PROFILES: dict[SourceKind, SourceProfile] = {
         required_fields=("session_id", "generation", "sequence", "step",
                          "environment_version", "scenario", "seed"),
         description="A running or paused simulation session.",
+        plain_label="Live simulation",
+        plain_summary="A simulation running here, now, on your chosen scenario, "
+                      "seed and controller.",
+        group="live",
     ),
     SourceKind.RECORDED_REPLAY: SourceProfile(
         kind=SourceKind.RECORDED_REPLAY,
@@ -78,6 +89,10 @@ _SOURCE_PROFILES: dict[SourceKind, SourceProfile] = {
             "aggregates only, so a link-level topology cannot be replayed."),
         required_fields=("policy_id", "scenario", "seed", "recorded_step", "stage"),
         description="Playback of an immutable recorded trace. Never a controller run.",
+        plain_label="Recorded episode playback",
+        plain_summary="Step-by-step playback of an episode that was recorded "
+                      "earlier. Nothing is being decided while you watch it.",
+        group="study_evidence",
     ),
     SourceKind.DEVELOPMENT_EVIDENCE: SourceProfile(
         kind=SourceKind.DEVELOPMENT_EVIDENCE,
@@ -91,6 +106,13 @@ _SOURCE_PROFILES: dict[SourceKind, SourceProfile] = {
             "Development evidence is aggregate. It carries no episode topology."),
         required_fields=("stage", "source_sha", "artifact_path"),
         description="Pilot, continuity, learning-curve and checkpoint-selection evidence.",
+        plain_label="Pilot and continuity results (before the holdout)",
+        plain_summary="Results produced while the study was still being built: "
+                      "pilots, learning curves and the checkpoint selection. They "
+                      "were all created before the final holdout was opened, so "
+                      "they may inform how the study was set up but they are not "
+                      "the study's conclusion.",
+        group="study_evidence",
     ),
     SourceKind.FINAL_HOLDOUT_EVIDENCE: SourceProfile(
         kind=SourceKind.FINAL_HOLDOUT_EVIDENCE,
@@ -104,6 +126,12 @@ _SOURCE_PROFILES: dict[SourceKind, SourceProfile] = {
             "Final-holdout evidence is a frozen one-shot result, not a topology state."),
         required_fields=("stage", "source_sha", "artifact_path"),
         description="The untouched one-shot final holdout. Frozen; never a live comparator.",
+        plain_label="Final study result (frozen, read-only)",
+        plain_summary="The one-shot result on data the study never trained or "
+                      "selected on. It ran once, it is frozen, and it can only be "
+                      "read. It is never a live comparison and never a model you "
+                      "can pick.",
+        group="study_evidence",
     ),
 }
 

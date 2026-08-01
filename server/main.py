@@ -33,6 +33,7 @@ from pydantic import BaseModel, Field
 from mplssim.display import display_bundle, scenario_label
 from mplssim.evidence import identity
 from mplssim.factory import get_scenarios, get_topology, get_traffic_config
+from mplssim.product import checkpoints_v2
 from mplssim.validation import ConfigError, validate_configs
 from server import db
 from server.events import log_event, recent_events
@@ -40,7 +41,8 @@ from server.evidence_api import router as evidence_router
 from server.product_api import bind_session_provider
 from server.product_api import router as product_router
 from server.session import (
-    SessionConfig, SessionError, SessionState, SimSession, list_checkpoints,
+    DEFAULT_ENVIRONMENT, SessionConfig, SessionError, SessionState, SimSession,
+    algorithms_for, list_checkpoints,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -84,12 +86,20 @@ app = FastAPI(
 # ------------------------------------------------------------------ schemas
 class StartRequest(BaseModel):
     scenario: str = "demo_evening"
-    algorithms: list[str] = Field(default=["rl"], min_length=1, max_length=2)
+    #: V2 is the truthful default: it is the governed study environment and the
+    #: only one with continuity-selected checkpoints. V1 must be asked for.
+    environment: str = Field(default=DEFAULT_ENVIRONMENT, pattern="^(v1|v2)$")
+    algorithms: list[str] = Field(default=["masked_bandit"], min_length=1,
+                                  max_length=2)
     seed: int = 42
-    model_tag: str | None = "ppo_te"
+    model_tag: str | None = "ppo_te"       # V1 checkpoint tag only
+    training_root: int = checkpoints_v2.DEFAULT_ROOT   # V2 checkpoint root only
     safety_filter: bool = True
     speed: str = "1x"
     autostart: bool = True
+    #: "automatic" runs the policy; "advisor" holds each proposed action for an
+    #: operator decision. `advisor` remains accepted for existing clients.
+    execution: str | None = Field(default=None, pattern="^(automatic|advisor)$")
     advisor: bool = False
     interface_mode: str = "advanced"
 
@@ -225,18 +235,33 @@ def benchmark() -> dict:
 async def sim_start(req: StartRequest) -> dict:
     if req.seed in identity.HOLDOUT_SEEDS:
         raise HTTPException(400, "frozen final-holdout seeds are blocked for live sessions")
+    if req.seed < 0:
+        raise HTTPException(400, "seed must be a non-negative integer")
     if req.scenario not in get_scenarios():
         raise HTTPException(400, f"unknown scenario {req.scenario}")
+    allowed = algorithms_for(req.environment)
     for a in req.algorithms:
-        if a not in ("rl", "static", "greedy", "cspf", "random"):
-            raise HTTPException(400, f"unknown algorithm {a}")
+        if a not in allowed:
+            raise HTTPException(400, (
+                f"{a!r} cannot run in the {req.environment.upper()} environment. "
+                f"Available: {', '.join(allowed)}."))
+    if req.environment == "v2" and req.training_root not in checkpoints_v2.TRAINING_ROOTS:
+        raise HTTPException(400, (
+            f"training root {req.training_root} is not one of the study's "
+            f"continuity roots {list(checkpoints_v2.TRAINING_ROOTS)}."))
+    advisor = req.advisor if req.execution is None else req.execution == "advisor"
     try:
         session = SimSession(SessionConfig(
             scenario=req.scenario, algorithms=tuple(req.algorithms),
             seed=req.seed, model_tag=req.model_tag,
             safety_filter=req.safety_filter, speed=req.speed,
-            interface_mode=req.interface_mode, advisor=req.advisor,
+            interface_mode=req.interface_mode, advisor=advisor,
+            environment=req.environment, training_root=req.training_root,
         ))
+    # A missing or incompatible V2 checkpoint fails closed here, with the
+    # verification reason, instead of degrading the session to V1.
+    except checkpoints_v2.CheckpointUnavailable as e:
+        raise HTTPException(409, str(e)) from e
     except (FileNotFoundError, ConfigError, ValueError) as e:
         raise HTTPException(400, str(e)) from e
     old: SimSession | None = STATE["session"]
@@ -244,7 +269,7 @@ async def sim_start(req: StartRequest) -> dict:
         await old.pause()
     STATE["session"] = session
     session.subscribers.append(WS_HUB.send)
-    if req.autostart and not req.advisor:
+    if req.autostart and not advisor:
         await session.resume()
     return session.status()
 
@@ -266,7 +291,39 @@ async def sim_step() -> dict:
 
 @app.post("/api/simulation/reset")
 async def sim_reset() -> dict:
+    """Reset run: same experiment at step zero; the replaced run is retained."""
     return await _handle(current_session().reset())
+
+
+@app.post("/api/simulation/stop")
+async def sim_stop() -> dict:
+    """Full reset: stop the runners and return to initial configuration.
+
+    Clears the active session only. No model, checkpoint or evidence artifact is
+    read, written or modified.
+    """
+    session: SimSession | None = STATE["session"]
+    if session is None:
+        return {"stopped": False, "reason": "no active session"}
+    await session.shutdown()
+    STATE["session"] = None
+    log_event("session_full_reset", scenario=session.config.scenario)
+    return {"stopped": True, "session_id": session.id,
+            "retained_runs": len(session.previous_runs)}
+
+
+@app.get("/api/simulation/retained-runs")
+def sim_retained_runs() -> dict:
+    """Runs archived by a reset run, kept for later comparison."""
+    session = current_session()
+    return {"count": len(session.previous_runs),
+            "runs": [{k: v for k, v in run.items() if k != "runs"}
+                     | {"runs": [{"algorithm": r["algorithm"],
+                                  "checkpoint_id": r["checkpoint_id"],
+                                  "cumulative_reward": r["cumulative_reward"],
+                                  "steps": len(r["history"])}
+                                 for r in run["runs"]]}
+                     for run in session.previous_runs]}
 
 
 @app.post("/api/simulation/run-until")

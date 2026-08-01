@@ -26,6 +26,7 @@ def client():
 
 def start(client, **over):
     body = {"scenario": "evening_peak", "algorithms": ["greedy"], "seed": 5,
+            "environment": "v1",
             "model_tag": None, "speed": "fast", "autostart": False}
     body.update(over)
     r = client.post("/api/simulation/start", json=body)

@@ -80,17 +80,47 @@ Changed observations are descriptive deltas, never causal importance.
 
 | Method | Path | Body | Description |
 |---|---|---|---|
-| POST | `/api/simulation/start` | `{scenario, algorithms: ["rl","static"], seed, model_tag, safety_filter, speed, autostart}` | Create (and optionally start) a session; 2 algorithms = paired compare mode |
+| POST | `/api/simulation/start` | `{scenario, environment, algorithms, seed, training_root, model_tag, safety_filter, speed, autostart, execution}` | Create (and optionally start) a session; 2 algorithms = paired compare mode |
 | POST | `/api/simulation/pause` | – | Pause the ticking loop |
 | POST | `/api/simulation/resume` | – | Resume |
 | POST | `/api/simulation/step` | – | Advance exactly one control interval (must be paused) |
 | POST | `/api/simulation/run-until` | `{condition, max_steps, util_threshold}` | Paused fast-forward to `next_event`, `congestion`, real `failure`, real `recovery`, or `end`; unknown conditions fail closed |
-| POST | `/api/simulation/reset` | – | Rebuild the same session at t=0 |
+| POST | `/api/simulation/reset` | – | **Reset run**: rebuild the same experiment at t=0 and retain the run it replaced |
+| POST | `/api/simulation/stop` | – | **Full reset**: stop the runners and clear the active session |
+| GET | `/api/simulation/retained-runs` | – | Runs archived by reset run, summarized |
 | POST | `/api/simulation/speed` | `{speed: "1x"\|"5x"\|"20x"\|"fast"}` | Presentation pacing (1x = one 5-min interval / 2 s) |
 | GET | `/api/simulation/status` | – | Clock, step, running/done flags |
 | GET | `/api/simulation/moment?algorithm=rl` | – | Atomic product read of snapshot, decision, timeline, comparison, and advisor state under the session lock |
 
-Valid `algorithms`: `rl`, `static`, `greedy`, `cspf`, `random`.
+`environment` defaults to **`v2`**, the governed study environment. Valid
+`algorithms` depend on it:
+
+| `environment` | Valid `algorithms` | Checkpoint selector |
+|---|---|---|
+| `v2` (default) | `masked_bandit`, `maskable_ppo`, `greedy`, `cspf`, `static` | `training_root` ∈ {42, 314159, 271828}, default 42 |
+| `v1` | `rl`, `static`, `greedy`, `cspf`, `random` | `model_tag`, default `ppo_te` |
+
+`rl` is V1's generic controller slot and `ppo_te` is the V1 checkpoint tag it
+loads; they are not two different controllers. V2's learners are named for what
+they are. A V1 controller requested in V2 (or the reverse) is a `400`; V2 is
+never silently substituted for V1 or the reverse.
+
+A V2 learner whose frozen checkpoint cannot be verified returns `409` with the
+verification reason — missing artifact root, payload or sidecar SHA-256
+mismatch, a sidecar that does not declare V2 and the expected training root, or
+a stored environment identity that does not validate against the live
+environment. No fallback is ever attempted.
+
+`execution` is `automatic` (the policy acts; each completed decision is
+explained) or `advisor` (each proposed action is held until `approve` or
+`reject`). In advisor execution `POST /api/simulation/step` produces a
+*proposal* rather than advancing the clock, and `/api/simulation/run-until`
+returns `approval_bypassed: true` because a fast-forward is one delegated
+gesture rather than many individual approvals.
+
+`/api/traffic/burst` and `/api/traffic/multiplier` return `409` in V2: the
+frozen V2 engine has no manual traffic override and none is fabricated.
+
 Frozen final-holdout seeds `1001–1005` are rejected for live sessions before
 the current session is changed. They remain available only through the
 read-only governed evidence APIs.

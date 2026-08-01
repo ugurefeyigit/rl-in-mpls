@@ -18,9 +18,27 @@ opens `/present`. A manual server also works:
 python -m uvicorn server.main:app --port 8000
 ```
 
+## Start here
+
+Everything you need is in the persistent left control panel: environment
+(**V2** by default), scenario, seed, execution style, controller, optional
+comparison, checkpoint root, speed, then **Start run**. Below it are the
+transport controls, reset run and full reset, the approve/reject pair when you
+chose advisor execution, Guided Story, and the Study evidence region. Nothing
+that starts or steers a run lives anywhere else.
+
+A newcomer should be able to pick a scenario and a controller and press Start
+run without reading this file.
+
 The persistent source stamp is part of the presentation. `LIVE`, `RECORDED`,
 `DEVELOPMENT`, and `FINAL EVIDENCE` are different record types, not cosmetic
-badges. Only LIVE can execute a policy or color links from utilization.
+badges. Only LIVE can execute a policy or color links from utilization. In the
+setup path those records are named in plain language and grouped under **Study
+evidence and results**, because a finished study record is not a simulation
+setting.
+
+Audience view has a pinned exit control at every viewport, and `Escape` always
+leaves it — including from fullscreen, without reloading.
 
 ## Composition
 

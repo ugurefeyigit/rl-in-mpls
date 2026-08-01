@@ -98,20 +98,29 @@ function policyLabel(state) {
   return checkpoint ? `${policy?.label || id} · ${checkpoint}` : (policy?.label || id);
 }
 
+/* The record switch says which record you are looking at. It uses the plain
+ * wording, not the bare ledger stamp, and study evidence carries a "Study
+ * result" prefix so it can never read as another thing you could run live. */
 export function renderSourceSwitch(state, { onSelect }) {
   const container = document.querySelector("#source-switch .source-switch__options");
   const capabilities = state.data.capabilities;
   if (!capabilities) return;
   fill(container, capabilities.sources.map((source) => {
     const selected = source.kind === state.source.kind;
+    const evidence = source.group === "study_evidence";
     return el("button", {
       type: "button",
       class: "chip",
+      dataset: { group: source.group || "live" },
       "aria-pressed": selected ? "true" : "false",
       disabled: !source.available && !selected,
-      title: source.available ? source.description : source.unavailable_reason,
+      title: source.available
+        ? (source.plain_summary || source.description)
+        : source.unavailable_reason,
       onClick: () => onSelect(source.kind),
-      text: source.label,
+      text: evidence
+        ? `Study result · ${source.plain_label || source.label}`
+        : (source.plain_label || source.label),
     });
   }));
 }

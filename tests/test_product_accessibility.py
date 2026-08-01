@@ -56,14 +56,18 @@ def test_responsive_contract_covers_required_widths_without_page_overflow():
     assert "#atlas-svg" in phone and "min-width:" in phone
 
 
-def test_mobile_shell_uses_page_flow_instead_of_squeezing_main_beneath_cockpit():
+def test_mobile_shell_uses_page_flow_instead_of_squeezing_the_control_panel():
     css = (FRONTEND / "css" / "responsive.css").read_text(encoding="utf-8")
     tablet = css.split("@media (max-width: 768px)", 1)[1].split(
         "@media (max-width: 390px)", 1
     )[0]
     assert "height: auto" in tablet
     assert ".shell-main { overflow-y: visible; }" in tablet
-    assert ".cockpit { max-height: none; overflow-y: visible; }" in tablet
+    # Below 768 the control column stacks above the map rather than squeezing it,
+    # and its controls keep a 44px touch target.
+    assert "grid-template-columns: minmax(0, 1fr);" in tablet
+    assert ".control-panel {" in tablet
+    assert "min-height: 44px" in tablet
 
 
 def test_phone_ledgers_wrap_without_native_scrollbar_strips():
@@ -83,9 +87,11 @@ def test_shell_grid_children_cannot_expand_the_page_from_intrinsic_content():
     css = (FRONTEND / "css" / "shell.css").read_text(encoding="utf-8")
     body_rule = css.split("\nbody {", 1)[1].split("}", 1)[0]
     assert "grid-template-columns: minmax(0, 1fr)" in body_rule
-    assert ".shell-head, .ledger, .shell-main, .cockpit" in css
+    assert ".shell-head, .ledger, .shell-main" in css
     shell_rule = css.split("\n.shell-main {", 1)[1].split("}", 1)[0]
-    assert "grid-template-rows: auto auto auto auto auto" in shell_rule
+    assert "grid-template-columns: minmax(0, 1fr)" in shell_rule
+    work_rule = css.split("\n.work {", 1)[1].split("}", 1)[0]
+    assert "grid-template-rows: auto auto auto auto auto" in work_rule
     assert ".shell-main > *" in css
     rule = css.split(".shell-main > *", 1)[1].split("}", 1)[0]
     assert "min-width: 0" in rule

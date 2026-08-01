@@ -22,7 +22,7 @@ def test_full_session_lifecycle(client: TestClient):
     # start a paused comparison session with two baselines (no model needed)
     r = client.post("/api/simulation/start", json={
         "scenario": "link_failure", "algorithms": ["static", "greedy"],
-        "seed": 7, "autostart": False, "model_tag": None,
+        "seed": 7, "autostart": False, "environment": "v1", "model_tag": None,
     })
     assert r.status_code == 200, r.text
     assert r.json()["algorithms"] == ["static", "greedy"]

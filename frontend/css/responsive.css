@@ -1,6 +1,15 @@
 /* Desktop is the base composition. These are the three deliberate collapse points. */
+@media (max-width: 1440px) {
+  body[data-mode="presentation"]:not([data-audience="on"]) .shell-main {
+    --control-width: 280px;
+  }
+}
+
 @media (max-width: 1280px) {
   .shell-head { gap: var(--space-3); }
+  body[data-mode="presentation"]:not([data-audience="on"]) .shell-main {
+    --control-width: 264px;
+  }
   .wordmark__sub, .mode__hint, .tool__text { display: none; }
   .stage-wrap { grid-template-columns: minmax(0, 1fr) 280px; }
   .rl-grid { grid-template-columns: 1fr; }
@@ -25,12 +34,21 @@
   .context { order: 3; width: 100%; flex-basis: 100%; }
   .source-switch { margin-left: auto; }
   .stage-wrap { display: block; }
+  /* Below 768 the control column stacks above the map instead of squeezing it.
+     It stays first in the document, so it is still the first thing reached. */
+  body[data-mode="presentation"]:not([data-audience="on"]) .shell-main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .control-panel { border-right: 0; border-bottom: var(--rule-strong);
+                   overflow-y: visible; padding-inline: var(--space-3); }
+  /* Every control in the panel is a touch target, not only the transport row. */
+  .cp__transport .ctl, .cp__primary,
+  .control-panel .ctl, .control-panel select,
+  .control-panel input[type="number"] { min-height: 44px; }
+  .cp__choice, .cp__checkbox { min-height: 44px; align-items: center; }
   .rail { border-left: 0; border-top: var(--rule); max-height: none; }
   .atlas { min-height: 48vw; }
   .rec__outcomes { grid-template-columns: 1fr; }
-  .cockpit { max-height: none; overflow-y: visible; }
-  .cockpit__group { width: 100%; min-width: 0; flex-wrap: wrap;
-                    border-right: 0; padding-right: 0; }
   .drawer { width: 100vw; top: auto; max-height: 80vh; border-left: 0; border-top: var(--rule-strong); }
   .filters { align-items: stretch; }
   .filters__group { width: 100%; }
@@ -45,6 +63,8 @@
   .mode { min-width: 0; align-items: center; padding-inline: var(--space-1); text-align: center; }
   .mode__label { font-size: .6875rem; line-height: 1.2; white-space: normal; }
   .head-tools .tool:not(#btn-help) { display: none; }
+  .audience-exit { top: auto; bottom: var(--space-3); left: var(--space-3);
+                   right: var(--space-3); justify-content: center; }
   .ledger { display: grid; grid-template-columns: 1fr auto; }
   .ledger { gap: var(--space-2); padding-block: var(--space-2); }
   .stamp { grid-column: 1 / -1; }
@@ -87,6 +107,7 @@
 html, body { overflow-x: hidden; }
 
 @media print {
-  .head-tools, .source-switch, .cockpit, .stage__controls { display: none !important; }
+  .head-tools, .source-switch, .control-panel, .audience-exit,
+  .stage__controls { display: none !important; }
   body { background: white; color: black; }
 }

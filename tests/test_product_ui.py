@@ -25,11 +25,34 @@ SHELL_IDS = {
     "provenance-stamp", "provenance-word", "context-ledger",
     "source-switch", "stage", "atlas-svg", "atlas-links", "atlas-nodes",
     "topology-list", "moment-rail", "timeband", "mode-surface",
-    "panel-presentation", "panel-network", "panel-rl", "cockpit",
+    "panel-presentation", "panel-network", "panel-rl", "control-panel",
     "drawer-explain", "drawer-help", "drawer-conclusion", "live-region",
-    "btn-session-primary",
-    "btn-story-auto",
+    "btn-session-primary", "btn-audience-exit",
 }
+
+#: Controls the control panel renders once a state exists. They are asserted
+#: against the module that builds them rather than against static HTML, because
+#: the panel is rendered, not hand-written.
+CONTROL_PANEL_IDS = [
+    "cp-environment", "cp-scenario", "cp-seed", "cp-execution", "cp-policy-a",
+    "cp-compare", "cp-speed", "cp-start",
+    "btn-playpause", "btn-step", "btn-next-event",
+    "btn-stop", "btn-reset-run", "btn-full-reset",
+    "btn-approve", "btn-reject",
+    "btn-story-toggle", "btn-story-auto", "btn-story-next", "btn-story-prev",
+    "btn-conclusion", "btn-questions",
+]
+
+
+def test_every_run_control_lives_in_the_one_control_panel():
+    """No core control is split across the header, a bottom bar or a drawer."""
+    panel = (FRONTEND / "js" / "product" / "control-panel.js").read_text(
+        encoding="utf-8")
+    missing = [i for i in CONTROL_PANEL_IDS if f'"{i}"' not in panel]
+    assert not missing, f"control panel is missing: {missing}"
+    html = APP.read_text(encoding="utf-8")
+    assert 'class="cockpit"' not in html
+    assert 'id="cockpit"' not in html
 
 
 @pytest.fixture(scope="module")
@@ -53,7 +76,11 @@ def test_exactly_three_primary_modes_and_guided_story_is_nested():
     modes = re.findall(r'class="mode"[^>]+data-mode="([^"]+)"', html)
     assert modes == ["presentation", "network", "rl"]
     assert 'data-mode="guided-story"' not in html
-    assert "Start Guided Story" in html
+    panel = (FRONTEND / "js" / "product" / "control-panel.js").read_text(
+        encoding="utf-8")
+    assert "Start Guided Story" in panel
+    assert "Guided Story" not in re.sub(r"<nav class=\"modes\".*?</nav>", "",
+                                        html, flags=re.S).split("<main", 1)[0]
 
 
 def test_presentation_only_moment_rail_starts_hidden_without_a_flash():
@@ -357,10 +384,11 @@ def test_guided_story_owns_a_real_demo_evening_session_contract():
       import {{ matchesStorySession, storySessionConfig }} from {module!r};
       const config = storySessionConfig();
       if (config.scenario !== 'demo_evening' || config.seed !== 42) process.exit(2);
-      if (config.algorithms.join(',') !== 'rl,greedy') process.exit(3);
+      if (config.algorithms.join(',') !== 'masked_bandit,greedy') process.exit(3);
+      if (config.environment !== 'v2') process.exit(7);
       if (!config.advisor || config.autostart) process.exit(4);
       const exact = {{session_id:'s', scenario:'demo_evening', seed:42,
-        model_tag:'ppo_te', advisor:true, algorithms:['rl','greedy']}};
+        environment:'v2', advisor:true, algorithms:['masked_bandit','greedy']}};
       if (!matchesStorySession(exact)) process.exit(5);
       if (matchesStorySession({{...exact,seed:7}})) process.exit(6);
     """
@@ -395,12 +423,27 @@ def test_live_refresh_consumes_one_atomic_moment_endpoint():
 
 
 def test_guided_story_has_optional_automatic_playback_with_manual_equivalent():
-    html = APP.read_text(encoding="utf-8")
+    panel = (FRONTEND / "js" / "product" / "control-panel.js").read_text(
+        encoding="utf-8")
     main = (FRONTEND / "js" / "product" / "main.js").read_text(encoding="utf-8")
-    assert 'id="btn-story-auto"' in html
-    assert 'aria-pressed="false"' in html
+    assert '"btn-story-auto"' in panel
+    assert '"btn-story-next"' in panel and '"btn-story-prev"' in panel
+    assert '"btn-story-restart"' in panel
     assert "scheduleStoryAuto" in main
     assert "storyNext" in main
+
+
+def test_automatic_story_playback_holds_at_a_pending_recommendation():
+    """Automatic pacing must stop for approve or reject, never answer for you."""
+    main = (FRONTEND / "js" / "product" / "main.js").read_text(encoding="utf-8")
+    schedule = main.split("function scheduleStoryAuto()", 1)[1].split("\n}", 1)[0]
+    assert "recommendation?.pending" in schedule
+    advance = main.split("async function storyNext()", 1)[1].split("\n}", 1)[0]
+    assert "recommendation?.pending" in advance
+    # Approve and reject both resume the schedule they interrupted.
+    for name in ("async function approve()", "async function reject()"):
+        body = main.split(name, 1)[1].split("\n}", 1)[0]
+        assert "scheduleStoryAuto()" in body
 
 
 def test_guided_story_failure_and_repair_beats_wait_for_the_real_states():

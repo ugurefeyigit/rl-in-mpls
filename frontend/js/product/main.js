@@ -6,7 +6,7 @@ import { api as replayApi } from "./adapters/recorded-v2.js";
 import { beatAt, matchesStorySession, storySessionConfig } from "./guided-story.js";
 import { renderConclusion } from "./governed-study.js";
 import { questionDestination } from "./help.js";
-import { proposalFromAdvisor } from "./recommendation-card.js";
+import { explanationFromDecision, proposalFromAdvisor } from "./recommendation-card.js";
 import { onNavigate, readLocation, writeLocation } from "./router.js";
 import { mountShell } from "./shell.js";
 import { captureSource, createStore, isCurrentSource } from "./store.js";
@@ -32,6 +32,15 @@ const atlas = new TopologyAtlas({
 
 const actions = {
   setSource,
+  setup: (partial) => { store.patch({ setup: partial }); reconcileSetup(); },
+  startRun: () => run(startRun),
+  resetRun: () => run(resetRun),
+  fullReset: () => run(fullReset),
+  pause: () => run(() => liveApi.pause().then(refreshLive)),
+  openEvidence: (kind) => run(() => setSource(kind)),
+  openConclusion: () => { run(loadEvidence); shell.openDrawer("drawer-conclusion"); },
+  storyRestart: () => run(restartStory),
+  exitAudience: () => store.patch({ ui: { audienceView: false } }),
   selectObject: (objectType, objectId) => store.select(objectType, objectId),
   selectEvent: (event) => { store.selectEvent(event.id); if (event.object_type && event.object_id) store.select(event.object_type, event.object_id); },
   toggleClass: (value) => toggleFilter("classes", value),
@@ -66,10 +75,12 @@ const actions = {
 
 async function boot() {
   shell = mountShell({ store, atlas, actions });
-  const [capabilities, contracts, displayMap] = await Promise.all([
+  const [capabilities, contracts, displayMap, scenarios] = await Promise.all([
     liveApi.capabilities(), liveApi.contracts(), liveApi.displayMap(),
+    liveApi.scenarios(),
   ]);
-  store.patch({ data: { capabilities, contracts, displayMap } });
+  store.patch({ data: { capabilities, contracts, displayMap, scenarios } });
+  applyCapabilityDefaults(capabilities, scenarios);
   atlas.build(displayMap);
   applyRoute(readLocation());
   shell.render();
@@ -167,28 +178,124 @@ async function refreshLiveOnce() {
   const schema = store.state.data.schema?.environment_version === snapshot.provenance.environment_version
     ? store.state.data.schema : await liveApi.schema(snapshot.provenance.environment_version);
   const record = advisor.history?.length ? advisor.history[advisor.history.length - 1] : null;
+  // Advisor execution has a live proposal to approve. Automatic execution has
+  // no proposal at all: the card explains the decision the policy already made.
   const recommendation = advisor.pending
-    ? proposalFromAdvisor(advisor.pending, snapshot)
-    : (record?.proposal ? proposalFromAdvisor(record.proposal, snapshot, { record }) : null);
+    ? proposalFromAdvisor(advisor.pending, snapshot, { execution: "advisor" })
+    : (record
+        ? proposalFromAdvisor(record, snapshot, { record, execution: "advisor" })
+        : explanationFromDecision(decision, snapshot));
   if (!isCurrentSource(store.state, sourceRequest)) return;
   store.patch({
     context: { comparator: snapshot.session.algorithms?.[1] || null },
     playback: { state: snapshot.session.state, speed: snapshot.session.speed,
       running: snapshot.session.running, awaitingDecision: snapshot.session.awaiting_decision },
-    data: { decision, timeline, comparison, schema, recommendation },
+    data: { decision, timeline, comparison, schema, recommendation, advisor },
     connection: "open", error: null,
     story: { bookmarks: timeline.events || [] },
   });
 }
 
+/* --------------------------------------------------------------- run setup */
+
+/** Seed the control panel from what this installation can actually run. */
+function applyCapabilityDefaults(capabilities, scenarios) {
+  const environment = capabilities?.default_environment || "v2";
+  const policies = (capabilities?.live_policies || [])
+    .filter((policy) => policy.environment_version === environment);
+  const preferred = capabilities?.checkpoint_registry?.default_policy;
+  const learner = policies.find((policy) => policy.id === preferred && policy.available)
+    || policies.find((policy) => policy.family === "learner" && policy.available)
+    || policies.find((policy) => policy.available);
+  const comparator = policies.find(
+    (policy) => policy.family === "baseline" && policy.id !== learner?.id);
+  const scenario = Object.keys(scenarios || {}).includes(store.state.setup.scenario)
+    ? store.state.setup.scenario : Object.keys(scenarios || {})[0];
+  store.patch({ setup: {
+    environment,
+    scenario: scenario || store.state.setup.scenario,
+    policyA: learner?.id || store.state.setup.policyA,
+    policyB: comparator?.id || store.state.setup.policyB,
+    trainingRoot: capabilities?.checkpoint_registry?.default_training_root
+      ?? store.state.setup.trainingRoot,
+  } });
+}
+
+/** Keep the pickers consistent when the environment changes under them. */
+function reconcileSetup() {
+  const setup = store.state.setup;
+  const policies = (store.state.data.capabilities?.live_policies || [])
+    .filter((policy) => policy.environment_version === setup.environment);
+  if (!policies.length) return;
+  const patch = {};
+  if (!policies.some((policy) => policy.id === setup.policyA)) {
+    patch.policyA = (policies.find((p) => p.family === "learner" && p.available)
+      || policies[0]).id;
+  }
+  if (!policies.some((policy) => policy.id === setup.policyB)) {
+    patch.policyB = (policies.find((p) => p.family === "baseline") || policies[0]).id;
+  }
+  if (Object.keys(patch).length) store.patch({ setup: patch });
+}
+
+function startConfig() {
+  const setup = store.state.setup;
+  const algorithms = setup.compare && setup.policyB && setup.policyB !== setup.policyA
+    ? [setup.policyA, setup.policyB] : [setup.policyA];
+  return {
+    scenario: setup.scenario,
+    environment: setup.environment,
+    algorithms,
+    seed: Number(setup.seed),
+    training_root: Number(setup.trainingRoot),
+    model_tag: setup.environment === "v1" ? "ppo_te" : null,
+    safety_filter: true,
+    speed: setup.speed,
+    autostart: false,
+    execution: setup.execution,
+    advisor: setup.execution === "advisor",
+    interface_mode: store.state.mode === "presentation" ? "present" : "advanced",
+  };
+}
+
+async function startRun() {
+  if (store.state.source.kind !== "live_session") store.setSource("live_session");
+  store.patch({ story: { active: false, auto: false, beat: 0, reviewBeat: null },
+                workflow: null });
+  await liveApi.start(startConfig());
+  await refreshLive();
+}
+
+async function resetRun() {
+  await liveApi.reset();
+  await refreshLive();
+}
+
+/** Full reset: stop the runners, drop transient UI state, keep the settings. */
+async function fullReset() {
+  if (storyTimer) window.clearTimeout(storyTimer);
+  storyTimer = null;
+  await liveApi.stop();
+  shell?.closeDrawer();
+  store.patch({
+    workflow: null,
+    story: { active: false, auto: false, beat: 0, reviewBeat: null, bookmarks: [] },
+    selection: { objectType: null, objectId: null, eventId: null, actionId: null },
+    ui: { audienceView: false, openDrawer: null, topologyList: false },
+    data: { snapshot: null, previousSnapshot: null, decision: null, timeline: null,
+            comparison: null, recommendation: null, counterfactual: null,
+            advisor: null },
+    playback: { state: "idle", speed: store.state.setup.speed, running: false,
+                awaitingDecision: false },
+    error: null,
+  });
+  await refreshLive();
+}
+
 async function ensureSession() {
   const status = await liveApi.status();
   if (hasActiveSession(status)) return status;
-  await liveApi.start({
-    scenario: "demo_evening", algorithms: ["rl", "greedy"], seed: 42,
-    model_tag: "ppo_te", safety_filter: true, speed: "1x", autostart: false,
-    advisor: true, interface_mode: store.state.mode === "presentation" ? "present" : "advanced",
-  });
+  await liveApi.start(startConfig());
   return refreshLive();
 }
 
@@ -219,8 +326,17 @@ async function propose() {
   await refreshLive();
 }
 
-async function approve() { await liveApi.approve(); await refreshLive(); }
-async function reject() { await liveApi.reject(); await refreshLive(); }
+async function approve() {
+  await liveApi.approve();
+  await refreshLive();
+  scheduleStoryAuto();
+}
+
+async function reject() {
+  await liveApi.reject();
+  await refreshLive();
+  scheduleStoryAuto();
+}
 
 async function counterfactual() {
   const decision = store.state.data.decision;
@@ -256,18 +372,33 @@ async function toggleStory() {
 }
 
 async function storyNext() {
+  // A held recommendation is a hard stop for both manual and automatic pacing.
+  // The beat does not advance until the operator approves or rejects it.
+  if (store.state.data.recommendation?.pending) {
+    throw new Error("This beat is waiting for you: approve or reject the "
+      + "recommendation before continuing.");
+  }
   const current = store.state.story.reviewBeat ?? store.state.story.beat;
   const next = Math.min(10, current + 1);
   const beat = beatAt(next);
   if (beat.advance?.kind === "step") await step();
   else if (beat.advance?.kind === "propose") await propose();
-  else if (beat.advance?.kind === "approve" && store.state.data.recommendation?.pending) await approve();
   else if (beat.advance?.kind === "runUntil") {
     await liveApi.runUntil(beat.advance.condition);
     await refreshLive();
   }
   store.patch({ story: { beat: Math.max(store.state.story.beat, next), reviewBeat: null } });
   if (beat.conclusion) { await loadEvidence(); shell.openDrawer("drawer-conclusion"); }
+}
+
+async function restartStory() {
+  if (storyTimer) window.clearTimeout(storyTimer);
+  storyTimer = null;
+  await liveApi.start(storySessionConfig());
+  await refreshLive();
+  store.patch({ workflow: "guided-story",
+    story: { active: true, auto: false, beat: 0, reviewBeat: null } });
+  writeLocation(store.state);
 }
 
 function storyPrevious() {
@@ -285,6 +416,9 @@ function scheduleStoryAuto() {
   if (storyTimer) window.clearTimeout(storyTimer);
   storyTimer = null;
   if (!store.state.story.active || !store.state.story.auto || store.state.story.beat >= 10) return;
+  // Automatic playback holds at a pending recommendation rather than answering
+  // it. Approve or Reject resumes the schedule.
+  if (store.state.data.recommendation?.pending) return;
   storyTimer = window.setTimeout(() => run(async () => {
     await storyNext();
     scheduleStoryAuto();

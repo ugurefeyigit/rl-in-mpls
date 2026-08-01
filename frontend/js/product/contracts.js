@@ -69,7 +69,7 @@ export const KEYS = [
   ["/", "Focus search in Network or RL Information"],
   ["[ / ]", "Previous or next incident bookmark"],
   ["? ", "Show this list"],
-  ["Esc", "Close the top drawer, then leave fullscreen"],
+  ["Esc", "Close the top drawer, then leave audience view, then leave fullscreen"],
   ["Arrow keys", "Move between cities while the topology has focus"],
   ["Enter", "Open the focused object's inspector"],
 ];

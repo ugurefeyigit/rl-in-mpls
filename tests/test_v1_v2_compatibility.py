@@ -163,6 +163,19 @@ ALLOWED_NEW_FILES = {
     "docs/PRODUCT_UI.md",
     "docs/ACCESSIBILITY.md",
     "HANDOFF_THREE_MODE_UI.md",
+    # Part 1: the live V2 foundation and the single Presentation control panel.
+    # `checkpoints_v2.py` verifies and loads a frozen governed checkpoint for
+    # *inference only*; `live_v2.py` is a read-only view over the frozen V2
+    # engine, which it does not edit. Neither trains, tunes, evaluates,
+    # reselects a checkpoint, touches a holdout seed, or writes under results/
+    # or runs/. V1's models, results, figures, configs and simulation source
+    # stay byte identical; the byte-identity test below still enforces that.
+    "mplssim/product/checkpoints_v2.py",
+    "mplssim/product/live_v2.py",
+    "frontend/js/product/control-panel.js",
+    "tests/test_v2_live_foundation.py",
+    "tests/test_presentation_controls.py",
+    "OPUS5_PART1_HANDOFF.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",
@@ -194,6 +207,9 @@ ALLOWED_MODIFIED_FILES = {
     "docs/V2_EVIDENCE_AUDIT.md",
     "PRODUCT.md",
     "DESIGN.md",
+    # Part 1: V2 became the live default, so the pre-existing V1 API suite now
+    # declares `"environment": "v1"` explicitly. Nothing it asserts changed.
+    "tests/test_api_e2e.py",
 }
 
 #: The single directory the implementation prompt designates for validation

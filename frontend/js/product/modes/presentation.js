@@ -15,14 +15,19 @@ import { BEATS, beatAt, progressText, storyContext } from "../guided-story.js";
 
 export function renderPresentation(state) {
   renderMomentRail(state);
+  const snapshot = state.data.snapshot;
   fill($("panel-presentation"), [
     storySection(state),
+    el("section", { class: "panel" }, [
+      el("h2", { class: "panel__title", text: "Network condition" }),
+      snapshot ? conditionList(snapshot)
+               : unavailable("Condition", "No run has produced a snapshot yet."),
+    ]),
     el("section", { class: "panel" }, [
       el("h2", { class: "panel__title", text: "Comparison lane" }),
       renderComparisonLane(state),
     ]),
   ]);
-  renderPresentationRail(state);
 }
 
 function renderMomentRail(state) {
@@ -34,7 +39,7 @@ function renderMomentRail(state) {
   if (!snapshot) {
     fill($("moment-primary"), [cell("Session", "Not started", "phase")]);
     $("moment-change").textContent =
-      "Start a session from the presenter cockpit to begin.";
+      "Choose a scenario and a controller on the left, then press Start run.";
     return;
   }
 
@@ -151,26 +156,6 @@ function storySection(state) {
           text: `You are reviewing an earlier beat. The live network has not been ` +
                 `rewound — it remains at ${context.clock}.` })
       : null,
-  ]);
-}
-
-function renderPresentationRail(state) {
-  const rail = $("rail");
-  const snapshot = state.data.snapshot;
-  if (state.mode !== "presentation") return;
-
-  fill(rail, [
-    el("section", { class: "panel" }, [
-      el("h2", { class: "panel__title", text: "Network condition" }),
-      snapshot ? conditionList(snapshot)
-               : unavailable("Condition", "No session snapshot yet."),
-    ]),
-    el("section", { class: "panel" }, [
-      el("h2", { class: "panel__title", text: "Governed study" }),
-      el("p", { class: "prose",
-        text: "The closed V2 result is a frozen record, not part of this run. " +
-              "Open the governed conclusion from the cockpit to read it." }),
-    ]),
   ]);
 }
 
