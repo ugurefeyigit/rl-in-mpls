@@ -196,6 +196,7 @@ ALLOWED_NEW_FILES = {
     "docs/ADR-003-results-retention-and-delegated-fast-forward.md",
     "docs/RESULTS_AND_COMPARISON.md",
     "OPUS5_PART2_HANDOFF.md",
+    "CODEX_HANDOFF.md",
     "final/README.md",
     "final/OPERATING_THE_UI.md",
     "final/RUNNING_IT_AGAIN.md",

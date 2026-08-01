@@ -79,14 +79,16 @@
  * this stylesheet either, because there is nothing to style.
  */
 .results { display: grid; gap: var(--space-5); }
-.results__rule { margin: 0; padding: var(--space-3); border-left: 3px solid var(--state-pressure); background: var(--surface-sunken); font-size: .8125rem; }
+.results__rule { margin: 0; padding: var(--space-3); background: var(--surface-sunken); font-size: .8125rem; }
 .results__section { border-top: var(--rule); padding-top: var(--space-3); }
 .results__title { margin: 0 0 var(--space-1); font-family: var(--font-plate); font-size: 1.0625rem; letter-spacing: var(--track-plate); text-transform: uppercase; }
 .results__grain { margin: 0 0 var(--space-1); color: var(--atlas-fog); font-size: .8125rem; }
 .results__class, .results__sub, .results__pointer { margin: 0 0 var(--space-3); color: var(--atlas-cloud); font-size: .8125rem; }
 .results__archive { margin-top: var(--space-4); }
 .results__archive-head { margin: 0 0 var(--space-2); font-family: var(--font-data); font-size: .875rem; color: var(--atlas-fog); }
-.panel--notice { border-left: 3px solid var(--state-pressure); }
+/* A disclosure, not an alarm: it takes the same top-rule idiom as the verdict
+   block rather than a coloured stripe down its side. */
+.panel--notice { border-top: 2px solid var(--state-pressure); }
 
 /* --- the control panel ---------------------------------------------------
  * One column, top to bottom, in the order a first-time user needs: what world,
