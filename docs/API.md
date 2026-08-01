@@ -59,7 +59,8 @@ generation/step fingerprints and never advances the running engine.
 | GET | `/api/simulation/snapshot` | Typed live topology, demand, metric, incident, session, and provenance snapshot |
 | GET | `/api/simulation/decision` | Observation → mask → output → action → safety → transition → reward pipeline |
 | GET | `/api/simulation/timeline` | Typed live incident, action, FRR, recovery, and stabilization events |
-| GET | `/api/simulation/comparison` | Paired-lane state plus synchronization proof; no verdict when proof fails |
+| GET | `/api/simulation/comparison` | Synchronization proof plus the full paired decision comparison in `detail` — lanes, metric rows, movement counters, first divergence, verdict. When the proof fails, `detail.available` is `false` and the payload carries **no** verdict, metric row or gap at all |
+| GET | `/api/product/results` | Live run, retained runs and a pointer to the closed study, in three sections that share no table and no aggregate. Answers with no active session |
 | GET | `/api/simulation/object/{kind}/{id}` | Focused router, link, demand, or path details |
 | POST | `/api/simulation/counterfactual` | One-interval simulated estimate on a clone; stale requests fail closed |
 
@@ -84,10 +85,10 @@ Changed observations are descriptive deltas, never causal importance.
 | POST | `/api/simulation/pause` | – | Pause the ticking loop |
 | POST | `/api/simulation/resume` | – | Resume |
 | POST | `/api/simulation/step` | – | Advance exactly one control interval (must be paused) |
-| POST | `/api/simulation/run-until` | `{condition, max_steps, util_threshold}` | Paused fast-forward to `next_event`, `congestion`, real `failure`, real `recovery`, or `end`; unknown conditions fail closed |
+| POST | `/api/simulation/run-until` | `{condition, max_steps, util_threshold, delegate}` | Paused fast-forward to `next_event`, `congestion`, real `failure`, real `recovery`, or `end`; unknown conditions fail closed. **Advisor execution requires `delegate: true`** and returns `409` naming the asymmetry otherwise (ADR-003) |
 | POST | `/api/simulation/reset` | – | **Reset run**: rebuild the same experiment at t=0 and retain the run it replaced |
-| POST | `/api/simulation/stop` | – | **Full reset**: stop the runners and clear the active session |
-| GET | `/api/simulation/retained-runs` | – | Runs archived by reset run, summarized |
+| POST | `/api/simulation/stop` | – | **Full reset**: stop the runners, hand the session's archive *and the run on screen* to the process store, clear the session |
+| GET | `/api/simulation/retained-runs` | – | Runs archived by reset run plus runs handed over by full reset. Never 404s on a missing session; dropped on restart |
 | POST | `/api/simulation/speed` | `{speed: "1x"\|"5x"\|"20x"\|"fast"}` | Presentation pacing (1x = one 5-min interval / 2 s) |
 | GET | `/api/simulation/status` | – | Clock, step, running/done flags |
 | GET | `/api/simulation/moment?algorithm=rl` | – | Atomic product read of snapshot, decision, timeline, comparison, and advisor state under the session lock |
@@ -114,9 +115,18 @@ environment. No fallback is ever attempted.
 `execution` is `automatic` (the policy acts; each completed decision is
 explained) or `advisor` (each proposed action is held until `approve` or
 `reject`). In advisor execution `POST /api/simulation/step` produces a
-*proposal* rather than advancing the clock, and `/api/simulation/run-until`
-returns `approval_bypassed: true` because a fast-forward is one delegated
-gesture rather than many individual approvals.
+*proposal* rather than advancing the clock.
+
+A fast-forward is the one place per-action approval does not hold: it applies
+the controller's own actions for a stretch of intervals in one gesture. Rather
+than doing that silently, `/api/simulation/run-until` **refuses** under advisor
+execution unless the caller sends `delegate: true`. When it is sent, the stretch
+runs and **one** `delegated_batch` record enters the approval ledger, carrying
+`from_step`, `to_step`, `steps` and the condition. `GET /api/advisor/status`
+reports `proposals`, `delegated_batches` and `delegated_intervals` separately,
+and the timeline renders the batch as its own `delegation` event kind — never as
+a recommendation the operator answered. See
+[ADR-003](ADR-003-results-retention-and-delegated-fast-forward.md).
 
 `/api/traffic/burst` and `/api/traffic/multiplier` return `409` in V2: the
 frozen V2 engine has no manual traffic override and none is fabricated.
@@ -149,8 +159,15 @@ read-only governed evidence APIs.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/export/results?fmt=csv\|json` | Download the session's step metrics |
-| POST | `/api/export/save-run` | Persist run summaries to SQLite (`results/runs.db`) |
+| POST | `/api/export/save-run` | Persist run summaries to SQLite (`results/runs.db`), summarized **per environment**; `409` before the first completed interval |
 | GET | `/api/runs` | Stored run summaries |
+
+A V1 summary and a V2 summary have different fields, because V1 and V2 record
+different interval columns. A V2 summary lists what it cannot measure in
+`not_measured` rather than padding those columns with zeros, and every saved row
+carries `environment_version`, `record_class: "live_demonstration"` and
+`is_evidence: false`. See
+[RESULTS_AND_COMPARISON.md](RESULTS_AND_COMPARISON.md#saving-a-run).
 
 ## Training
 

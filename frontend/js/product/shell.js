@@ -111,6 +111,18 @@ export function mountShell({ store, atlas, actions }) {
     $("btn-audience-exit").hidden = !state.ui.audienceView;
   }
 
+  /* Leaving audience view must never drop focus onto <body>.
+   *
+   * The audience toggle lives in the header tool row, which the narrow-viewport
+   * rules hide entirely — so on a phone the toggle is not focusable and the
+   * obvious `focus()` silently did nothing. Fall back to the mode surface,
+   * which is always present and always focusable. */
+  function restoreFocusAfterAudience() {
+    const toggle = $("btn-audience");
+    if (toggle && toggle.offsetParent !== null) { toggle.focus(); return; }
+    $("mode-surface").focus();
+  }
+
   function controlHandlers() {
     return {
       onSetup: actions.setup,
@@ -129,6 +141,8 @@ export function mountShell({ store, atlas, actions }) {
       onStoryNext: actions.storyNext,
       onStoryPrevious: actions.storyPrevious,
       onStoryRestart: actions.storyRestart,
+      onLoadResults: actions.loadResults,
+      onSaveRun: actions.saveRun,
       onOpenEvidence: actions.openEvidence,
       onOpenConclusion: () => { actions.openConclusion(); },
       onOpenQuestions: () => openDrawer("drawer-questions"),
@@ -208,7 +222,7 @@ export function mountShell({ store, atlas, actions }) {
     $("btn-audience").addEventListener("click", actions.toggleAudience);
     $("btn-audience-exit").addEventListener("click", () => {
       actions.exitAudience();
-      $("btn-audience").focus();
+      restoreFocusAfterAudience();
     });
     $("btn-fullscreen").addEventListener("click", actions.toggleFullscreen);
     $("btn-session-primary").addEventListener("click", () => {
@@ -233,7 +247,7 @@ export function mountShell({ store, atlas, actions }) {
       if (store.state.ui.openDrawer) { closeDrawer(); return; }
       if (store.state.ui.audienceView) {
         actions.exitAudience();
-        $("btn-audience").focus();
+        restoreFocusAfterAudience();
         return;
       }
       if (document.fullscreenElement) document.exitFullscreen();

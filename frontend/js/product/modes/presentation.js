@@ -11,6 +11,7 @@
 import { $, el, fill, unavailable } from "../dom.js";
 import { count, percent, signed } from "../format.js";
 import { renderComparisonLane } from "../comparison-lane.js";
+import { renderResults } from "../results.js";
 import { BEATS, beatAt, progressText, storyContext } from "../guided-story.js";
 
 export function renderPresentation(state) {
@@ -23,10 +24,29 @@ export function renderPresentation(state) {
       snapshot ? conditionList(snapshot)
                : unavailable("Condition", "No run has produced a snapshot yet."),
     ]),
+    delegationNotice(state),
     el("section", { class: "panel" }, [
       el("h2", { class: "panel__title", text: "Comparison lane" }),
       renderComparisonLane(state),
     ]),
+    el("section", { class: "panel", id: "panel-results",
+                    "aria-labelledby": "results-title" }, [
+      el("h2", { class: "panel__title", id: "results-title", text: "Results" }),
+      renderResults(state),
+    ]),
+  ]);
+}
+
+/* A delegated fast-forward is an operator decision about intervals nobody
+ * approved individually. It is disclosed on the surface, not only in the
+ * response body. */
+function delegationNotice(state) {
+  const delegation = state.delegation;
+  if (!delegation) return null;
+  return el("section", { class: "panel panel--notice", id: "delegation-notice",
+                         role: "status" }, [
+    el("h2", { class: "panel__title", text: "Delegated intervals" }),
+    el("p", { class: "prose", text: delegation.note }),
   ]);
 }
 
@@ -48,20 +68,25 @@ function renderMomentRail(state) {
   const values = metrics.available ? metrics.values : {};
   const decision = state.data.decision;
 
-  fill($("moment-primary"), [
+  // Eight cells read well on a working screen and badly from the back of a
+  // room. Audience view keeps the four a presenter actually points at; nothing
+  // is recomputed, only fewer cells are shown.
+  const cells = [
     cell("Phase", incident.label, "phase", incident.phase),
     cell("Time", `${snapshot.time.clock} · step ${count(snapshot.time.step)}`, "time"),
     cell("Incident", incident.active_incident || "No active incident", "incident",
          incident.failed_links.length ? "failure"
            : (incident.congested_links.length ? "pressure" : "normal")),
+    cell("Busiest link", percent(values.max_util?.value, 0), "metric"),
     cell("Action", actionText(decision), "action"),
     cell("Interval reward", decision?.reward?.available
       ? signed(decision.reward.interval_reward, 3) : "—", "reward"),
     cell("Cumulative reward", decision?.reward?.available
       ? signed(decision.reward.cumulative_reward, 2) : "—", "reward"),
-    cell("Busiest link", percent(values.max_util?.value, 0), "metric"),
     cell("SLA risks now", count(incident.demands_at_risk.length), "metric"),
-  ]);
+  ];
+  rail.dataset.density = state.ui.audienceView ? "projector" : "working";
+  fill($("moment-primary"), state.ui.audienceView ? cells.slice(0, 4) : cells);
 
   $("moment-change").textContent = changeSentence(state);
 }

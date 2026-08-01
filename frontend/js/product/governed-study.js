@@ -152,7 +152,7 @@ function actionRegion(actions, state) {
     el("h3", { class: "panel__title", text: "Action and no-op distribution" }),
     ...blocks,
     el("p", { class: "rew__note",
-      text: `Distribution source: ${shortHash(actions.source_sha)} Â· ` +
+      text: `Distribution source: ${shortHash(actions.source_sha)} · ` +
             `${count(actions.noop?.steps_per_policy)} recorded steps per policy.` }),
   ]);
 }
@@ -173,7 +173,7 @@ function rewardRegion(payload) {
           el("th", { scope: "col", text: "Sum" }),
         ])]),
         el("tbody", {}, rows.map((row) => el("tr", {}, [
-          el("th", { scope: "row", text: `${row.policy_id} Â· ${row.training_root}` }),
+          el("th", { scope: "row", text: `${row.policy_id} · ${row.training_root}` }),
           ...components.map((name) => el("td", { text: cell(row.components?.[name]) })),
           el("td", { text: cell(row.sum) }),
         ]))),
@@ -245,7 +245,7 @@ function methodTable(title, rows, caption) {
     .filter((key) => rows.some((row) => row[key] !== undefined));
   return el("div", { class: "panel table-scroll" }, [
     el("table", { class: "grid" }, [
-      el("caption", { text: `${title} Â· ${caption}` }),
+      el("caption", { text: `${title} · ${caption}` }),
       el("thead", {}, [el("tr", {}, [
         el("th", { scope: "col", text: "Method" }),
         ...columns.map((key) => el("th", { scope: "col", text: label(key) })),

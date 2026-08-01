@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 from mplssim.display import display_bundle, scenario_label
 from mplssim.evidence import identity
 from mplssim.factory import get_scenarios, get_topology, get_traffic_config
-from mplssim.product import checkpoints_v2
+from mplssim.product import checkpoints_v2, results, run_summary
 from mplssim.validation import ConfigError, validate_configs
 from server import db
 from server.events import log_event, recent_events
@@ -126,6 +126,10 @@ class RunUntilRequest(BaseModel):
     condition: str = "next_event"   # next_event | congestion | failure | recovery | end
     max_steps: int = 300
     util_threshold: float = 0.9
+    #: Advisor execution only. A fast-forward applies the controller's own
+    #: actions for a stretch of intervals without individual approval, so the
+    #: caller must say it is delegating them. Refused with the reason otherwise.
+    delegate: bool = False
 
 
 class TrainRequest(BaseModel):
@@ -304,32 +308,36 @@ async def sim_stop() -> dict:
     """
     session: SimSession | None = STATE["session"]
     if session is None:
-        return {"stopped": False, "reason": "no active session"}
+        return {"stopped": False, "reason": "no active session",
+                "retained_runs": len(results.process_retained())}
+    # The session's archive — and the run that was on screen — are handed to the
+    # process store, so returning to the configuration form does not silently
+    # discard what the operator just watched. A restart still drops everything;
+    # see docs/ADR-003 for why a demonstration number is never persisted.
+    handed = results.hand_over(session)
     await session.shutdown()
     STATE["session"] = None
-    log_event("session_full_reset", scenario=session.config.scenario)
+    log_event("session_full_reset", scenario=session.config.scenario,
+              handed_over=handed)
     return {"stopped": True, "session_id": session.id,
-            "retained_runs": len(session.previous_runs)}
+            "handed_to_process_store": handed,
+            "retained_runs": len(results.process_retained())}
 
 
 @app.get("/api/simulation/retained-runs")
 def sim_retained_runs() -> dict:
-    """Runs archived by a reset run, kept for later comparison."""
-    session = current_session()
-    return {"count": len(session.previous_runs),
-            "runs": [{k: v for k, v in run.items() if k != "runs"}
-                     | {"runs": [{"algorithm": r["algorithm"],
-                                  "checkpoint_id": r["checkpoint_id"],
-                                  "cumulative_reward": r["cumulative_reward"],
-                                  "steps": len(r["history"])}
-                                 for r in run["runs"]]}
-                     for run in session.previous_runs]}
+    """Runs archived by a reset run or handed over by a full reset.
+
+    Never 404s on a missing session: a full reset is exactly when the operator
+    wants to look at what was kept.
+    """
+    return results.retained_runs(STATE["session"])
 
 
 @app.post("/api/simulation/run-until")
 async def sim_run_until(req: RunUntilRequest) -> dict:
     return await _handle(current_session().run_until(
-        req.condition, req.max_steps, req.util_threshold))
+        req.condition, req.max_steps, req.util_threshold, req.delegate))
 
 
 @app.post("/api/simulation/speed")
@@ -481,24 +489,29 @@ def export_results(fmt: str = "csv") -> Response:
 
 @app.post("/api/export/save-run")
 def save_run() -> dict:
-    from mplssim.experiments.runner import summarize_records
+    """Save each lane's episode summary, summarized for its own environment.
+
+    V1 and V2 record different interval columns, so each gets its own
+    summarizer. A V2 row is never padded into the shape of a V1 row.
+    """
     s = current_session()
+    if not any(r.history for r in s.runners):
+        raise HTTPException(409, "no interval has completed yet, so there is "
+                                 "nothing to save")
     ids = []
     for r in s.runners:
         if not r.history:
             continue
-        df = pd.DataFrame([
-            {**h["metrics"], "reward": h["reward"],
-             "n_failed_links": h["n_failed_links"]}
-            for h in r.history
-        ])
-        summary = summarize_records(df, r.algorithm, s.config.scenario,
-                                    s.config.seed, engine=r.eng)
-        summary["cumulative_reward"] = round(r.cumulative_reward, 4)
+        summary = run_summary.summarize_session_runner(
+            r, scenario=s.config.scenario, seed=s.config.seed,
+            environment=s.config.environment,
+            training_root=(s.config.training_root
+                           if s.config.environment == "v2" else None))
         ids.append(db.save_run("live", s.config.scenario, r.algorithm,
                                s.config.seed, summary))
-    log_event("run_saved", ids=ids, scenario=s.config.scenario)
-    return {"saved_run_ids": ids}
+    log_event("run_saved", ids=ids, scenario=s.config.scenario,
+              environment=s.config.environment)
+    return {"saved_run_ids": ids, "environment": s.config.environment}
 
 
 @app.get("/api/runs")

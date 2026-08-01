@@ -46,6 +46,7 @@ export function renderControlPanel(state, handlers) {
     runSection(state, handlers, session, live),
     decisionSection(state, handlers, session),
     storySection(state, handlers),
+    resultsSection(state, handlers, session),
     evidenceSection(state, handlers),
   ]);
 }
@@ -301,6 +302,18 @@ function decisionSection(state, handlers, session) {
       text: pending
         ? "The proposed action is held. Nothing has been applied yet."
         : "Step or resume; the run pauses at the next proposed action." }),
+    // The one place per-action approval does not hold. It is stated here, next
+    // to the approval controls, rather than only in an API response.
+    el("p", { class: "cp__note",
+      text: "Skip to next event is the exception: it applies the controller's "
+            + "own actions for a stretch of intervals in one gesture. It asks "
+            + "you to delegate that stretch first, and records it as one "
+            + "delegated batch." }),
+    advisor?.delegated_intervals
+      ? el("p", { class: "cp__note cp__note--blocked", role: "status",
+          text: `${advisor.delegated_intervals} interval(s) in this run were `
+                + `delegated, not approved individually.` })
+      : null,
   ]);
 }
 
@@ -338,6 +351,43 @@ function storySection(state, handlers) {
   ]);
 }
 
+/* -------------------------------------------------------------- 5 results */
+function resultsSection(state, handlers, session) {
+  const results = state.data.results;
+  const retained = results?.retained;
+  const saved = state.savedRun;
+  return el("section", { class: "cp__section", "aria-labelledby": "cp-results-title" }, [
+    el("h2", { class: "cp__title", id: "cp-results-title", text: "5 · Results" }),
+    el("p", { class: "cp__note",
+      text: "The live run, runs kept by Reset run, and the closed study are three "
+            + "separate records. They are reported side by side and never "
+            + "averaged together." }),
+    el("div", { class: "cp__transport", role: "group", "aria-label": "Results" }, [
+      el("button", { type: "button", class: "ctl", id: "btn-results-refresh",
+                     onClick: handlers.onLoadResults, text: "Refresh results" }),
+      el("button", { type: "button", class: "ctl", id: "btn-save-run",
+                     disabled: !session || !session.step,
+                     onClick: handlers.onSaveRun, text: "Save this run" }),
+    ]),
+    el("p", { class: "cp__status", id: "results-status", role: "status",
+      text: retained
+        ? `${retained.session_count} kept in this session · `
+          + `${retained.process_count} kept from earlier sessions`
+        : "Results have not been read yet." }),
+    saved?.saved_run_ids?.length
+      ? el("p", { class: "cp__note",
+          text: `Saved as run ${saved.saved_run_ids.join(", ")} under the `
+                + `${String(saved.environment).toUpperCase()} summary shape. A `
+                + `saved live run is a demonstration record, not evidence.` })
+      : null,
+    el("p", { class: "cp__note",
+      text: retained?.lifetime
+        || "Reset run archives the run it replaces. Full reset keeps it for this "
+           + "server process. A restart drops it: a demonstration number is "
+           + "never persisted as a result." }),
+  ]);
+}
+
 /* ---------------------------------------------------------- study evidence */
 function evidenceSection(state, handlers) {
   const sources = (state.data.capabilities?.sources || [])
@@ -345,7 +395,7 @@ function evidenceSection(state, handlers) {
   return el("section", { class: "cp__section cp__section--evidence",
                          "aria-labelledby": "cp-evidence-title" }, [
     el("h2", { class: "cp__title", id: "cp-evidence-title",
-               text: "Study evidence and results" }),
+               text: "6 · Study evidence and results" }),
     el("p", { class: "cp__note",
       text: "Finished, read-only records of the closed study. "
             + "These are not simulation settings: none of them can be run, "

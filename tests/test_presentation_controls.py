@@ -131,9 +131,23 @@ def test_escape_leaves_audience_view_before_fullscreen_and_restores_focus():
         "\n    }", 1)[0]
     assert block.index("audienceView") < block.index("fullscreenElement")
     assert "exitAudience()" in block
-    assert 'btn-audience").focus()' in block
+    assert "restoreFocusAfterAudience()" in block
     # Leaving audience view is a state change, never a reload.
     assert "location.reload" not in shell
+
+
+def test_leaving_audience_view_never_drops_focus_onto_the_body():
+    """The audience toggle is hidden at narrow viewports, so `focus()` on it
+    silently did nothing there and focus landed on <body>. The restore falls
+    back to a landmark that is always present."""
+    shell = read(PRODUCT / "shell.js")
+    body = shell.split("function restoreFocusAfterAudience()", 1)[1].split(
+        "\n  }", 1)[0]
+    assert "offsetParent !== null" in body
+    assert '$("mode-surface").focus()' in body
+    for handler in ('$("btn-audience-exit").addEventListener',):
+        assert handler in shell
+    assert shell.count("restoreFocusAfterAudience()") >= 3
 
 
 def test_the_keyboard_reference_documents_the_audience_escape():
@@ -260,6 +274,55 @@ def test_every_product_module_parses(path: Path):
     result = subprocess.run(["node", "--check", str(path)],
                             capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr
+
+
+# ====================================================== Guided Story pacing
+# Part 1 exercised beats 1–2 interactively. Beat 8 declared
+# `advance.kind === "approve"` and beats 4–5 declared `select`, and the runner
+# handled neither — so a presenter pressing Next at beat 8 advanced the copy
+# without applying anything. Part 2 handles both; these pin them.
+def test_every_beat_advance_kind_is_handled_by_the_runner():
+    story = read(PRODUCT / "guided-story.js")
+    main = read(PRODUCT / "main.js")
+    kinds = set(re.findall(r'advance: \{ kind: "(\w+)"', story))
+    assert kinds, "the story must declare how its beats advance"
+    body = main.split("async function storyNext()", 1)[1].split("\n}", 1)[0]
+    for kind in sorted(kinds):
+        assert f'=== "{kind}"' in body, kind
+
+
+def test_a_beat_that_names_an_object_selects_it():
+    story = read(PRODUCT / "guided-story.js")
+    main = read(PRODUCT / "main.js")
+    assert "select: (ctx)" in story
+    body = main.split("async function storyNext()", 1)[1].split("\n}", 1)[0]
+    assert "beat.select?.(" in body
+    assert "store.select(selection.objectType, selection.objectId)" in body
+
+
+def test_the_story_delegates_its_own_fast_forwards_explicitly():
+    """The story runs with advisor approval, so its skips are delegated."""
+    main = read(PRODUCT / "main.js")
+    body = main.split("async function storyNext()", 1)[1].split("\n}", 1)[0]
+    assert "liveApi.runUntil(beat.advance.condition, 300, true)" in body
+
+
+def test_the_story_length_is_read_from_the_beats_not_hardcoded():
+    main = read(PRODUCT / "main.js")
+    assert "BEATS.length - 1" in main
+    assert "story.beat >= 10" not in main
+
+
+def test_a_delegated_batch_never_becomes_a_recommendation_card():
+    main = read(PRODUCT / "main.js")
+    assert 'row.kind !== "delegated_batch"' in main
+
+
+def test_audience_view_reduces_the_moment_rail_for_a_projector():
+    presentation = read(PRODUCT / "modes" / "presentation.js")
+    assert "state.ui.audienceView ? cells.slice(0, 4) : cells" in presentation
+    css = read(FRONTEND / "css" / "presentation-mode.css")
+    assert '.moment-rail[data-density="projector"]' in css
 
 
 def test_no_module_reaches_the_network_outside_its_adapter():

@@ -176,6 +176,30 @@ ALLOWED_NEW_FILES = {
     "tests/test_v2_live_foundation.py",
     "tests/test_presentation_controls.py",
     "OPUS5_PART1_HANDOFF.md",
+    # Part 2: the comparison, results and release layer. Every module here is a
+    # *read* over state that already exists — the live session's own recorded
+    # history, the pairing proof, and a pointer to the frozen study. None of
+    # them trains, tunes, evaluates, selects a checkpoint, touches a holdout
+    # seed, loads a governed artifact, or writes under results/, runs/ or
+    # models/. `results.py` explicitly declines to load the study's numbers so
+    # a second copy of them cannot drift, and tests/test_part2_results.py
+    # asserts that no cross-class aggregate exists anywhere in it. V1's models,
+    # results, figures, configs and simulation source stay byte identical; the
+    # byte-identity test below still enforces that.
+    "mplssim/product/comparison.py",
+    "mplssim/product/results.py",
+    "mplssim/product/run_summary.py",
+    "frontend/js/product/results.js",
+    "tests/test_part2_comparison.py",
+    "tests/test_part2_results.py",
+    "tests/test_part2_v2_endpoints.py",
+    "docs/ADR-003-results-retention-and-delegated-fast-forward.md",
+    "docs/RESULTS_AND_COMPARISON.md",
+    "OPUS5_PART2_HANDOFF.md",
+    "final/README.md",
+    "final/OPERATING_THE_UI.md",
+    "final/RUNNING_IT_AGAIN.md",
+    "final/RELEASE_NOTES.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",
@@ -210,6 +234,9 @@ ALLOWED_MODIFIED_FILES = {
     # Part 1: V2 became the live default, so the pre-existing V1 API suite now
     # declares `"environment": "v1"` explicitly. Nothing it asserts changed.
     "tests/test_api_e2e.py",
+    # Part 2 modifies only files this list already authorizes: server/main.py,
+    # server/session.py, the product modules and the frontend shell are all
+    # covered above, so no new modification permission is needed here.
 }
 
 #: The single directory the implementation prompt designates for validation

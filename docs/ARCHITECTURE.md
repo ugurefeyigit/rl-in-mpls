@@ -179,3 +179,32 @@ number addresses a different candidate path in each.
 The default training root is 42: the study's primary seed-42 scientific root,
 first in the registered root order. It is chosen by fixed identity, never from
 final-holdout performance.
+
+## Results, comparison and record classes
+
+Three product modules turn recorded state into surfaces, and each is a *read*
+over state that already exists.
+
+- `mplssim/product/pairing.py` answers **may we compare** — it fingerprints the
+  exogenous inputs of both lanes and either proves they share one experiment or
+  names the fields that broke the proof.
+- `mplssim/product/comparison.py` answers **what the comparison shows**, and
+  only when pairing said yes. On a broken proof it emits no verdict, no metric
+  row and no gap; the refusal *is* the payload. It never divides one signed
+  operational return by another, and it keeps controller TE changes, FRR
+  protection moves and post-recovery restorations in three separate counters.
+- `mplssim/product/results.py` reports three record classes —
+  `live_demonstration`, `retained_demonstration` and `governed_evidence` — in
+  three sections that share no table and no aggregate. It deliberately does
+  **not** load the study's numbers: it emits a pointer to `/api/v2/*`, so the
+  frozen record has exactly one renderer and cannot drift into a second copy.
+- `mplssim/product/run_summary.py` summarizes a saved run for its own
+  environment. V1 and V2 record different interval columns, so a V2 row declares
+  what it cannot measure rather than padding V1's columns with zeros.
+
+Retention is process-scoped and never written to disk: reset run archives to the
+session, full reset hands the archive to the process, a restart drops
+everything. The reasoning is in
+[ADR-003](ADR-003-results-retention-and-delegated-fast-forward.md), along with
+the decision that a fast-forward under advisor execution must be explicitly
+delegated and recorded as one batch in the approval ledger.

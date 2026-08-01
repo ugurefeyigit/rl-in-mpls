@@ -248,6 +248,8 @@ unchanged.
 | [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) | Keyboard, focus, list alternative, reduced motion and responsive behavior |
 | [docs/PRESENTATION_SCRIPT.md](docs/PRESENTATION_SCRIPT.md) | The 20–25 minute script: what to say, what to click, where RL loses |
 | [docs/OPERATOR_ADVISOR.md](docs/OPERATOR_ADVISOR.md) | propose / approve / reject, predicted vs actual, why proposals never mutate the engine |
+| [docs/RESULTS_AND_COMPARISON.md](docs/RESULTS_AND_COMPARISON.md) | The paired comparison, the three record classes, and what each refuses to do |
+| [docs/ADR-003-results-retention-and-delegated-fast-forward.md](docs/ADR-003-results-retention-and-delegated-fast-forward.md) | Why demonstrations and evidence never merge, how long a retained run lives, and why a fast-forward must be delegated |
 | [docs/CITY_DISPLAY_MAPPING.md](docs/CITY_DISPLAY_MAPPING.md) | The router → city table and the rule that internal IDs never change |
 
 **Display names are a presentation layer only.** `PE1`, `L11`, `D2` and the

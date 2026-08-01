@@ -46,15 +46,37 @@ drives a run is there, top to bottom, in the order a newcomer needs it:
    **full reset**.
 10. Approve or reject, only in advisor execution.
 11. Guided Story entry with manual and automatic pacing.
+12. Results — refresh, save this run, and how many earlier runs are kept.
+13. Study evidence and results — the frozen records, in their own region.
 
 Nothing that starts or steers a run lives in the header, a bottom bar or a
 drawer. The bottom presenter cockpit is gone.
 
 **Reset run** recreates the same environment, scenario, seed and controllers at
 step zero and retains the run it replaced. **Full reset** stops the runners,
-clears active and transient UI state, closes Guided Story and the advisor
+hands the session's archive *and the run that was on screen* to the process
+store, clears active and transient UI state, closes Guided Story and the advisor
 workflow, and returns to the initial configuration. Neither mutates a model, a
-checkpoint or any evidence artifact.
+checkpoint or any evidence artifact. A server restart drops every retained run;
+see [ADR-003](ADR-003-results-retention-and-delegated-fast-forward.md).
+
+**Skip to next event** is the one control that does not respect per-action
+approval: it applies the controller's own actions for a stretch of intervals in
+one gesture. Under advisor execution it asks the operator to delegate that
+stretch before running it, and the panel then shows a running count of intervals
+delegated rather than approved. The server refuses an undelegated fast-forward
+outright.
+
+## The results surface
+
+Presentation Mode carries one **Results** panel with three sections that share
+no table and no aggregate: the live run, earlier runs kept in this session, and
+the closed V2 study. The study section holds a pointer and a reason, never a
+transcribed figure — the frozen record has exactly one renderer, under RL
+Information → Governed Study, reading its own artifacts. The comparison lane
+sits directly above it and shows a verdict only while the pairing proof holds;
+both surfaces are documented in
+[RESULTS_AND_COMPARISON.md](RESULTS_AND_COMPARISON.md).
 
 **Audience view** hides the working chrome. Its exit control is deliberately
 rendered outside that chrome, is pinned visible at every viewport including

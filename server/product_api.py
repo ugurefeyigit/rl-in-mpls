@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 from mplssim.factory import get_topology
 from mplssim.product import catalog, contracts, counterfactual, decision as decision_mod
 from mplssim.product import display_map as display_map_mod
+from mplssim.product import results as results_mod
 from mplssim.product import schemas, serialize, timeline as timeline_mod
 
 router = APIRouter(tags=["product"])
@@ -180,9 +181,23 @@ def timeline() -> dict:
 
 
 @router.get("/api/simulation/comparison",
-            summary="Synchronization proof for the paired comparison lane")
+            summary="Synchronization proof and the paired decision comparison")
 def comparison() -> dict:
     return serialize.comparison_state(_session())
+
+
+# ------------------------------------------------------------------- results
+@router.get("/api/product/results",
+            summary="Live run, retained runs and the study record, kept apart")
+def product_results() -> dict:
+    """Three record classes in three sections.
+
+    This route never 404s on a missing session: retained runs and the pointer to
+    the governed study outlive any one session, and a full reset is exactly when
+    an operator wants to read them.
+    """
+    session = _session_provider() if _session_provider else None
+    return results_mod.results(session)
 
 
 # ------------------------------------------------------------ counterfactual

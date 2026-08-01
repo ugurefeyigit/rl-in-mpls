@@ -11,6 +11,13 @@
     minmax(210px, 1.8fr) minmax(120px, 1fr) repeat(4, minmax(128px, 1fr));
   overflow-x: auto;
 }
+/* Audience view keeps four cells, so each one gets the width a projector needs
+   and the geometry still does not move between the two densities. */
+.moment-rail[data-density="projector"] .moment-rail__row {
+  grid-template-columns: minmax(180px, 1.2fr) minmax(150px, 1fr)
+    minmax(260px, 1.8fr) minmax(150px, 1fr);
+}
+.moment-rail[data-density="projector"] .moment-cell__value { font-size: 1.25rem; }
 .moment-cell { padding: var(--space-2) var(--space-3); border-right: var(--rule); min-width: 0; }
 .moment-cell:last-child { border-right: 0; }
 .moment-cell__label { display: block; color: var(--atlas-cloud); font-size: var(--size-utility); letter-spacing: var(--track-utility); text-transform: uppercase; }
@@ -40,9 +47,46 @@
 .story__beat[aria-current="step"] { border-top-color: var(--state-selection); color: var(--atlas-fog); }
 .story__review { color: var(--state-pressure); }
 
-.cmp { display: grid; gap: var(--space-2); }
-.cmp__lane { display: grid; grid-template-columns: 32px minmax(130px, 1fr) repeat(3, minmax(90px, auto)); align-items: center; gap: var(--space-3); padding: var(--space-2) 0; border-top: var(--rule); }
-.cmp__token { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid currentColor; color: var(--state-comparison); font-family: var(--font-plate); }
+/* --- the paired comparison ------------------------------------------------
+ * Lane A and lane B are told apart by a letter token and a left border style as
+ * well as by colour, so the pairing survives a projector, a colour-blind reader
+ * and a greyscale print.
+ */
+.cmp { display: grid; gap: var(--space-4); }
+.cmp__sync, .cmp__proof { color: var(--atlas-cloud); font-size: .8125rem; margin: 0; }
+.cmp__lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--space-4); }
+.cmp__lane { padding: var(--space-3); border: 1px solid var(--atlas-rule); border-left-width: 3px; min-width: 0; }
+.cmp__lane[data-lane="a"] { border-left-color: var(--state-comparison); border-left-style: solid; }
+.cmp__lane[data-lane="b"] { border-left-color: var(--state-selection); border-left-style: dashed; }
+.cmp__lane-head { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-1); font-family: var(--font-plate); font-size: 1rem; letter-spacing: var(--track-plate); text-transform: uppercase; }
+.cmp__lane-name { min-width: 0; overflow-wrap: anywhere; }
+.cmp__lane-kind { margin: 0 0 var(--space-3); color: var(--atlas-cloud); font-size: var(--size-utility); text-transform: uppercase; letter-spacing: var(--track-utility); }
+.cmp__lane-note { margin: var(--space-3) 0 0; color: var(--atlas-cloud); font-size: .8125rem; }
+.cmp__reject { margin: var(--space-2) 0 0; color: var(--state-failure); font-size: .8125rem; }
+.cmp__token { display: grid; place-items: center; width: 28px; height: 28px; flex: 0 0 auto; border: 1px solid currentColor; color: var(--state-comparison); font-family: var(--font-plate); }
+.cmp__lane[data-lane="b"] .cmp__token { color: var(--state-selection); }
+.cmp__verdict { padding: var(--space-3); border-top: 2px solid var(--atlas-rule); }
+.cmp__verdict[data-leader="a"] { border-top-color: var(--state-comparison); }
+.cmp__verdict[data-leader="b"] { border-top-color: var(--state-selection); }
+.cmp__verdict-line { margin: 0 0 var(--space-2); font-family: var(--font-plate); font-size: 1.0625rem; }
+.cmp__grid tbody tr[data-leader="a"] th[scope="row"] { border-left: 3px solid var(--state-comparison); padding-left: var(--space-2); }
+.cmp__grid tbody tr[data-leader="b"] th[scope="row"] { border-left: 3px dashed var(--state-selection); padding-left: var(--space-2); }
+.cmp__diverge { margin: 0; color: var(--state-pressure); font-size: .8125rem; }
+.cmp--broken .facts { margin-top: var(--space-3); }
+
+/* --- the results surface --------------------------------------------------
+ * Three sections, three headings, three tables. There is no combined table in
+ * this stylesheet either, because there is nothing to style.
+ */
+.results { display: grid; gap: var(--space-5); }
+.results__rule { margin: 0; padding: var(--space-3); border-left: 3px solid var(--state-pressure); background: var(--surface-sunken); font-size: .8125rem; }
+.results__section { border-top: var(--rule); padding-top: var(--space-3); }
+.results__title { margin: 0 0 var(--space-1); font-family: var(--font-plate); font-size: 1.0625rem; letter-spacing: var(--track-plate); text-transform: uppercase; }
+.results__grain { margin: 0 0 var(--space-1); color: var(--atlas-fog); font-size: .8125rem; }
+.results__class, .results__sub, .results__pointer { margin: 0 0 var(--space-3); color: var(--atlas-cloud); font-size: .8125rem; }
+.results__archive { margin-top: var(--space-4); }
+.results__archive-head { margin: 0 0 var(--space-2); font-family: var(--font-data); font-size: .875rem; color: var(--atlas-fog); }
+.panel--notice { border-left: 3px solid var(--state-pressure); }
 
 /* --- the control panel ---------------------------------------------------
  * One column, top to bottom, in the order a first-time user needs: what world,

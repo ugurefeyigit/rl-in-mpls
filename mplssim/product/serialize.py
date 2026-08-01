@@ -410,10 +410,11 @@ def _crosses(demand: dict[str, Any], link: dict[str, Any]) -> bool:
 
 
 def comparison_state(session: Any) -> dict[str, Any]:
-    state = pairing.synchronization(session)
-    state["lane_details"] = [{
-        "algorithm": runner.algorithm,
-        "last_decision": runner.last_decision,
-        "cumulative_reward": round(float(runner.cumulative_reward), 4),
-    } for runner in session.runners]
-    return state
+    """The paired comparison, built in `mplssim.product.comparison`.
+
+    Kept here as the product layer's single entry point so existing callers do
+    not need to know where the derivation moved to.
+    """
+    from mplssim.product import comparison as comparison_mod
+
+    return comparison_mod.comparison_state(session)

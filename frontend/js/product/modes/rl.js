@@ -132,7 +132,11 @@ function renderRlRail(state) {
     el("section", { class: "panel" }, [
       el("h2", { class: "panel__title", text: "Evidence boundary" }),
       el("p", { class: "prose", text: state.source.kind === "live_session"
-        ? "This is a live decision from the V1 runner. It is not final-holdout evidence."
+        ? `This is a live decision from the `
+          + `${(state.context.environmentVersion || "v2").toUpperCase()} runner`
+          + `${state.context.checkpointId ? ` on checkpoint ${state.context.checkpointId}` : ""}`
+          + `. A governed checkpoint driving a live demonstration is still a live `
+          + `record; it is not final-holdout evidence.`
         : `${state.source.kind.replaceAll("_", " ")} is read-only and cannot execute a policy.` }),
     ]),
     el("section", { class: "panel" }, [

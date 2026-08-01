@@ -67,9 +67,15 @@ export const api = {
   reset: () => post("/api/simulation/reset"),
   stop: () => post("/api/simulation/stop"),
   retainedRuns: () => get("/api/simulation/retained-runs"),
+  results: () => get("/api/product/results"),
   speed: (speed) => post("/api/simulation/speed", { speed }),
-  runUntil: (condition, maxSteps = 300) =>
-    post("/api/simulation/run-until", { condition, max_steps: maxSteps }),
+  // `delegate` is required by advisor execution: a fast-forward applies the
+  // controller's own actions for a stretch without individual approval, and the
+  // server refuses to do that unless the caller says so.
+  runUntil: (condition, maxSteps = 300, delegate = false) =>
+    post("/api/simulation/run-until",
+         { condition, max_steps: maxSteps, delegate }),
+  saveRun: () => post("/api/export/save-run"),
 
   injectFailure: (link) => post("/api/failure/inject", { link }),
   recoverLink: (link) => post("/api/failure/recover", { link }),

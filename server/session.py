@@ -945,12 +945,29 @@ class SimSession:
         return {"ok": True, "factor": factor}
 
     # ---------------------------------------------------------- run helpers
+    #: Refusal shown when advisor execution is asked to fast-forward without the
+    #: caller saying, in the request, that it is delegating those intervals.
+    DELEGATION_REQUIRED = (
+        "This session runs with advisor approval, so every action is supposed to "
+        "be approved individually. A fast-forward cannot do that: it applies the "
+        "controller's own actions for a stretch of intervals in one gesture. "
+        "Send delegate=true to authorize that stretch explicitly. It is recorded "
+        "in the approval ledger as one delegated batch, not as a run of "
+        "individual approvals.")
+
     async def run_until(self, condition: str, max_steps: int = 300,
-                        util_threshold: float = 0.9) -> dict[str, Any]:
+                        util_threshold: float = 0.9,
+                        delegate: bool = False) -> dict[str, Any]:
         """Fast-forward (used by Guided Story's 'Next Event'):
         condition = 'next_event' | 'congestion' | 'failure' | 'recovery' |
         'end'. Steps synchronously
-        under the lock; no wall-clock pacing; state must not be RUNNING."""
+        under the lock; no wall-clock pacing; state must not be RUNNING.
+
+        Under advisor execution the caller must pass ``delegate=True``. Part 1
+        left this as a disclosed asymmetry; Part 2 closes it by making the
+        delegation an explicit, recorded decision rather than a footnote on a
+        response the operator may never read (docs/ADR-003).
+        """
         async with self._lock:
             allowed = {"next_event", "congestion", "failure", "recovery", "end"}
             if condition not in allowed:
@@ -961,6 +978,8 @@ class SimSession:
                 raise SessionError("scenario finished")
             if self.pending_proposal is not None:
                 raise SessionError("resolve the advisor recommendation first")
+            if self.config.advisor and not delegate:
+                raise SessionError(self.DELEGATION_REQUIRED)
             if self.state == SessionState.IDLE:
                 self.state = SessionState.PAUSED
             eng = self.runners[0].eng
@@ -992,8 +1011,33 @@ class SimSession:
                         break
             if self.done:
                 self.state = SessionState.COMPLETED
+            # A delegated stretch enters the approval ledger as ONE record, so
+            # the history cannot be read as a run of individual approvals. It is
+            # the operator's decision, and it is written down as such.
+            if self.config.advisor and steps:
+                engine = self.runners[0].eng
+                start = engine.step_count - steps
+                self.advisor_history.append({
+                    "id": len(self.advisor_history) + 1,
+                    "kind": "delegated_batch",
+                    "approved": True,
+                    "delegated": True,
+                    "condition": condition,
+                    "steps": steps,
+                    "from_step": int(start),
+                    "to_step": int(engine.step_count),
+                    # `step`/`t_min` name the interval the stretch ENDED on, so
+                    # every ledger record can be placed on the timeline without
+                    # the reader having to know which kind it is.
+                    "step": int(engine.step_count),
+                    "t_min": float(engine.t_min),
+                    "policy_id": self.config.algorithms[0],
+                    "note": ("The operator delegated this stretch in one "
+                             "gesture. The controller's own actions were "
+                             "applied; no individual action was approved."),
+                })
             log_event("run_until", condition=condition, steps=steps,
-                      **self._log_ctx())
+                      delegated=bool(self.config.advisor), **self._log_ctx())
         if payload is not None:
             await self._broadcast(payload)
         return {
@@ -1001,11 +1045,14 @@ class SimSession:
             "status": self.status(),
             # A fast-forward is the operator delegating a stretch of intervals
             # in one gesture. In advisor execution those intervals are not
-            # individually approved, and the response says so rather than
-            # letting the UI imply that each one was.
+            # individually approved, and both the response and the approval
+            # ledger say so rather than letting the UI imply that each one was.
             "approval_bypassed": bool(self.config.advisor),
-            "note": ("Fast-forward applied the controller's own actions for "
-                     "these intervals without individual approval."
+            "delegated": bool(self.config.advisor),
+            "note": (f"You delegated {steps} interval(s). The controller's own "
+                     f"actions were applied; none of them was approved "
+                     f"individually. The approval history records this as one "
+                     f"delegated batch."
                      if self.config.advisor else
                      "Fast-forward ran the controller normally."),
         }
@@ -1056,6 +1103,10 @@ class SimSession:
                 selected_output = None if raw is None else round(float(raw), 6)
             proposal = {
                 "id": len(self.advisor_history) + 1,
+                # The ledger holds two kinds of record: a proposal an operator
+                # answered, and a stretch an operator delegated. A client that
+                # renders one as the other would misreport what was approved.
+                "kind": "proposal",
                 "proposed_at": time.time(),
                 "step": r.eng.step_count,
                 "t_min": r.eng.t_min,
@@ -1137,9 +1188,16 @@ class SimSession:
         return await self._advisor_decide(False)
 
     def advisor_status(self) -> dict[str, Any]:
+        history = self.advisor_history[-20:]
         return {
             "pending": self.pending_proposal,
-            "history": self.advisor_history[-20:],
+            "history": history,
+            "proposals": [r for r in history if r.get("kind") != "delegated_batch"],
+            "delegated_batches": [r for r in history
+                                  if r.get("kind") == "delegated_batch"],
+            "delegated_intervals": sum(
+                int(r.get("steps", 0)) for r in self.advisor_history
+                if r.get("kind") == "delegated_batch"),
             "enabled": self.config.advisor,
             "execution": self.config.execution,
             "explanation_only": not self.config.advisor,

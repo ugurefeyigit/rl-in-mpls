@@ -20,6 +20,10 @@ from mplssim.sim import models as m
 #: renders it as a generic event rather than dropping it.
 EVENT_KINDS: tuple[str, ...] = (
     "congestion", "sla_risk", "failure", "frr", "recommendation",
+    # A stretch the operator delegated in one gesture. It is deliberately NOT a
+    # "recommendation": nothing in it was individually approved, and showing it
+    # as a run of approvals would overstate what the operator actually decided.
+    "delegation",
     "action", "reversal", "flap", "recovery", "stabilization",
 )
 
@@ -145,6 +149,22 @@ def _advisor_events(session: Any) -> list[dict[str, Any]]:
     start_hour = engine.scenario.start_hour
     events = []
     for record in session.advisor_history:
+        # The approval ledger holds two kinds of record. A delegated batch has
+        # no proposal, no decoded action and no single interval, so it gets its
+        # own event rather than being forced into the recommendation shape.
+        if record.get("kind") == "delegated_batch":
+            step = int(record["to_step"])
+            t_min = float(record["t_min"])
+            events.append(_event(
+                "delegation", step, t_min,
+                (start_hour + t_min / 60.0) % 24.0,
+                title=f"{record['steps']} interval(s) delegated",
+                detail=record["note"],
+                object_type=None, object_id=None,
+                delegated=True, approved=None,
+                from_step=int(record["from_step"]), to_step=step,
+                steps=int(record["steps"]), condition=record.get("condition")))
+            continue
         hour = (start_hour + float(record["t_min"]) / 60.0) % 24.0
         decoded = record.get("decoded") or {}
         target = decoded.get("demand") or "no-op"

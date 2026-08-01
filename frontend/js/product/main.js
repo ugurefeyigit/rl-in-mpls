@@ -3,7 +3,7 @@
 import { api as evidenceApi } from "./adapters/evidence-v2.js";
 import { api as liveApi, connect, hasActiveSession } from "./adapters/live-v1.js";
 import { api as replayApi } from "./adapters/recorded-v2.js";
-import { beatAt, matchesStorySession, storySessionConfig } from "./guided-story.js";
+import { BEATS, beatAt, matchesStorySession, storyContext, storySessionConfig } from "./guided-story.js";
 import { renderConclusion } from "./governed-study.js";
 import { questionDestination } from "./help.js";
 import { explanationFromDecision, proposalFromAdvisor } from "./recommendation-card.js";
@@ -60,7 +60,9 @@ const actions = {
   toggleFullscreen: () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(),
   playPause: () => run(playPause),
   step: () => run(step),
-  nextEvent: () => run(() => ensureSession().then(() => liveApi.runUntil("next_event")).then(refreshLive)),
+  nextEvent: () => run(() => fastForward("next_event")),
+  loadResults: () => run(loadResults),
+  saveRun: () => run(saveRun),
   setSpeed: (speed) => run(() => liveApi.speed(speed).then(refreshLive)),
   toggleStory: () => run(async () => { await toggleStory(); scheduleStoryAuto(); }),
   toggleStoryAuto,
@@ -161,6 +163,45 @@ async function loadEvidence() {
   if (conclusion) conclusion.replaceChildren(...renderConclusion(store.state));
 }
 
+/* ------------------------------------------------------------- fast-forward */
+
+/**
+ * Skip to a condition. Advisor execution refuses a fast-forward unless the
+ * operator delegates the stretch, because it applies the controller's own
+ * actions without individual approval. The confirmation is the delegation: it
+ * is asked once, here, and recorded server-side as one delegated batch.
+ */
+async function fastForward(condition) {
+  await ensureSession();
+  const advisor = store.state.data.snapshot?.session?.execution === "advisor";
+  if (advisor && !window.confirm(
+    "This session runs with advisor approval.\n\n"
+    + "Skipping ahead applies the controller's own actions for a stretch of "
+    + "intervals in one gesture. Those intervals are NOT approved individually, "
+    + "and the approval history will record this as one delegated batch.\n\n"
+    + "Delegate this stretch?")) {
+    return;
+  }
+  const outcome = await liveApi.runUntil(condition, 300, advisor);
+  await refreshLive();
+  if (outcome?.delegated) {
+    store.patch({ delegation: { note: outcome.note, steps: outcome.steps } });
+  }
+}
+
+/* ----------------------------------------------------------------- results */
+
+async function loadResults() {
+  const results = await liveApi.results();
+  store.patch({ data: { results } });
+}
+
+async function saveRun() {
+  const outcome = await liveApi.saveRun();
+  store.patch({ savedRun: outcome });
+  await loadResults();
+}
+
 async function refreshLiveOnce() {
   if (store.state.source.kind !== "live_session") return;
   const sourceRequest = captureSource(store.state);
@@ -169,15 +210,25 @@ async function refreshLiveOnce() {
   if (!hasActiveSession(status)) {
     store.patch({ data: { snapshot: null, previousSnapshot: null, decision: null,
       timeline: null, comparison: null, recommendation: null }, connection: "open" });
+    await loadResults();
     return;
   }
+  // The displayed moment is one atomic read and stays one atomic read. Results
+  // are a separate concern — retained runs and a pointer to the study — so they
+  // are read afterwards and never batched into the moment.
   const moment = await liveApi.moment();
+  const results = await liveApi.results();
   const { snapshot, decision, timeline, comparison, advisor } = moment;
   if (!isCurrentSource(store.state, sourceRequest)) return;
   if (!store.acceptSnapshot(snapshot)) return;
   const schema = store.state.data.schema?.environment_version === snapshot.provenance.environment_version
     ? store.state.data.schema : await liveApi.schema(snapshot.provenance.environment_version);
-  const record = advisor.history?.length ? advisor.history[advisor.history.length - 1] : null;
+  // Only a proposal record can become a recommendation card. A delegated batch
+  // is an operator decision about a stretch of intervals, not an action to
+  // explain, and rendering it as one would misreport what was approved.
+  const proposals = advisor.proposals
+    || (advisor.history || []).filter((row) => row.kind !== "delegated_batch");
+  const record = proposals.length ? proposals[proposals.length - 1] : null;
   // Advisor execution has a live proposal to approve. Automatic execution has
   // no proposal at all: the card explains the decision the policy already made.
   const recommendation = advisor.pending
@@ -190,7 +241,7 @@ async function refreshLiveOnce() {
     context: { comparator: snapshot.session.algorithms?.[1] || null },
     playback: { state: snapshot.session.state, speed: snapshot.session.speed,
       running: snapshot.session.running, awaitingDecision: snapshot.session.awaiting_decision },
-    data: { decision, timeline, comparison, schema, recommendation, advisor },
+    data: { decision, timeline, comparison, schema, recommendation, advisor, results },
     connection: "open", error: null,
     story: { bookmarks: timeline.events || [] },
   });
@@ -379,15 +430,25 @@ async function storyNext() {
       + "recommendation before continuing.");
   }
   const current = store.state.story.reviewBeat ?? store.state.story.beat;
-  const next = Math.min(10, current + 1);
+  const next = Math.min(BEATS.length - 1, current + 1);
   const beat = beatAt(next);
   if (beat.advance?.kind === "step") await step();
   else if (beat.advance?.kind === "propose") await propose();
-  else if (beat.advance?.kind === "runUntil") {
-    await liveApi.runUntil(beat.advance.condition);
+  else if (beat.advance?.kind === "approve") {
+    // Beat 8 is "observe the transition", so it needs an applied action. If
+    // nothing is held it proposes first rather than silently doing nothing.
+    if (!store.state.data.snapshot?.session?.awaiting_decision) await propose();
+    if (store.state.data.snapshot?.session?.awaiting_decision) await approve();
+  } else if (beat.advance?.kind === "runUntil") {
+    // The story runs with advisor approval, so its own fast-forwards are
+    // delegated stretches. The beat copy says so; the server records it.
+    await liveApi.runUntil(beat.advance.condition, 300, true);
     await refreshLive();
   }
   store.patch({ story: { beat: Math.max(store.state.story.beat, next), reviewBeat: null } });
+  // A beat that names an object selects it, so the topology follows the copy.
+  const selection = beat.select?.(storyContext(store.state));
+  if (selection) store.select(selection.objectType, selection.objectId);
   if (beat.conclusion) { await loadEvidence(); shell.openDrawer("drawer-conclusion"); }
 }
 
@@ -415,7 +476,8 @@ function toggleStoryAuto() {
 function scheduleStoryAuto() {
   if (storyTimer) window.clearTimeout(storyTimer);
   storyTimer = null;
-  if (!store.state.story.active || !store.state.story.auto || store.state.story.beat >= 10) return;
+  if (!store.state.story.active || !store.state.story.auto
+      || store.state.story.beat >= BEATS.length - 1) return;
   // Automatic playback holds at a pending recommendation rather than answering
   // it. Approve or Reject resumes the schedule.
   if (store.state.data.recommendation?.pending) return;
