@@ -1,6 +1,7 @@
 /* URL ↔ state.
  *
- * The four legacy URLs keep working and keep meaning what they meant:
+ * The four legacy URLs keep working and keep meaning what they meant; Exp 2.1
+ * adds `/compare` without redirecting any existing destination:
  * `/present` is Presentation, `/` and `/advanced` are Network Information, and
  * `/study` is RL Information at the governed study. The server renders the shell
  * for each of them, so there is no redirect flash.
@@ -22,6 +23,7 @@ export function readLocation(loc = window.location) {
     selection: { objectType: null, objectId: null },
     eventId: null,
     step: null,
+    comparisonRunId: null,
   };
 
   const mode = params.get("mode");
@@ -52,6 +54,9 @@ export function readLocation(loc = window.location) {
   const step = params.get("step");
   if (step && /^\d+$/.test(step)) state.step = Number(step);
 
+  const comparisonRunId = params.get("comparison_run");
+  if (comparisonRunId) state.comparisonRunId = comparisonRunId;
+
   return state;
 }
 
@@ -76,6 +81,10 @@ export function locationForState(state) {
     params.set("object", `${state.selection.objectType}:${state.selection.objectId}`);
   }
   if (state.selection.eventId) params.set("event", state.selection.eventId);
+  if (state.comparisonFocus?.runId) params.set("comparison_run", state.comparisonFocus.runId);
+  const selectedStep = state.mode === "compare"
+    ? state.comparisonView?.selectedStep : state.comparisonFocus?.step;
+  if (selectedStep !== null && selectedStep !== undefined) params.set("step", selectedStep);
 
   const query = params.toString();
   return query ? `${path}?${query}` : path;

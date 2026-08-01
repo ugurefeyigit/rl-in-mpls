@@ -200,6 +200,58 @@ def product_results() -> dict:
     return results_mod.results(session)
 
 
+class ComparativeRunSelection(BaseModel):
+    run_id: str = Field(..., min_length=1)
+
+
+def _comparative_payload() -> dict:
+    session = _session_provider() if _session_provider else None
+    return results_mod.comparative_runs(session)
+
+
+@router.get("/api/product/comparative-runs",
+            summary="Two completed live-demonstration runs for Exp 2.1")
+def comparative_runs() -> dict:
+    return _comparative_payload()
+
+
+@router.put("/api/product/comparative-runs/{slot}",
+            summary="Assign a completed run to comparison slot A or B")
+def assign_comparative_run(slot: str, req: ComparativeRunSelection) -> dict:
+    session = _session_provider() if _session_provider else None
+    try:
+        results_mod.assign_comparison_slot(session, slot, req.run_id)
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(409, str(exc)) from exc
+    return _comparative_payload()
+
+
+@router.delete("/api/product/comparative-runs/{slot}",
+               summary="Clear comparison slot A or B")
+def clear_comparative_run(slot: str) -> dict:
+    try:
+        results_mod.clear_comparison_slot(slot)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return _comparative_payload()
+
+
+@router.post("/api/product/comparative-runs/swap",
+             summary="Swap completed comparison runs A and B")
+def swap_comparative_runs() -> dict:
+    results_mod.swap_comparison_slots()
+    return _comparative_payload()
+
+
+@router.delete("/api/product/comparative-runs",
+               summary="Clear both completed comparison slots")
+def clear_comparative_runs() -> dict:
+    results_mod.clear_comparison_runs()
+    return _comparative_payload()
+
+
 # ------------------------------------------------------------ counterfactual
 class CounterfactualRequest(BaseModel):
     action: int = Field(..., ge=0, lt=contracts.ACTION_COUNT)

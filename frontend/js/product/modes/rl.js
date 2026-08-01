@@ -13,6 +13,7 @@ import { renderObservationInspector } from "../observation-inspector.js";
 import { counterfactualPanel, renderPolicyOutputs } from "../policy-outputs.js";
 import { renderRecordedTrace } from "../recorded-trace.js";
 import { renderRewardWaterfall } from "../reward-waterfall.js";
+import { renderComparisonContext } from "../comparison-context.js";
 
 const PIPELINE_LABELS = {
   observation: "Observation",
@@ -27,6 +28,11 @@ const PIPELINE_LABELS = {
 
 export function renderRl(state, handlers) {
   const panel = $("panel-rl");
+  if (state.comparisonFocus.runId) {
+    fill(panel, [renderComparisonContext(state, "rl")]);
+    fill($("rail"), []);
+    return;
+  }
   fill(panel, [
     secondaryNavigation(state, handlers.onSetView),
     state.rlView === "study" ? studyView(state, handlers)

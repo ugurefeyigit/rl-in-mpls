@@ -1,7 +1,7 @@
-"""Executable product contracts for the unified three-mode product.
+"""Executable product contracts for the unified four-mode product.
 
-These freeze the decisions the approved design package made — exactly three
-primary modes, Guided Story nested inside Presentation, four *typed* source
+These freeze the Exp 2.1 migration — exactly four primary modes, Guided Story
+nested inside Presentation, four *typed* source
 kinds that cannot be coerced into one another, backward-compatible routes, and
 the scientific constants any product surface is allowed to state.
 
@@ -17,8 +17,9 @@ from mplssim.product import contracts
 
 
 # ------------------------------------------------------------------ modes
-def test_exactly_three_primary_modes():
-    assert [m.id for m in contracts.PRIMARY_MODES] == ["presentation", "network", "rl"]
+def test_exactly_four_primary_modes():
+    assert [m.id for m in contracts.PRIMARY_MODES] == [
+        "presentation", "network", "rl", "compare"]
 
 
 def test_guided_story_is_a_presentation_workflow_not_a_mode():
@@ -34,6 +35,7 @@ def test_mode_ids_are_stable_and_labelled():
         "presentation": "Presentation",
         "network": "Network Information",
         "rl": "RL Information",
+        "compare": "Comparative Run Results",
     }
 
 
@@ -43,6 +45,7 @@ def test_mode_ids_are_stable_and_labelled():
     ("/advanced", "network"),
     ("/present", "presentation"),
     ("/study", "rl"),
+    ("/compare", "compare"),
 ])
 def test_backward_compatible_routes_map_to_the_approved_mode(path, mode):
     assert contracts.route_context(path).mode == mode
@@ -61,7 +64,7 @@ def test_present_route_opens_a_live_session_context():
 
 
 def test_every_documented_route_is_registered():
-    assert set(contracts.ROUTES) == {"/", "/advanced", "/present", "/study"}
+    assert set(contracts.ROUTES) == {"/", "/advanced", "/present", "/study", "/compare"}
 
 
 # ----------------------------------------------------------- source kinds

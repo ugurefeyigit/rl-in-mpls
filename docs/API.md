@@ -45,7 +45,7 @@ Replay is a tape player. Every payload is marked `kind: "recorded_replay"` and
 
 ## Unified product API
 
-These additive endpoints feed the three-mode shell. They preserve all existing
+These additive endpoints feed the four-mode Exp 2.1 shell. They preserve all existing
 API paths. Every live payload declares provenance; routes fail closed when no
 session exists. The only POST below is a clone-only estimate that refuses stale
 generation/step fingerprints and never advances the running engine.
@@ -53,7 +53,7 @@ generation/step fingerprints and never advances the running engine.
 | Method | Path | Description |
 |---|---|---|
 | GET | `/api/product/capabilities` | Installed policies, sources, checkpoints, and truthful unavailable reasons |
-| GET | `/api/product/contracts` | Three modes, nested workflows, routes, source permissions, output semantics, no-op grains |
+| GET | `/api/product/contracts` | Four modes, nested workflows, routes, source permissions, output semantics, no-op grains |
 | GET | `/api/product/display-map` | Fixed display-only engineering schematic, city/role labels, capacity and utilization classes |
 | GET | `/api/rl/schema?environment=v1\|v2` | Observation groups, all 69 actions, and authoritative reward-component schema |
 | GET | `/api/simulation/snapshot` | Typed live topology, demand, metric, incident, session, and provenance snapshot |
@@ -61,6 +61,11 @@ generation/step fingerprints and never advances the running engine.
 | GET | `/api/simulation/timeline` | Typed live incident, action, FRR, recovery, and stabilization events |
 | GET | `/api/simulation/comparison` | Synchronization proof plus the full paired decision comparison in `detail` — lanes, metric rows, movement counters, first divergence, verdict. When the proof fails, `detail.available` is `false` and the payload carries **no** verdict, metric row or gap at all |
 | GET | `/api/product/results` | Live run, retained runs and a pointer to the closed study, in three sections that share no table and no aggregate. Answers with no active session |
+| GET | `/api/product/comparative-runs` | Completed-run A/B slots, eligible completed candidates, pairing integrity, direction-aware headline rows, real interval series, reward components, and events |
+| PUT | `/api/product/comparative-runs/{a\|b}` | Assign or replace one A/B slot from an eligible completed run ID |
+| DELETE | `/api/product/comparative-runs/{a\|b}` | Clear one A/B slot |
+| POST | `/api/product/comparative-runs/swap` | Swap A and B without changing either run record |
+| DELETE | `/api/product/comparative-runs` | Clear A, B, and backend comparison state |
 | GET | `/api/simulation/object/{kind}/{id}` | Focused router, link, demand, or path details |
 | POST | `/api/simulation/counterfactual` | One-interval simulated estimate on a clone; stale requests fail closed |
 

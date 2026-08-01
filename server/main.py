@@ -306,6 +306,9 @@ async def sim_stop() -> dict:
     Clears the active session only. No model, checkpoint or evidence artifact is
     read, written or modified.
     """
+    # Exp 2.1 defines Full Reset as the hard boundary for all A/B comparison
+    # state, even when no live session remains to stop.
+    results.clear_comparison_runs()
     session: SimSession | None = STATE["session"]
     if session is None:
         return {"stopped": False, "reason": "no active session",
@@ -625,6 +628,11 @@ def present() -> FileResponse:
 
 @app.get("/study")
 def study_page() -> FileResponse:
+    return FileResponse(ROOT / "frontend" / "app.html")
+
+
+@app.get("/compare")
+def compare_page() -> FileResponse:
     return FileResponse(ROOT / "frontend" / "app.html")
 
 

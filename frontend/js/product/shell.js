@@ -12,6 +12,7 @@ import { renderHelp, renderQuestions } from "./help.js";
 import { renderNetwork, networkStageTitle } from "./modes/network.js";
 import { renderPresentation } from "./modes/presentation.js";
 import { renderRl } from "./modes/rl.js";
+import { renderCompare } from "./modes/compare.js";
 import { renderContextLedger, renderProvenance, renderSourceSwitch } from "./provenance.js";
 import { renderRecommendation } from "./recommendation-card.js";
 import { writeLocation } from "./router.js";
@@ -25,14 +26,17 @@ export function mountShell({ store, atlas, actions }) {
     const state = store.state;
     document.body.dataset.mode = state.mode;
     document.body.dataset.audience = state.ui.audienceView ? "on" : "off";
+    document.body.dataset.comparisonFocus = state.comparisonFocus.runId ? "on" : "off";
 
-    for (const mode of ["presentation", "network", "rl"]) {
+    for (const mode of ["presentation", "network", "rl", "compare"]) {
       const link = $(`mode-${mode}`);
       link.setAttribute("aria-current", state.mode === mode ? "page" : "false");
       $(`panel-${mode}`).hidden = state.mode !== mode;
     }
-    $("mode-surface-title").textContent = state.mode === "presentation"
-      ? "Presentation" : (state.mode === "network" ? "Network Information" : "RL Information");
+    $("mode-surface-title").textContent = ({
+      presentation: "Presentation", network: "Network Information",
+      rl: "RL Information", compare: "Comparative Run Results",
+    })[state.mode];
     $("moment-rail").hidden = state.mode !== "presentation";
     renderControlPanel(state, controlHandlers());
     renderAudienceExit(state);
@@ -45,16 +49,18 @@ export function mountShell({ store, atlas, actions }) {
     renderRecommendation(state);
     renderTimeband(state, { onSelectEvent: actions.selectEvent });
 
-    if (state.mode === "presentation") renderPresentation(state);
+    if (state.mode === "presentation") renderPresentation(state, comparisonHandlers());
     else if (state.mode === "network") renderNetwork(state, networkHandlers());
-    else renderRl(state, rlHandlers());
+    else if (state.mode === "rl") renderRl(state, rlHandlers());
+    else renderCompare(state, comparisonHandlers());
 
     renderExplain(state);
     renderButtons(state);
   }
 
   function renderStage(state) {
-    const live = state.source.kind === "live_session";
+    const storedFocus = Boolean(state.comparisonFocus.runId);
+    const live = state.source.kind === "live_session" && !storedFocus;
     const snapshot = live ? state.data.snapshot : referenceSnapshot(state.data.displayMap);
     const note = $("atlas-unavailable");
     const showTelemetry = live && Boolean(state.data.snapshot);
@@ -70,11 +76,13 @@ export function mountShell({ store, atlas, actions }) {
       note.textContent = "";
     } else {
       note.hidden = false;
-      note.textContent = state.source.kind === "recorded_replay"
+      note.textContent = storedFocus
+        ? "REFERENCE TOPOLOGY · STORED RUN HAS AGGREGATE INTERVAL DATA, NOT A PER-LINK SNAPSHOT"
+        : state.source.kind === "recorded_replay"
         ? "REFERENCE TOPOLOGY · NO RECORDED LINK TELEMETRY"
         : "REFERENCE TOPOLOGY · THIS EVIDENCE CARRIES NO LINK TELEMETRY";
     }
-    $("stage-title").textContent = state.mode === "network"
+    $("stage-title").textContent = storedFocus ? "Stored completed-run interval reference" : state.mode === "network"
       ? networkStageTitle(state.data.snapshot)
       : (state.mode === "presentation" ? "Current network moment" : "Network reference");
     $("atlas-disclaimer").textContent = `${state.data.displayMap?.layout_note || "Fixed engineering schematic · not geographic"} · Fictional scaled network, not a real operator.`;
@@ -146,6 +154,18 @@ export function mountShell({ store, atlas, actions }) {
       onOpenEvidence: actions.openEvidence,
       onOpenConclusion: () => { actions.openConclusion(); },
       onOpenQuestions: () => openDrawer("drawer-questions"),
+    };
+  }
+
+  function comparisonHandlers() {
+    return {
+      onAssign: actions.assignComparativeRun,
+      onClear: actions.clearComparativeRun,
+      onClearAll: actions.clearComparativeRuns,
+      onSwap: actions.swapComparativeRuns,
+      onSelectStep: actions.selectComparisonStep,
+      onRewardView: actions.setComparisonRewardView,
+      onResetView: actions.resetComparisonView,
     };
   }
 
@@ -235,9 +255,9 @@ export function mountShell({ store, atlas, actions }) {
 
   function onKeyDown(event) {
     if (isTypingTarget(event.target)) return;
-    if (event.altKey && ["1", "2", "3"].includes(event.key)) {
+    if (event.altKey && ["1", "2", "3", "4"].includes(event.key)) {
       event.preventDefault();
-      store.setMode({ "1": "presentation", "2": "network", "3": "rl" }[event.key]);
+      store.setMode({ "1": "presentation", "2": "network", "3": "rl", "4": "compare" }[event.key]);
       writeLocation(store.state);
       return;
     }

@@ -222,13 +222,14 @@ Manual UI checks that the suite cannot cover are in
 
 ---
 
-## Unified three-mode application
+## Unified application · Exp 2.1
 
-One build-free application now serves all four compatibility routes. It has
-exactly three primary modes: **Presentation**, **Network Information**, and
-**RL Information**. Guided Story is an eleven-beat workflow inside Presentation,
-not a fourth mode. Mode changes retain the selected source and object; source
-changes clear incompatible live state before loading the new record.
+One build-free application preserves all four earlier routes and adds `/compare`.
+It has four primary modes: **Presentation**, **Network Information**,
+**RL Information**, and **Comparative Run Results**. Guided Story remains an
+eleven-beat workflow inside Presentation, not a primary mode. Exp 2.1's fourth
+mode compares at most two completed live-demonstration runs in process memory;
+Full Reset clears both slots and no comparison record is written to disk.
 
 The persistent source stamp distinguishes **LIVE**, **RECORDED**,
 **DEVELOPMENT**, and **FINAL EVIDENCE**. Recorded traces never appear live,

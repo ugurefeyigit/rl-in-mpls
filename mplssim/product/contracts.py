@@ -166,6 +166,8 @@ PRIMARY_MODES: tuple[Mode, ...] = (
          "The MPLS traffic-engineering operations workspace."),
     Mode("rl", "RL Information", "Alt+3",
          "The inference pipeline and the governed evidence record."),
+    Mode("compare", "Comparative Run Results", "Alt+4",
+         "Two completed live-demonstration runs compared without promoting either to evidence."),
 )
 
 MODE_IDS: tuple[str, ...] = tuple(m.id for m in PRIMARY_MODES)
@@ -173,7 +175,7 @@ MODE_IDS: tuple[str, ...] = tuple(m.id for m in PRIMARY_MODES)
 
 @dataclass(frozen=True)
 class Workflow:
-    """A workflow lives *inside* a mode. It is never a fourth primary mode."""
+    """A workflow lives *inside* a mode. It is not a separate primary mode."""
 
     id: str
     mode: str
@@ -211,8 +213,9 @@ ROUTES: dict[str, RouteContext] = {
                              note="Preserves the Presentation Mode destination."),
     "/study": RouteContext("/study", "rl", SourceKind.FINAL_HOLDOUT_EVIDENCE,
                            rl_view="study",
-                           note="Preserves the sealed-study destination without "
-                                "creating a fourth primary mode."),
+                           note="Preserves the sealed-study destination."),
+    "/compare": RouteContext("/compare", "compare", SourceKind.LIVE_SESSION,
+                             note="Exp 2.1 completed-run comparison; process memory only."),
 }
 
 

@@ -199,6 +199,9 @@ class AlgoRunner:
             "components": decision["components"],
             "metrics": {k: v for k, v in interval.items() if k != "failed_links"},
             "n_failed_links": len(interval["failed_links"]),
+            "failed_links": list(interval["failed_links"]),
+            "moved_mbps": decision.get("moved_mbps"),
+            "decision": decision,
         })
         return decision
 
@@ -279,6 +282,8 @@ class AlgoRunner:
             "cumulative_reward": round(self.cumulative_reward, 2),
             "mask_valid_actions": int(mask.sum()),
             "done": terminated or truncated,
+            "moved_mbps": (float(pre_state.get("volume", 0.0))
+                           if action > 0 and info["decoded_action"].get("accepted") else 0.0),
             "explanation": self._explain(action, info, before_max_util, pre_state),
         }
         if probs is not None:
@@ -346,11 +351,14 @@ class AlgoRunner:
         eng = self.eng
         moves = self.controller.decide(eng)
         applied = []
+        moved_mbps = 0.0
         log_mark = len(eng.action_log)
         for d_idx, p_idx in moves:
             ok, reason = eng.apply_action(
                 d_idx, p_idx,
                 source=self.controller.name if self.controller.name != "random" else "rl")
+            if ok:
+                moved_mbps += float(eng.demand_volumes[d_idx])
             applied.append({"demand": eng.demands[d_idx].id, "path_idx": p_idx,
                             "accepted": ok, "reason": reason})
         flapped = any(a.is_flap for a in eng.action_log[log_mark:] if a.accepted)
@@ -368,6 +376,7 @@ class AlgoRunner:
             "components": {k: round(v, 4) for k, v in comps.items()},
             "cumulative_reward": round(self.cumulative_reward, 2),
             "done": eng.done,
+            "moved_mbps": moved_mbps,
             "explanation": (
                 f"{self.algorithm} moved {len(applied)} demand(s)." if applied
                 else f"{self.algorithm}: no reroute this interval."),
@@ -492,6 +501,8 @@ class AlgoRunnerV2:
             "te_reversals": int(interval["te_reversals"]),
             "frr_changes": int(interval["frr_changes"]),
             "recovery_restorations": int(interval["recovery_restorations"]),
+            "moved_mbps": (float(pre_state.get("volume", 0.0))
+                           if action > 0 and info["decoded_action"].get("accepted") else 0.0),
             "explanation": self._explain(action, info, before_max_util, pre_state),
         }
         if scores is not None:
@@ -511,6 +522,9 @@ class AlgoRunnerV2:
             "components": decision["components"],
             "metrics": {k: v for k, v in interval.items() if k != "failed_links"},
             "n_failed_links": len(interval["failed_links"]),
+            "failed_links": list(interval["failed_links"]),
+            "moved_mbps": decision.get("moved_mbps"),
+            "decision": decision,
         })
         self.last_decision = decision
         return decision
@@ -822,7 +836,9 @@ class SimSession:
         if not any(r.history for r in self.runners):
             return None
         return {
+            "session_id": self.id,
             "generation": self._generation,
+            "completed": bool(self.done),
             "environment": self.config.environment,
             "scenario": self.config.scenario,
             "seed": self.config.seed,
@@ -831,6 +847,10 @@ class SimSession:
             "runs": [{
                 "algorithm": r.algorithm,
                 "checkpoint_id": r.checkpoint_id,
+                "checkpoint_provenance": (r.provenance()
+                                          if callable(getattr(r, "provenance", None))
+                                          else None),
+                "output_semantics": r.output_semantics,
                 "cumulative_reward": round(float(r.cumulative_reward), 4),
                 "history": list(r.history),
             } for r in self.runners],

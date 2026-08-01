@@ -3,7 +3,7 @@
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
 │ frontend/ (static ES modules, no build step)                           │
-│   app.html     shared shell · fixed SVG topology · three modes         │
+│   app.html     shared shell · fixed SVG topology · four modes          │
 │   js/product/ typed source adapters · store guards · mode renderers    │
 │         ▲ REST (fetch)                  ▲ WebSocket /ws/telemetry      │
 ├─────────┴───────────────────────────────┴──────────────────────────────┤
@@ -85,11 +85,18 @@ the UI shows proposed vs accepted actions and rejection reasons. Evaluation
 can disable it (`--no-safety`) for the experimental-mode comparison.
 
 ### Shared shell and typed sources
-`frontend/app.html` serves `/`, `/advanced`, `/present`, and `/study`. Client
-routing selects one of three modes without creating separate products. The
+`frontend/app.html` serves `/`, `/advanced`, `/present`, `/study`, and `/compare`.
+Client routing selects one of four modes without creating separate products. The
 store guards live snapshots by session generation and monotonic sequence, and
 guards asynchronous reads by source revision so a late LIVE response cannot
 populate a RECORDED or evidence surface.
+
+Exp 2.1 extends the existing process-memory results boundary with exactly two
+completed-run slots. A/B records are normalized copies of recorded interval
+history, never model objects and never evidence. Full Reset clears both slots;
+server restart drops them by construction. The `/compare` renderer uses authored
+SVG plus table twins and deep-links only the aggregate interval fields that were
+actually retained.
 
 Four adapters preserve the data boundary: live V1 may execute and render link
 telemetry; recorded V2 is immutable and has no per-link utilization;

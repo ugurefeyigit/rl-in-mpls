@@ -63,6 +63,35 @@ const actions = {
   nextEvent: () => run(() => fastForward("next_event")),
   loadResults: () => run(loadResults),
   saveRun: () => run(saveRun),
+  assignComparativeRun: (slot, runId) => run(async () => {
+    const comparativeRuns = await liveApi.assignComparativeRun(slot, runId);
+    store.patch({ data: { comparativeRuns }, comparisonView: { selectedStep: null } });
+  }),
+  clearComparativeRun: (slot) => run(async () => {
+    const comparativeRuns = await liveApi.clearComparativeRun(slot);
+    store.patch({ data: { comparativeRuns }, comparisonView: { selectedStep: null },
+                  comparisonFocus: { runId: null, step: null } });
+  }),
+  clearComparativeRuns: () => run(async () => {
+    const comparativeRuns = await liveApi.clearComparativeRuns();
+    store.patch({ data: { comparativeRuns }, comparisonView: { selectedStep: null },
+                  comparisonFocus: { runId: null, step: null } });
+  }),
+  swapComparativeRuns: () => run(async () => {
+    const comparativeRuns = await liveApi.swapComparativeRuns();
+    store.patch({ data: { comparativeRuns } });
+  }),
+  selectComparisonStep: (selectedStep) =>
+    store.patch({ comparisonView: {
+      selectedStep: selectedStep === null ? null : Number(selectedStep),
+    } }),
+  setComparisonRewardView: (rewardView) =>
+    store.patch({ comparisonView: { rewardView } }),
+  resetComparisonView: () => {
+    store.patch({ comparisonView: { selectedStep: null, rewardView: "interval" },
+                  comparisonFocus: { runId: null, step: null } });
+    writeLocation(store.state, { replace: true });
+  },
   setSpeed: (speed) => run(() => liveApi.speed(speed).then(refreshLive)),
   toggleStory: () => run(async () => { await toggleStory(); scheduleStoryAuto(); }),
   toggleStoryAuto,
@@ -100,6 +129,8 @@ function applyRoute(route) {
     workflow: route.workflow,
     rlView: route.rlView,
     selection: { ...route.selection, eventId: route.eventId, actionId: null },
+    comparisonView: { selectedStep: route.step },
+    comparisonFocus: { runId: route.comparisonRunId, step: route.step },
   });
   store.patch({ story: {
     active: route.workflow === "guided-story",
@@ -196,6 +227,11 @@ async function loadResults() {
   store.patch({ data: { results } });
 }
 
+async function loadComparativeRuns() {
+  const comparativeRuns = await liveApi.comparativeRuns();
+  store.patch({ data: { comparativeRuns } });
+}
+
 async function saveRun() {
   const outcome = await liveApi.saveRun();
   store.patch({ savedRun: outcome });
@@ -210,14 +246,16 @@ async function refreshLiveOnce() {
   if (!hasActiveSession(status)) {
     store.patch({ data: { snapshot: null, previousSnapshot: null, decision: null,
       timeline: null, comparison: null, recommendation: null }, connection: "open" });
-    await loadResults();
+    await Promise.all([loadResults(), loadComparativeRuns()]);
     return;
   }
   // The displayed moment is one atomic read and stays one atomic read. Results
   // are a separate concern — retained runs and a pointer to the study — so they
   // are read afterwards and never batched into the moment.
   const moment = await liveApi.moment();
-  const results = await liveApi.results();
+  const [results, comparativeRuns] = await Promise.all([
+    liveApi.results(), liveApi.comparativeRuns(),
+  ]);
   const { snapshot, decision, timeline, comparison, advisor } = moment;
   if (!isCurrentSource(store.state, sourceRequest)) return;
   if (!store.acceptSnapshot(snapshot)) return;
@@ -241,7 +279,8 @@ async function refreshLiveOnce() {
     context: { comparator: snapshot.session.algorithms?.[1] || null },
     playback: { state: snapshot.session.state, speed: snapshot.session.speed,
       running: snapshot.session.running, awaitingDecision: snapshot.session.awaiting_decision },
-    data: { decision, timeline, comparison, schema, recommendation, advisor, results },
+    data: { decision, timeline, comparison, schema, recommendation, advisor, results,
+            comparativeRuns },
     connection: "open", error: null,
     story: { bookmarks: timeline.events || [] },
   });
@@ -336,6 +375,8 @@ async function fullReset() {
     data: { snapshot: null, previousSnapshot: null, decision: null, timeline: null,
             comparison: null, recommendation: null, counterfactual: null,
             advisor: null },
+    comparisonView: { selectedStep: null, rewardView: "interval" },
+    comparisonFocus: { runId: null, step: null },
     playback: { state: "idle", speed: store.state.setup.speed, running: false,
                 awaitingDecision: false },
     error: null,

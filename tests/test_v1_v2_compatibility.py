@@ -201,6 +201,20 @@ ALLOWED_NEW_FILES = {
     "final/OPERATING_THE_UI.md",
     "final/RUNNING_IT_AGAIN.md",
     "final/RELEASE_NOTES.md",
+    # Exp 2.1: a bounded, process-memory comparison of two completed live
+    # demonstrations. These modules add the fourth product route and authored
+    # SVG/table views over already-recorded interval history. They never train,
+    # evaluate, load holdout environments, persist A/B state, or write below a
+    # governed path. Existing shell files are touched only at their documented
+    # route/nav/store extension points.
+    "frontend/css/comparison-mode.css",
+    "frontend/js/product/comparison-picker.js",
+    "frontend/js/product/comparison-charts.js",
+    "frontend/js/product/comparison-context.js",
+    "frontend/js/product/modes/compare.js",
+    "tests/test_exp21_comparative_runs.py",
+    "docs/EXP_2_1_COMPARATIVE_RUN_RESULTS.md",
+    "docs/superpowers/plans/2026-08-01-exp-2-1-comparative-run-results.md",
 }
 ALLOWED_MODIFIED_FILES = {
     ".gitignore",

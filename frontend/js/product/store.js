@@ -68,7 +68,11 @@ const initial = {
     // Retained runs and the study pointer outlive one live session, so
     // `results` deliberately survives a source change and a full reset.
     results: null,
+    comparativeRuns: null,
   },
+
+  comparisonView: { selectedStep: null, rewardView: "interval" },
+  comparisonFocus: { runId: null, step: null },
 
   // The last delegated fast-forward and the last saved run, so the surface can
   // disclose both instead of leaving them in a response nobody reads.

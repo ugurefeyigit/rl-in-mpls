@@ -59,7 +59,7 @@
   :root { --shell-pad: var(--space-3); }
   .shell-head { display: grid; grid-template-columns: 1fr auto; }
   .modes { grid-column: 1 / -1; display: grid;
-           grid-template-columns: .9fr 1.35fr 1fr; overflow: visible; }
+           grid-template-columns: .85fr 1.15fr .9fr 1.35fr; overflow: visible; }
   .mode { min-width: 0; align-items: center; padding-inline: var(--space-1); text-align: center; }
   .mode__label { font-size: .6875rem; line-height: 1.2; white-space: normal; }
   .head-tools .tool:not(#btn-help) { display: none; }

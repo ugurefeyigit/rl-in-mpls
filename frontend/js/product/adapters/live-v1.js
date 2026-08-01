@@ -34,6 +34,28 @@ async function post(path, body) {
   return response.json();
 }
 
+async function put(path, body) {
+  const response = await fetch(path, {
+    method: "PUT", headers: JSON_HEADERS, body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw Object.assign(new Error(detail?.detail || response.statusText),
+      { status: response.status, detail: detail?.detail });
+  }
+  return response.json();
+}
+
+async function remove(path) {
+  const response = await fetch(path, { method: "DELETE" });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    throw Object.assign(new Error(detail?.detail || response.statusText),
+      { status: response.status, detail: detail?.detail });
+  }
+  return response.json();
+}
+
 export const kind = "live_session";
 
 /** Match the status schema returned by /api/simulation/status. */
@@ -68,6 +90,12 @@ export const api = {
   stop: () => post("/api/simulation/stop"),
   retainedRuns: () => get("/api/simulation/retained-runs"),
   results: () => get("/api/product/results"),
+  comparativeRuns: () => get("/api/product/comparative-runs"),
+  assignComparativeRun: (slot, runId) =>
+    put(`/api/product/comparative-runs/${slot}`, { run_id: runId }),
+  clearComparativeRun: (slot) => remove(`/api/product/comparative-runs/${slot}`),
+  clearComparativeRuns: () => remove("/api/product/comparative-runs"),
+  swapComparativeRuns: () => post("/api/product/comparative-runs/swap"),
   speed: (speed) => post("/api/simulation/speed", { speed }),
   // `delegate` is required by advisor execution: a fast-forward applies the
   // controller's own actions for a stretch without individual approval, and the

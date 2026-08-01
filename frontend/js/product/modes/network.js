@@ -10,10 +10,17 @@ import { count, mbps, metricDelta, metricValue, percent } from "../format.js";
 import { renderDemandRiskTable, riskSummary } from "../demand-risk-table.js";
 import { matchesDemand, renderFilterBar } from "../network-filters.js";
 import { crosses, renderInspector } from "../object-inspector.js";
+import { renderComparisonContext } from "../comparison-context.js";
 
 export function renderNetwork(state, handlers) {
   const snapshot = state.data.snapshot;
   const panel = $("panel-network");
+
+  if (state.comparisonFocus.runId) {
+    fill(panel, [renderComparisonContext(state, "network")]);
+    fill($("rail"), []);
+    return;
+  }
 
   if (state.source.kind !== "live_session") {
     fill(panel, [unavailable("Network Information",

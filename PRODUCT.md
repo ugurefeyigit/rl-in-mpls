@@ -42,7 +42,7 @@ The product combines a runnable MPLS-TE simulation, policy-level decision inspec
 
 ### Product modes
 
-The application has exactly three primary modes: Presentation, Network Information, and RL Information. Guided Story is a dedicated workflow within Presentation, not a fourth primary mode.
+Exp 2.1 has four primary modes: Presentation, Network Information, RL Information, and Comparative Run Results. Guided Story remains a dedicated workflow within Presentation, not a primary mode. Comparative Run Results operates only on two bounded, completed live-demonstration records in process memory; it does not change the four evidence/provenance source kinds or promote a demonstration to evidence.
 
 ### Network and simulation truth
 
@@ -110,7 +110,7 @@ The V2 study is complete and frozen. Product work must not train, tune, resume, 
 ## Product Principles
 
 1. **State before story.** A viewer can always tell whether the product is live, recorded, development, or final evidence before interpreting a number.
-2. **One network, three depths.** Presentation, Network Information, and RL Information preserve context and reveal more detail rather than becoming disconnected sites.
+2. **One network, four primary modes.** Presentation, Network Information, and RL Information preserve one live or recorded context at increasing depth. Comparative Run Results is the completed-run analytical surface and deep-links its selected interval back into those same Network and RL vocabularies without inventing a stored topology snapshot.
 3. **Topology as the shared object.** The network and the current decision remain the anchor; panels support them instead of competing with them.
 4. **Mechanism before marketing.** Show the real observation, action, transition, outcome, and evidence chain. Never substitute anthropomorphic or fabricated explanation.
 5. **Negative results remain visible.** The bandit's overall win, PPO's deceptive-local-optimum win, movement cost, limitations, and the lack of positive evidence for temporal planning travel together.

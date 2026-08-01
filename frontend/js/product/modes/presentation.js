@@ -10,11 +10,11 @@
 
 import { $, el, fill, unavailable } from "../dom.js";
 import { count, percent, signed } from "../format.js";
-import { renderComparisonLane } from "../comparison-lane.js";
+import { renderComparisonPicker } from "../comparison-picker.js";
 import { renderResults } from "../results.js";
 import { BEATS, beatAt, progressText, storyContext } from "../guided-story.js";
 
-export function renderPresentation(state) {
+export function renderPresentation(state, handlers) {
   renderMomentRail(state);
   const snapshot = state.data.snapshot;
   fill($("panel-presentation"), [
@@ -27,7 +27,7 @@ export function renderPresentation(state) {
     delegationNotice(state),
     el("section", { class: "panel" }, [
       el("h2", { class: "panel__title", text: "Comparison lane" }),
-      renderComparisonLane(state),
+      renderComparisonPicker(state, handlers, { compact: true }),
     ]),
     el("section", { class: "panel", id: "panel-results",
                     "aria-labelledby": "results-title" }, [

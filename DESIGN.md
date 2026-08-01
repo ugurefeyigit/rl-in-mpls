@@ -16,7 +16,7 @@
 
 This is a replacement visual world. Existing UI behavior, copy, data contracts, city registry, topology meaning, and evidence safeguards are source material; the current dark console, wallboard, and light study dossier are not authorities to blend together.
 
-The world must remain recognizable across Presentation, Network Information, and RL Information. Density changes by mode, but the shell, route notation, typography, status grammar, object selection, and motion language do not.
+The world must remain recognizable across Presentation, Network Information, RL Information, and Comparative Run Results. Density changes by mode, but the shell, route notation, typography, status grammar, object selection, and motion language do not.
 
 ## Direction exploration
 
@@ -158,6 +158,14 @@ Use the stable pre-redesign engineering schematic, display-scaled from the exist
 - Tables keep row identity fixed left and numeric measures right-aligned.
 - Every chart has a table or textual equivalent and states source, grain, unit, and stage.
 - Development and final evidence never share a plotting region.
+
+### Exp 2.1 completed-run comparison
+
+- A is always `state-comparison` with a solid rail and circle marker. B is always `state-selection` with a dashed rail and diamond marker. Neither identity color says which run won.
+- Semantic green, amber, red, and gray apply only after a metric's favorable direction is known, with outcome text in the same cell.
+- The shared interval cursor is the surface's signature interaction: selection aligns every graph and exposes the same keyboard and hover value.
+- Reward leads full width. Utilization, delivery, and SLA risk remain separate instruments; churn counts never share an axis with moved Mbps. The 12-component view diverges around a visible zero baseline.
+- Each SVG has visible axes, unit, legend, direct A/B labels, truthful unavailable state, and a table with identical values. At narrow widths every instrument stacks in narrative order.
 
 ## Motion
 

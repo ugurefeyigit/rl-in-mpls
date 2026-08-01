@@ -1,4 +1,4 @@
-"""Unified three-mode product-shell contracts.
+"""Unified four-mode product-shell contracts.
 
 These tests exercise the served routes and the complete static ES-module graph.
 They intentionally avoid copying scientific values into frontend fixtures.
@@ -21,11 +21,11 @@ FRONTEND = ROOT / "frontend"
 APP = FRONTEND / "app.html"
 
 SHELL_IDS = {
-    "mode-nav", "mode-presentation", "mode-network", "mode-rl",
+    "mode-nav", "mode-presentation", "mode-network", "mode-rl", "mode-compare",
     "provenance-stamp", "provenance-word", "context-ledger",
     "source-switch", "stage", "atlas-svg", "atlas-links", "atlas-nodes",
     "topology-list", "moment-rail", "timeband", "mode-surface",
-    "panel-presentation", "panel-network", "panel-rl", "control-panel",
+    "panel-presentation", "panel-network", "panel-rl", "panel-compare", "control-panel",
     "drawer-explain", "drawer-help", "drawer-conclusion", "live-region",
     "btn-session-primary", "btn-audience-exit",
 }
@@ -61,7 +61,7 @@ def client():
         yield test_client
 
 
-@pytest.mark.parametrize("path", ["/", "/advanced", "/present", "/study"])
+@pytest.mark.parametrize("path", ["/", "/advanced", "/present", "/study", "/compare"])
 def test_legacy_routes_serve_the_unified_dispatch_atlas(client: TestClient, path: str):
     response = client.get(path)
     assert response.status_code == 200
@@ -71,10 +71,10 @@ def test_legacy_routes_serve_the_unified_dispatch_atlas(client: TestClient, path
     assert not missing, f"{path} is missing unified-shell IDs: {missing}"
 
 
-def test_exactly_three_primary_modes_and_guided_story_is_nested():
+def test_exactly_four_primary_modes_and_guided_story_is_nested():
     html = APP.read_text(encoding="utf-8")
     modes = re.findall(r'class="mode"[^>]+data-mode="([^"]+)"', html)
-    assert modes == ["presentation", "network", "rl"]
+    assert modes == ["presentation", "network", "rl", "compare"]
     assert 'data-mode="guided-story"' not in html
     panel = (FRONTEND / "js" / "product" / "control-panel.js").read_text(
         encoding="utf-8")

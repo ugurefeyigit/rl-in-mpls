@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="/static/css/presentation-mode.css">
 <link rel="stylesheet" href="/static/css/network-mode.css">
 <link rel="stylesheet" href="/static/css/rl-mode.css">
+<link rel="stylesheet" href="/static/css/comparison-mode.css">
 <link rel="stylesheet" href="/static/css/responsive.css">
 </head>
 <body data-mode="network" data-source="live_session" data-audience="off">
@@ -72,6 +73,10 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <a class="mode" id="mode-rl" href="/study" data-mode="rl">
       <span class="mode__label">RL Information</span>
       <span class="mode__hint">Alt+3</span>
+    </a>
+    <a class="mode" id="mode-compare" href="/compare" data-mode="compare">
+      <span class="mode__label">Comparative Run Results</span>
+      <span class="mode__hint">Alt+4</span>
     </a>
   </nav>
 
@@ -209,6 +214,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <div class="surface-panel" id="panel-presentation" data-mode="presentation" hidden></div>
     <div class="surface-panel" id="panel-network" data-mode="network" hidden></div>
     <div class="surface-panel" id="panel-rl" data-mode="rl" hidden></div>
+    <div class="surface-panel" id="panel-compare" data-mode="compare" hidden></div>
   </section>
   </div>
 </main>
