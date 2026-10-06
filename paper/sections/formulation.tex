@@ -1,0 +1,95 @@
+\section{Problem Formulation}
+\label{sec:formulation}
+
+We state the decision problem exactly as implemented (Environment~V2 of the
+artifact, frozen at commit \texttt{dca533b}); Appendix~\ref{app:formulation}
+gives every constant.
+
+\paragraph{Network and demands.}
+The backbone is a directed graph $G=(V,E)$ with $|V|=18$ routers (four ingress
+and four egress provider-edge routers, eight core and two aggregation routers)
+and $|E|=64$ directed links (32 bidirectional links, \SIrange{250}{2000}{Mb/s}
+per direction; Fig.~\ref{fig:topology}). There are $|\mathcal D|=17$ demands in
+six classes, each with a priority $\pi_d\in\{1,\dots,6\}$, a delay and a loss
+SLA, and a \emph{protected} flag (voice and critical traffic). Each demand
+has a fixed, ordered set of $k=4$ candidate label-switched paths
+$\mathcal P_d=(p_{d,0},\dots,p_{d,3})$, computed once by Yen's algorithm under
+role, hop-count and propagation-delay constraints; $p_{d,0}$ is the
+administratively shortest valid path.
+
+\paragraph{Exogenous traffic.}
+The offered rate of demand $d$ is
+$v_d(t)=b_d\,f_{\kappa(d)}(h(t))\,m\,\eta_d(t)\,\mathrm{clip}(1+n_d(t),0.4,2)$:
+a class-specific diurnal profile, a scenario multiplier, scripted or randomized
+burst / flash-crowd factors and per-demand AR(1) noise
+($n_d(t)=0.9\,n_d(t-1)+\sigma_d\varepsilon$, one step per simulated minute).
+Link failures and recoveries are scripted or randomized events. Nothing in the
+exogenous process $\xi_t$ depends on routing, which makes comparisons between
+controllers exactly paired.
+
+\paragraph{State and transitions.}
+The controllable state $y_t$ holds, for each demand, its current candidate
+$x_d$, a disconnection flag, the remaining \emph{dwell} (hold-down) $\omega_d$,
+the previous traffic-engineering (TE) path and its age. The Markov state is
+$s_t=(y_t,\xi_t)$. Decisions are taken every \SI{5}{min}; an interval is
+simulated as five one-minute ticks in which a damped fixed-point solver
+computes carried flow, per-link loss
+($0$ below 90\,\% utilization, quadratic to 2\,\% at 100\,\%, $1-0.98/\rho$
+above), M/M/1-shaped queueing delay and per-demand SLA status. A link failure
+triggers immediate, free fast-reroute of the affected demands to their
+cheapest live candidate. Because $\xi$ is action-independent,
+\begin{equation}
+P(s_{t+1}\mid s_t,a_t)=P_\xi(\xi_{t+1}\mid\xi_t)\;
+\mathbb 1\!\left[y_{t+1}=\Psi(y_t,a_t,\xi_{t:t+1})\right],
+\label{eq:transition}
+\end{equation}
+so an action influences the future \emph{only} through the routing state,
+which persists until changed.
+
+\paragraph{Actions and masks.}
+$\mathcal A=\{0\}\cup\{(d,p)\}$, $|\mathcal A|=69$: action $0$ changes nothing;
+$(d,p)$ moves demand $d$ to candidate $p$. At most one TE change is made per
+interval. The legality mask is
+\begin{equation}
+m_t(d,p)=\mathbb 1[\text{$p_{d,p}$ is up}]\,\mathbb 1[p\neq x_d]\,
+\mathbb 1[\omega_d=0]\,
+\mathbb 1\!\left[\neg\mathrm{prot}_d\ \vee\ \max_{e\in p_{d,p}}\hat G_e/c_e\le1\right],
+\label{eq:mask}
+\end{equation}
+with $m_t(0)=1$, where $\hat G_e$ is the projected gross load on link $e$ after
+the move. An accepted move starts a three-interval dwell. The last factor
+couples demands: where one demand is routed changes which moves are legal for
+protected demands.
+
+\paragraph{Reward.}
+With $\mathrm{DR}$ the delivered ratio, PD/UD the priority-weighted protected
+and unprotected disconnected fractions, SEV a bounded priority-weighted SLA
+severity, $\rho^{\max}$ the worst link utilization and OV the overload ratio,
+\begin{equation}
+r_t=\underbrace{2\mathrm{DR}-30\mathrm{PD}-8\mathrm{UD}-6\mathrm{SEV}
+-2g(\rho^{\max})-6\mathrm{OV}}_{U_t}
++0.2\big(0.995\,\Phi_{t+1}-\Phi_t\big)-C^{\mathrm{TE}}_t-0.05\,\mathbb 1[\text{rejected}],
+\label{eq:reward}
+\end{equation}
+where $g(\rho)=\log(1+\max(0,(\rho-0.7)/0.3))$, $\Phi=\tanh(U/10)$ evaluated at
+interval boundaries, and the move cost
+$C^{\mathrm{TE}}=0.08+0.30\,\mathrm{vol}+0.12\,\mathrm{div}+0.30\,\mathrm{rev}$
+charges the moved traffic share, the edge-set divergence between old and new
+path and returns to the previous path within six intervals. The reward is the
+exact sum of twelve logged components.
+
+\paragraph{What kind of problem is this?}
+With respect to $s_t$ the problem is a finite-horizon MDP with state-dependent
+action sets: routes persist, moves lock a demand for three intervals, reversal
+costs depend on history, and the protected-class mask couples demands. The
+learners observe $o_t\in[0,1]^{604}$, which contains the routing state (current
+and previous path, dwell, path age), per-link utilization, per-demand health
+relative to SLA, and the projected bottleneck of every candidate move, but not
+the clock, the noise state or future events; with respect to $\xi$ the problem
+is therefore partially observable. A contextual bandit that regresses
+$\mathbb E[r_t\mid o_t,a_t]$ discards the persistence of a new configuration
+beyond the first interval, the opportunity cost of the dwell lock, future
+reversal costs and the effect on other demands' legal sets. It keeps the first
+interval of a move's effect because, in the frozen environment, a move carries
+traffic in the interval in which it is made. Section~\ref{sec:sequentiality}
+measures how much the discarded terms matter.

@@ -1,0 +1,931 @@
+% references.bib -- verified bibliography for the RL-in-MPLS paper
+% Every entry below was checked (title, authors, venue, year) against Crossref,
+% arXiv, the RFC Editor, the publisher/proceedings page, or a search result that
+% pointed at the official page (literature review, 2026-10-06).
+% Entries whose content could not be confirmed are NOT here; see
+% LITERATURE_MATRIX.md, section "Unverified".
+
+% =====================================================================
+% 1. Classical traffic engineering, MPLS, routing optimization
+% =====================================================================
+
+@misc{rfc2702,
+  author       = {Awduche, D. and Malcolm, J. and Agogbua, J. and O'Dell, M. and McManus, J.},
+  title        = {Requirements for Traffic Engineering Over {MPLS}},
+  howpublished = {RFC 2702},
+  publisher    = {RFC Editor},
+  year         = {1999},
+  month        = sep,
+  doi          = {10.17487/RFC2702},
+  url          = {https://www.rfc-editor.org/rfc/rfc2702}
+}
+
+@misc{rfc3209,
+  author       = {Awduche, D. and Berger, L. and Gan, D. and Li, T. and Srinivasan, V. and Swallow, G.},
+  title        = {{RSVP-TE}: Extensions to {RSVP} for {LSP} Tunnels},
+  howpublished = {RFC 3209},
+  publisher    = {RFC Editor},
+  year         = {2001},
+  month        = dec,
+  doi          = {10.17487/RFC3209},
+  url          = {https://www.rfc-editor.org/rfc/rfc3209}
+}
+
+@misc{rfc3272,
+  author       = {Awduche, D. and Chiu, A. and Elwalid, A. and Widjaja, I. and Xiao, X.},
+  title        = {Overview and Principles of {Internet} Traffic Engineering},
+  howpublished = {RFC 3272},
+  publisher    = {RFC Editor},
+  year         = {2002},
+  month        = may,
+  note         = {Obsoleted by RFC 9522},
+  doi          = {10.17487/RFC3272},
+  url          = {https://www.rfc-editor.org/rfc/rfc3272}
+}
+
+@misc{rfc9522,
+  author       = {Farrel, A.},
+  note         = {A. Farrel, Ed.},
+  title        = {Overview and Principles of {Internet} Traffic Engineering},
+  howpublished = {RFC 9522},
+  publisher    = {RFC Editor},
+  year         = {2024},
+  month        = jan,
+  doi          = {10.17487/RFC9522},
+  url          = {https://www.rfc-editor.org/rfc/rfc9522}
+}
+
+@misc{rfc8402,
+  author       = {Filsfils, C. and Previdi, S. and Ginsberg, L. and Decraene, B. and Litkowski, S. and Shakir, R.},
+  title        = {Segment Routing Architecture},
+  howpublished = {RFC 8402},
+  publisher    = {RFC Editor},
+  year         = {2018},
+  month        = jul,
+  doi          = {10.17487/RFC8402},
+  url          = {https://www.rfc-editor.org/rfc/rfc8402}
+}
+
+@misc{rfc3630,
+  author       = {Katz, D. and Kompella, K. and Yeung, D.},
+  title        = {Traffic Engineering ({TE}) Extensions to {OSPF} Version 2},
+  howpublished = {RFC 3630},
+  publisher    = {RFC Editor},
+  year         = {2003},
+  month        = oct,
+  doi          = {10.17487/RFC3630},
+  url          = {https://www.rfc-editor.org/rfc/rfc3630}
+}
+
+@misc{rfc4655,
+  author       = {Farrel, A. and Vasseur, J.-P. and Ash, J.},
+  title        = {A Path Computation Element ({PCE})-Based Architecture},
+  howpublished = {RFC 4655},
+  publisher    = {RFC Editor},
+  year         = {2006},
+  month        = aug,
+  doi          = {10.17487/RFC4655},
+  url          = {https://www.rfc-editor.org/rfc/rfc4655}
+}
+
+@article{awduche1999mpls,
+  author  = {Awduche, Daniel O.},
+  title   = {{MPLS} and Traffic Engineering in {IP} Networks},
+  journal = {IEEE Communications Magazine},
+  volume  = {37},
+  number  = {12},
+  pages   = {42--47},
+  year    = {1999},
+  doi     = {10.1109/35.809383}
+}
+
+@article{xiao2000mplste,
+  author  = {Xiao, Xipeng and Hannan, A. and Bailey, B. and Ni, L. M.},
+  title   = {Traffic Engineering with {MPLS} in the {Internet}},
+  journal = {IEEE Network},
+  volume  = {14},
+  number  = {2},
+  pages   = {28--33},
+  year    = {2000},
+  doi     = {10.1109/65.826369}
+}
+
+@article{wang2008overview,
+  author  = {Wang, Ning and Ho, Kin and Pavlou, George and Howarth, Michael},
+  title   = {An Overview of Routing Optimization for {Internet} Traffic Engineering},
+  journal = {IEEE Communications Surveys \& Tutorials},
+  volume  = {10},
+  number  = {1},
+  pages   = {36--56},
+  year    = {2008},
+  doi     = {10.1109/COMST.2008.4483669}
+}
+
+@inproceedings{fortz2000ospf,
+  author    = {Fortz, Bernard and Thorup, Mikkel},
+  title     = {Internet Traffic Engineering by Optimizing {OSPF} Weights},
+  booktitle = {Proceedings of IEEE INFOCOM 2000},
+  volume    = {2},
+  pages     = {519--528},
+  year      = {2000},
+  doi       = {10.1109/INFCOM.2000.832225}
+}
+
+@inproceedings{applegate2003oblivious,
+  author    = {Applegate, David and Cohen, Edith},
+  title     = {Making Intra-Domain Routing Robust to Changing and Uncertain Traffic Demands},
+  booktitle = {Proceedings of ACM SIGCOMM 2003},
+  pages     = {313--324},
+  year      = {2003},
+  doi       = {10.1145/863955.863991}
+}
+
+@inproceedings{kandula2005texcp,
+  author    = {Kandula, Srikanth and Katabi, Dina and Davie, Bruce and Charny, Anna},
+  title     = {Walking the Tightrope: Responsive Yet Stable Traffic Engineering},
+  booktitle = {Proceedings of ACM SIGCOMM 2005},
+  pages     = {253--264},
+  year      = {2005},
+  doi       = {10.1145/1080091.1080122}
+}
+
+@inproceedings{elwalid2001mate,
+  author    = {Elwalid, Anwar and Jin, Cheng and Low, Steven and Widjaja, Indra},
+  title     = {{MATE}: {MPLS} Adaptive Traffic Engineering},
+  booktitle = {Proceedings of IEEE INFOCOM 2001},
+  volume    = {3},
+  pages     = {1300--1309},
+  year      = {2001},
+  doi       = {10.1109/INFCOM.2001.916625}
+}
+
+@inproceedings{wang2006cope,
+  author    = {Wang, Hao and Xie, Haiyong and Qiu, Lili and Yang, Yang Richard and Zhang, Yin and Greenberg, Albert},
+  title     = {{COPE}: Traffic Engineering in Dynamic Networks},
+  booktitle = {Proceedings of ACM SIGCOMM 2006},
+  pages     = {99--110},
+  year      = {2006},
+  doi       = {10.1145/1159913.1159926}
+}
+
+@inproceedings{jain2013b4,
+  author    = {Jain, Sushant and Kumar, Alok and Mandal, Subhasree and Ong, Joon and Poutievski, Leon and Singh, Arjun and Venkata, Subbaiah and Wanderer, Jim and Zhou, Junlan and Zhu, Min and Zolla, Jon and H{\"o}lzle, Urs and Stuart, Stephen and Vahdat, Amin},
+  title     = {{B4}: Experience with a Globally-Deployed Software Defined {WAN}},
+  booktitle = {Proceedings of ACM SIGCOMM 2013},
+  pages     = {3--14},
+  year      = {2013},
+  doi       = {10.1145/2486001.2486019}
+}
+
+@inproceedings{hong2013swan,
+  author    = {Hong, Chi-Yao and Kandula, Srikanth and Mahajan, Ratul and Zhang, Ming and Gill, Vijay and Nanduri, Mohan and Wattenhofer, Roger},
+  title     = {Achieving High Utilization with Software-Driven {WAN}},
+  booktitle = {Proceedings of ACM SIGCOMM 2013},
+  pages     = {15--26},
+  year      = {2013},
+  doi       = {10.1145/2486001.2486012}
+}
+
+@article{yen1971kshortest,
+  author  = {Yen, Jin Y.},
+  title   = {Finding the $K$ Shortest Loopless Paths in a Network},
+  journal = {Management Science},
+  volume  = {17},
+  number  = {11},
+  pages   = {712--716},
+  year    = {1971},
+  doi     = {10.1287/mnsc.17.11.712}
+}
+
+@book{ahuja1993networkflows,
+  author    = {Ahuja, Ravindra K. and Magnanti, Thomas L. and Orlin, James B.},
+  title     = {Network Flows: Theory, Algorithms, and Applications},
+  publisher = {Prentice Hall},
+  address   = {Englewood Cliffs, NJ},
+  year      = {1993}
+}
+
+@inproceedings{kumar2018smore,
+  author    = {Kumar, Praveen and Yuan, Yang and Yu, Chris and Foster, Nate and Kleinberg, Robert and Lapukhov, Petr and Lim, Chiun Lin and Soul{\'e}, Robert},
+  title     = {Semi-Oblivious Traffic Engineering: The Road Not Taken},
+  booktitle = {Proceedings of the 15th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  year      = {2018},
+  url       = {https://www.usenix.org/conference/nsdi18/presentation/kumar}
+}
+
+@inproceedings{hartert2015defo,
+  author    = {Hartert, Renaud and Vissicchio, Stefano and Schaus, Pierre and Bonaventure, Olivier and Filsfils, Clarence and Telkamp, Thomas and Francois, Pierre},
+  title     = {A Declarative and Expressive Approach to Control Forwarding Paths in Carrier-Grade Networks},
+  booktitle = {Proceedings of ACM SIGCOMM 2015},
+  pages     = {15--28},
+  year      = {2015},
+  doi       = {10.1145/2785956.2787495}
+}
+
+@inproceedings{liu2014ffc,
+  author    = {Liu, Hongqiang Harry and Kandula, Srikanth and Mahajan, Ratul and Zhang, Ming and Gelernter, David},
+  title     = {Traffic Engineering with Forward Fault Correction},
+  booktitle = {Proceedings of ACM SIGCOMM 2014},
+  pages     = {527--538},
+  year      = {2014},
+  doi       = {10.1145/2619239.2626314}
+}
+
+@inproceedings{bogle2019teavar,
+  author    = {Bogle, Jeremy and Bhatia, Nikhil and Ghobadi, Manya and Menache, Ishai and Bj{\o}rner, Nikolaj and Valadarsky, Asaf and Schapira, Michael},
+  title     = {{TEAVAR}: Striking the Right Utilization-Availability Balance in {WAN} Traffic Engineering},
+  booktitle = {Proceedings of ACM SIGCOMM 2019},
+  pages     = {29--43},
+  year      = {2019},
+  doi       = {10.1145/3341302.3342069}
+}
+
+@inproceedings{abuzaid2021ncflow,
+  author    = {Abuzaid, Firas and Kandula, Srikanth and Arzani, Behnaz and Menache, Ishai and Zaharia, Matei and Bailis, Peter},
+  title     = {Contracting Wide-area Network Topologies to Solve Flow Problems Quickly},
+  booktitle = {Proceedings of the 18th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  year      = {2021},
+  url       = {https://www.usenix.org/conference/nsdi21/presentation/abuzaid}
+}
+
+% =====================================================================
+% 2. RL / DRL / learning for routing and TE
+% =====================================================================
+
+@inproceedings{boyan1993qrouting,
+  author    = {Boyan, Justin A. and Littman, Michael L.},
+  title     = {Packet Routing in Dynamically Changing Networks: A Reinforcement Learning Approach},
+  booktitle = {Advances in Neural Information Processing Systems 6 (NIPS 1993)},
+  pages     = {671--678},
+  year      = {1993},
+  url       = {https://papers.nips.cc/paper_files/paper/1993/hash/4ea06fbc83cdd0a06020c35d50e1e89a-Abstract.html}
+}
+
+@inproceedings{valadarsky2017learning,
+  author    = {Valadarsky, Asaf and Schapira, Michael and Shahaf, Dafna and Tamar, Aviv},
+  title     = {Learning to Route},
+  booktitle = {Proceedings of the 16th ACM Workshop on Hot Topics in Networks (HotNets-XVI)},
+  pages     = {185--191},
+  year      = {2017},
+  doi       = {10.1145/3152434.3152441},
+  note      = {Extended version: arXiv:1708.03074, ``A Machine Learning Approach to Routing''}
+}
+
+@misc{stampa2017drl,
+  author        = {Stampa, Giorgio and Arias, Marta and Sanchez-Charles, David and Muntes-Mulero, Victor and Cabellos, Albert},
+  title         = {A Deep-Reinforcement Learning Approach for Software-Defined Networking Routing Optimization},
+  year          = {2017},
+  eprint        = {1709.07080},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.NI},
+  url           = {https://arxiv.org/abs/1709.07080}
+}
+
+@inproceedings{xu2018drlte,
+  author    = {Xu, Zhiyuan and Tang, Jian and Meng, Jingsong and Zhang, Weiyi and Wang, Yanzhi and Liu, Chi Harold and Yang, Dejun},
+  title     = {Experience-driven Networking: A Deep Reinforcement Learning based Approach},
+  booktitle = {Proceedings of IEEE INFOCOM 2018},
+  year      = {2018},
+  doi       = {10.1109/INFOCOM.2018.8485853}
+}
+
+@article{zhang2020cfrrl,
+  author  = {Zhang, Junjie and Ye, Minghao and Guo, Zehua and Yen, Chen-Yu and Chao, H. Jonathan},
+  title   = {{CFR-RL}: Traffic Engineering With Reinforcement Learning in {SDN}},
+  journal = {IEEE Journal on Selected Areas in Communications},
+  volume  = {38},
+  number  = {10},
+  pages   = {2249--2259},
+  year    = {2020},
+  doi     = {10.1109/JSAC.2020.3000371}
+}
+
+@inproceedings{rusek2019routenet,
+  author    = {Rusek, Krzysztof and Su{\'a}rez-Varela, Jos{\'e} and Mestres, Albert and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title     = {Unveiling the Potential of Graph Neural Networks for Network Modeling and Optimization in {SDN}},
+  booktitle = {Proceedings of the 2019 ACM Symposium on SDN Research (SOSR)},
+  pages     = {140--151},
+  year      = {2019},
+  doi       = {10.1145/3314148.3314357}
+}
+
+@article{rusek2020routenet,
+  author  = {Rusek, Krzysztof and Su{\'a}rez-Varela, Jos{\'e} and Almasan, Paul and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title   = {{RouteNet}: Leveraging Graph Neural Networks for Network Modeling and Optimization in {SDN}},
+  journal = {IEEE Journal on Selected Areas in Communications},
+  volume  = {38},
+  number  = {10},
+  pages   = {2260--2270},
+  year    = {2020},
+  doi     = {10.1109/JSAC.2020.3000405}
+}
+
+@article{almasan2022drlgnn,
+  author  = {Almasan, Paul and Su{\'a}rez-Varela, Jos{\'e} and Rusek, Krzysztof and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title   = {Deep Reinforcement Learning Meets Graph Neural Networks: Exploring a Routing Optimization Use Case},
+  journal = {Computer Communications},
+  volume  = {196},
+  pages   = {184--194},
+  year    = {2022},
+  doi     = {10.1016/j.comcom.2022.09.029},
+  note    = {arXiv:1910.07421}
+}
+
+@article{almasan2022enero,
+  author  = {Almasan, Paul and Xiao, Shihan and Cheng, Xiangle and Shi, Xiang and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title   = {{ENERO}: Efficient Real-Time {WAN} Routing Optimization with Deep Reinforcement Learning},
+  journal = {Computer Networks},
+  volume  = {214},
+  pages   = {109166},
+  year    = {2022},
+  doi     = {10.1016/j.comnet.2022.109166}
+}
+
+@inproceedings{bernardez2021ml,
+  author    = {Bern{\'a}rdez, Guillermo and Su{\'a}rez-Varela, Jos{\'e} and L{\'o}pez, Albert and Wu, Bo and Xiao, Shihan and Cheng, Xiangle and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title     = {Is Machine Learning Ready for Traffic Engineering Optimization?},
+  booktitle = {Proceedings of the 29th IEEE International Conference on Network Protocols (ICNP)},
+  year      = {2021},
+  doi       = {10.1109/ICNP52444.2021.9651930}
+}
+
+@article{bernardez2023magnneto,
+  author  = {Bern{\'a}rdez, Guillermo and Su{\'a}rez-Varela, Jos{\'e} and L{\'o}pez, Albert and Shi, Xiang and Xiao, Shihan and Cheng, Xiangle and Barlet-Ros, Pere and Cabellos-Aparicio, Albert},
+  title   = {{MAGNNETO}: A Graph Neural Network-Based Multi-Agent System for Traffic Engineering},
+  journal = {IEEE Transactions on Cognitive Communications and Networking},
+  volume  = {9},
+  number  = {2},
+  pages   = {494--506},
+  year    = {2023},
+  doi     = {10.1109/TCCN.2023.3235719}
+}
+
+@inproceedings{hope2021gddr,
+  author    = {Hope, Oliver and Yoneki, Eiko},
+  title     = {{GDDR}: {GNN}-based Data-Driven Routing},
+  booktitle = {Proceedings of the 41st IEEE International Conference on Distributed Computing Systems (ICDCS)},
+  pages     = {517--527},
+  year      = {2021},
+  doi       = {10.1109/ICDCS51616.2021.00056}
+}
+
+@inproceedings{geng2020marlte,
+  author    = {Geng, Nan and Lan, Tian and Aggarwal, Vaneet and Yang, Yuan and Xu, Mingwei},
+  title     = {A Multi-agent Reinforcement Learning Perspective on Distributed Traffic Engineering},
+  booktitle = {Proceedings of the 28th IEEE International Conference on Network Protocols (ICNP)},
+  pages     = {1--11},
+  year      = {2020},
+  doi       = {10.1109/ICNP49622.2020.9259413}
+}
+
+@inproceedings{xu2023teal,
+  author    = {Xu, Zhiying and Yan, Francis Y. and Singh, Rachee and Chiu, Justin T. and Rush, Alexander M. and Yu, Minlan},
+  title     = {Teal: Learning-Accelerated Optimization of {WAN} Traffic Engineering},
+  booktitle = {Proceedings of ACM SIGCOMM 2023},
+  pages     = {378--393},
+  year      = {2023},
+  doi       = {10.1145/3603269.3604857}
+}
+
+@inproceedings{perry2023dote,
+  author    = {Perry, Yarin and Vieira Frujeri, Felipe and Hoch, Chaim and Kandula, Srikanth and Menache, Ishai and Schapira, Michael and Tamar, Aviv},
+  title     = {{DOTE}: Rethinking (Predictive) {WAN} Traffic Engineering},
+  booktitle = {Proceedings of the 20th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  year      = {2023},
+  url       = {https://www.usenix.org/conference/nsdi23/presentation/perry},
+  note      = {Best Paper Award. arXiv:2303.00735}
+}
+
+@inproceedings{liu2024figret,
+  author    = {Liu, Ximeng and Zhao, Shizhen and Cui, Yong and Wang, Xinbing},
+  title     = {{FIGRET}: Fine-Grained Robustness-Enhanced Traffic Engineering},
+  booktitle = {Proceedings of ACM SIGCOMM 2024},
+  pages     = {117--135},
+  year      = {2024},
+  doi       = {10.1145/3651890.3672258}
+}
+
+@inproceedings{gui2024redte,
+  author    = {Gui, Fei and Wang, Songtao and Li, Dan and Chen, Li and Gao, Kaihui and Min, Congcong and Wang, Yi},
+  title     = {{RedTE}: Mitigating Subsecond Traffic Bursts with Real-time and Distributed Traffic Engineering},
+  booktitle = {Proceedings of ACM SIGCOMM 2024},
+  pages     = {71--85},
+  year      = {2024},
+  doi       = {10.1145/3651890.3672231}
+}
+
+@inproceedings{alqiam2024harp,
+  author    = {AlQiam, Abd AlRhman and Yao, Yuanjun and Wang, Zhaodong and Ahuja, Satyajeet Singh and Zhang, Ying and Rao, Sanjay G. and Ribeiro, Bruno and Tawarmalani, Mohit},
+  title     = {Transferable Neural {WAN} {TE} for Changing Topologies},
+  booktitle = {Proceedings of ACM SIGCOMM 2024},
+  pages     = {86--102},
+  year      = {2024},
+  doi       = {10.1145/3651890.3672237}
+}
+
+@article{pei2024efficientte,
+  author  = {Pei, Xinglong and Sun, Penghao and Hu, Yuxiang and Li, Dan and Chen, Bo and Tian, Le},
+  title   = {Enabling Efficient Routing for Traffic Engineering in {SDN} with Deep Reinforcement Learning},
+  journal = {Computer Networks},
+  volume  = {241},
+  pages   = {110220},
+  year    = {2024},
+  doi     = {10.1016/j.comnet.2024.110220}
+}
+
+@article{boltres2024packerl,
+  author  = {Boltres, Andreas and Freymuth, Niklas and Jahnke, Patrick and Karl, Holger and Neumann, Gerhard},
+  title   = {Learning Sub-Second Routing Optimization in Computer Networks requires Packet-Level Dynamics},
+  journal = {Transactions on Machine Learning Research},
+  year    = {2024},
+  note    = {arXiv:2410.10377},
+  url     = {https://arxiv.org/abs/2410.10377}
+}
+
+@article{luong2019survey,
+  author  = {Luong, Nguyen Cong and Hoang, Dinh Thai and Gong, Shimin and Niyato, Dusit and Wang, Ping and Liang, Ying-Chang and Kim, Dong In},
+  title   = {Applications of Deep Reinforcement Learning in Communications and Networking: A Survey},
+  journal = {IEEE Communications Surveys \& Tutorials},
+  volume  = {21},
+  number  = {4},
+  pages   = {3133--3174},
+  year    = {2019},
+  doi     = {10.1109/COMST.2019.2916583}
+}
+
+@inproceedings{mao2019park,
+  author    = {Mao, Hongzi and Negi, Parimarjan and Narayan, Akshay and Wang, Hanrui and Yang, Jiacheng and Wang, Haonan and Marcus, Ryan and Addanki, Ravichandra and Khani Shirkoohi, Mehrdad and He, Songtao and Nathan, Vikram and Cangialosi, Frank and Venkatakrishnan, Shaileshh and Weng, Wei-Hung and Han, Song and Kraska, Tim and Alizadeh, Mohammad},
+  title     = {Park: An Open Platform for Learning-Augmented Computer Systems},
+  booktitle = {Advances in Neural Information Processing Systems 32 (NeurIPS 2019)},
+  year      = {2019},
+  url       = {https://proceedings.neurips.cc/paper/2019/hash/f69e505b08403ad2298b9f262659929a-Abstract.html}
+}
+
+@inproceedings{mao2017pensieve,
+  author    = {Mao, Hongzi and Netravali, Ravi and Alizadeh, Mohammad},
+  title     = {Neural Adaptive Video Streaming with {Pensieve}},
+  booktitle = {Proceedings of ACM SIGCOMM 2017},
+  pages     = {197--210},
+  year      = {2017},
+  doi       = {10.1145/3098822.3098843}
+}
+
+% =====================================================================
+% 3. Critiques, evaluation methodology, "simple baselines win"
+% =====================================================================
+
+@inproceedings{henderson2018matters,
+  author    = {Henderson, Peter and Islam, Riashat and Bachman, Philip and Pineau, Joelle and Precup, Doina and Meger, David},
+  title     = {Deep Reinforcement Learning That Matters},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {32},
+  number    = {1},
+  year      = {2018},
+  doi       = {10.1609/aaai.v32i1.11694}
+}
+
+@inproceedings{engstrom2020implementation,
+  author    = {Engstrom, Logan and Ilyas, Andrew and Santurkar, Shibani and Tsipras, Dimitris and Janoos, Firdaus and Rudolph, Larry and Madry, Aleksander},
+  title     = {Implementation Matters in Deep {RL}: A Case Study on {PPO} and {TRPO}},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2020},
+  url       = {https://openreview.net/forum?id=r1etN1rtPB}
+}
+
+@inproceedings{andrychowicz2021matters,
+  author    = {Andrychowicz, Marcin and Raichuk, Anton and Sta{\'n}czyk, Piotr and Orsini, Manu and Girgin, Sertan and Marinier, Rapha{\"e}l and Hussenot, L{\'e}onard and Geist, Matthieu and Pietquin, Olivier and Michalski, Marcin and Gelly, Sylvain and Bachem, Olivier},
+  title     = {What Matters for On-Policy Deep Actor-Critic Methods? {A} Large-Scale Study},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2021},
+  url       = {https://openreview.net/forum?id=nIAxjsniDzg}
+}
+
+@inproceedings{agarwal2021precipice,
+  author    = {Agarwal, Rishabh and Schwarzer, Max and Castro, Pablo Samuel and Courville, Aaron and Bellemare, Marc G.},
+  title     = {Deep Reinforcement Learning at the Edge of the Statistical Precipice},
+  booktitle = {Advances in Neural Information Processing Systems 34 (NeurIPS 2021)},
+  year      = {2021},
+  note      = {Outstanding Paper Award. arXiv:2108.13264},
+  url       = {https://arxiv.org/abs/2108.13264}
+}
+
+@article{patterson2024empirical,
+  author  = {Patterson, Andrew and Neumann, Samuel and White, Martha and White, Adam},
+  title   = {Empirical Design in Reinforcement Learning},
+  journal = {Journal of Machine Learning Research},
+  volume  = {25},
+  number  = {318},
+  pages   = {1--63},
+  year    = {2024},
+  url     = {https://www.jmlr.org/papers/v25/23-0183.html}
+}
+
+@inproceedings{mania2018random,
+  author    = {Mania, Horia and Guy, Aurelia and Recht, Benjamin},
+  title     = {Simple Random Search of Static Linear Policies is Competitive for Reinforcement Learning},
+  booktitle = {Advances in Neural Information Processing Systems 31 (NeurIPS 2018)},
+  year      = {2018},
+  url       = {https://papers.nips.cc/paper/2018/hash/7634ea65a4e6d9041cfd3f7de18e334a-Abstract.html}
+}
+
+@misc{huang2022ppo37,
+  author       = {Huang, S. and Dossa, R. and Raffin, A. and Kanervisto, A. and Wang, W.},
+  title        = {The 37 Implementation Details of Proximal Policy Optimization},
+  howpublished = {ICLR Blog Track},
+  year         = {2022},
+  url          = {https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/}
+}
+
+@misc{dulacarnold2019challenges,
+  author        = {Dulac-Arnold, Gabriel and Mankowitz, Daniel and Hester, Todd},
+  title         = {Challenges of Real-World Reinforcement Learning},
+  year          = {2019},
+  eprint        = {1904.12901},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1904.12901}
+}
+
+@inproceedings{yan2020puffer,
+  author    = {Yan, Francis Y. and Ayers, Hudson and Zhu, Chenzhi and Fouladi, Sadjad and Hong, James and Zhang, Keyi and Levis, Philip and Winstein, Keith},
+  title     = {Learning in situ: a Randomized Experiment in Video Streaming},
+  booktitle = {Proceedings of the 17th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
+  pages     = {495--511},
+  year      = {2020},
+  url       = {https://www.usenix.org/conference/nsdi20/presentation/yan}
+}
+
+@inproceedings{dethise2019blackbox,
+  author    = {Dethise, Arnaud and Canini, Marco and Kandula, Srikanth},
+  title     = {Cracking Open the Black Box: What Observations Can Tell Us About Reinforcement Learning Agents},
+  booktitle = {Proceedings of the 2019 Workshop on Network Meets AI \& ML (NetAI)},
+  pages     = {29--36},
+  year      = {2019},
+  doi       = {10.1145/3341216.3342210}
+}
+
+@article{doherty2025hype,
+  author  = {Doherty, Michael and Matzner, Robin and Sadeghi, Rasoul and Bayvel, Polina and Beghelli, Alejandra},
+  title   = {Reinforcement Learning for Dynamic Resource Allocation in Optical Networks: Hype or Hope?},
+  journal = {Journal of Optical Communications and Networking},
+  volume  = {17},
+  number  = {9},
+  pages   = {D1--D17},
+  year    = {2025},
+  doi     = {10.1364/JOCN.559990},
+  note    = {arXiv:2502.12804}
+}
+
+% =====================================================================
+% 4. Contextual / combinatorial bandits (incl. routing applications)
+% =====================================================================
+
+@inproceedings{li2010linucb,
+  author    = {Li, Lihong and Chu, Wei and Langford, John and Schapire, Robert E.},
+  title     = {A Contextual-Bandit Approach to Personalized News Article Recommendation},
+  booktitle = {Proceedings of the 19th International Conference on World Wide Web (WWW)},
+  year      = {2010},
+  doi       = {10.1145/1772690.1772758}
+}
+
+@inproceedings{langford2007epoch,
+  author    = {Langford, John and Zhang, Tong},
+  title     = {The Epoch-Greedy Algorithm for Multi-armed Bandits with Side Information},
+  booktitle = {Advances in Neural Information Processing Systems 20 (NIPS 2007)},
+  year      = {2007},
+  url       = {https://proceedings.neurips.cc/paper/2007/hash/4b04a686b0ad13dce35fa99fa4161c65-Abstract.html}
+}
+
+@inproceedings{agarwal2014taming,
+  author    = {Agarwal, Alekh and Hsu, Daniel and Kale, Satyen and Langford, John and Li, Lihong and Schapire, Robert E.},
+  title     = {Taming the Monster: A Fast and Simple Algorithm for Contextual Bandits},
+  booktitle = {Proceedings of the 31st International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {32},
+  pages     = {1638--1646},
+  year      = {2014}
+}
+
+@inproceedings{riquelme2018showdown,
+  author    = {Riquelme, Carlos and Tucker, George and Snoek, Jasper},
+  title     = {Deep {Bayesian} Bandits Showdown: An Empirical Comparison of {Bayesian} Deep Networks for {Thompson} Sampling},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2018},
+  url       = {https://arxiv.org/abs/1802.09127}
+}
+
+@inproceedings{zhou2020neuralucb,
+  author    = {Zhou, Dongruo and Li, Lihong and Gu, Quanquan},
+  title     = {Neural Contextual Bandits with {UCB}-based Exploration},
+  booktitle = {Proceedings of the 37th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {119},
+  year      = {2020},
+  url       = {https://proceedings.mlr.press/v119/zhou20a.html}
+}
+
+@inproceedings{foster2020beyond,
+  author    = {Foster, Dylan J. and Rakhlin, Alexander},
+  title     = {Beyond {UCB}: Optimal and Efficient Contextual Bandits with Regression Oracles},
+  booktitle = {Proceedings of the 37th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {119},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2002.04926}
+}
+
+@article{bietti2021bakeoff,
+  author  = {Bietti, Alberto and Agarwal, Alekh and Langford, John},
+  title   = {A Contextual Bandit Bake-off},
+  journal = {Journal of Machine Learning Research},
+  volume  = {22},
+  number  = {133},
+  pages   = {1--49},
+  year    = {2021},
+  url     = {https://jmlr.org/papers/v22/18-863.html}
+}
+
+@book{lattimore2020bandit,
+  author    = {Lattimore, Tor and Szepesv{\'a}ri, Csaba},
+  title     = {Bandit Algorithms},
+  publisher = {Cambridge University Press},
+  year      = {2020},
+  doi       = {10.1017/9781108571401}
+}
+
+@inproceedings{chen2013cmab,
+  author    = {Chen, Wei and Wang, Yajun and Yuan, Yang},
+  title     = {Combinatorial Multi-Armed Bandit: General Framework and Applications},
+  booktitle = {Proceedings of the 30th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {28},
+  number    = {1},
+  pages     = {151--159},
+  year      = {2013},
+  url       = {https://proceedings.mlr.press/v28/chen13a.html}
+}
+
+@inproceedings{kveton2015tight,
+  author    = {Kveton, Branislav and Wen, Zheng and Ashkan, Azin and Szepesv{\'a}ri, Csaba},
+  title     = {Tight Regret Bounds for Stochastic Combinatorial Semi-Bandits},
+  booktitle = {Proceedings of the 18th International Conference on Artificial Intelligence and Statistics (AISTATS)},
+  year      = {2015},
+  url       = {https://arxiv.org/abs/1410.0949}
+}
+
+@article{gyorgy2007online,
+  author  = {Gy{\"o}rgy, Andr{\'a}s and Linder, Tam{\'a}s and Lugosi, G{\'a}bor and Ottucs{\'a}k, Gy{\"o}rgy},
+  title   = {The On-Line Shortest Path Problem Under Partial Monitoring},
+  journal = {Journal of Machine Learning Research},
+  volume  = {8},
+  pages   = {2369--2403},
+  year    = {2007},
+  url     = {https://jmlr.org/papers/v8/gyoergy07a.html}
+}
+
+@article{talebi2018sosp,
+  author  = {Talebi, Mohammad Sadegh and Zou, Zhenhua and Combes, Richard and Proutiere, Alexandre and Johansson, Mikael},
+  title   = {Stochastic Online Shortest Path Routing: The Value of Feedback},
+  journal = {IEEE Transactions on Automatic Control},
+  volume  = {63},
+  number  = {4},
+  pages   = {915--930},
+  year    = {2018},
+  doi     = {10.1109/TAC.2017.2747409}
+}
+
+@inproceedings{awasthi2022congested,
+  author    = {Awasthi, Pranjal and Bhatia, Kush and Gollapudi, Sreenivas and Kollias, Kostas},
+  title     = {Congested Bandits: Optimal Routing via Short-term Resets},
+  booktitle = {Proceedings of the 39th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {162},
+  pages     = {1078--1100},
+  year      = {2022},
+  url       = {https://proceedings.mlr.press/v162/awasthi22a.html}
+}
+
+@article{santana2023bayesmab,
+  author  = {Santana, Pedro and Moura, Jos{\'e}},
+  title   = {A {Bayesian} Multi-Armed Bandit Algorithm for Dynamic End-to-End Routing in {SDN}-Based Networks with Piecewise-Stationary Rewards},
+  journal = {Algorithms},
+  volume  = {16},
+  number  = {5},
+  pages   = {233},
+  year    = {2023},
+  doi     = {10.3390/a16050233}
+}
+
+@article{cannelli2023hedging,
+  author  = {Cannelli, Loris and Nuti, Giuseppe and Sala, Marzio and Szehr, Oleg},
+  title   = {Hedging Using Reinforcement Learning: Contextual $k$-Armed Bandit versus $Q$-learning},
+  journal = {The Journal of Finance and Data Science},
+  volume  = {9},
+  pages   = {100101},
+  year    = {2023},
+  doi     = {10.1016/j.jfds.2023.100101}
+}
+
+@misc{suau2021offline,
+  author        = {Suau, Miguel and Agapitos, Alexandros and Lynch, David and Farrell, Derek and Zhou, Mingqi and Milenovic, Aleksandar},
+  title         = {Offline Contextual Bandits for Wireless Network Optimization},
+  year          = {2021},
+  eprint        = {2111.08587},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/2111.08587}
+}
+
+% =====================================================================
+% 5. Horizon, discounting, myopic vs. sequential, reward shaping
+% =====================================================================
+
+@inproceedings{jiang2015horizon,
+  author    = {Jiang, Nan and Kulesza, Alex and Singh, Satinder and Lewis, Richard},
+  title     = {The Dependence of Effective Planning Horizon on Model Accuracy},
+  booktitle = {Proceedings of the 2015 International Conference on Autonomous Agents and Multiagent Systems (AAMAS)},
+  pages     = {1181--1189},
+  year      = {2015},
+  note      = {Best Paper Award},
+  url       = {https://web.eecs.umich.edu/~baveja/Papers/gamma-AAMAS-final.pdf}
+}
+
+@inproceedings{ng1999shaping,
+  author    = {Ng, Andrew Y. and Harada, Daishi and Russell, Stuart J.},
+  title     = {Policy Invariance Under Reward Transformations: Theory and Application to Reward Shaping},
+  booktitle = {Proceedings of the Sixteenth International Conference on Machine Learning (ICML)},
+  pages     = {278--287},
+  publisher = {Morgan Kaufmann},
+  year      = {1999}
+}
+
+@article{wiewiora2003shaping,
+  author  = {Wiewiora, Eric},
+  title   = {Potential-Based Shaping and {Q}-Value Initialization are Equivalent},
+  journal = {Journal of Artificial Intelligence Research},
+  volume  = {19},
+  pages   = {205--208},
+  year    = {2003},
+  url     = {https://www.jair.org/index.php/jair/article/view/10338}
+}
+
+@inproceedings{laidlaw2023effective,
+  author    = {Laidlaw, Cassidy and Russell, Stuart and Dragan, Anca},
+  title     = {Bridging {RL} Theory and Practice with the Effective Horizon},
+  booktitle = {Advances in Neural Information Processing Systems 36 (NeurIPS 2023)},
+  year      = {2023},
+  note      = {Oral. arXiv:2304.09853},
+  url       = {https://arxiv.org/abs/2304.09853}
+}
+
+@inproceedings{laidlaw2024stochastic,
+  author    = {Laidlaw, Cassidy and Zhu, Banghua and Russell, Stuart and Dragan, Anca},
+  title     = {The Effective Horizon Explains Deep {RL} Performance in Stochastic Environments},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  note      = {Spotlight. arXiv:2312.08369},
+  url       = {https://arxiv.org/abs/2312.08369}
+}
+
+@inproceedings{amit2020discount,
+  author    = {Amit, Ron and Meir, Ron and Ciosek, Kamil},
+  title     = {Discount Factor as a Regularizer in Reinforcement Learning},
+  booktitle = {Proceedings of the 37th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {119},
+  year      = {2020},
+  url       = {https://arxiv.org/abs/2007.02040}
+}
+
+@inproceedings{petrik2008biasing,
+  author    = {Petrik, Marek and Scherrer, Bruno},
+  title     = {Biasing Approximate Dynamic Programming with a Lower Discount Factor},
+  booktitle = {Advances in Neural Information Processing Systems 21 (NIPS 2008)},
+  pages     = {1265--1272},
+  year      = {2008},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2008/file/08c5433a60135c32e34f46a71175850c-Paper.pdf}
+}
+
+@inproceedings{zhang2021rlbandits,
+  author    = {Zhang, Zihan and Ji, Xiangyang and Du, Simon S.},
+  title     = {Is Reinforcement Learning More Difficult Than Bandits? {A} Near-optimal Algorithm Escaping the Curse of Horizon},
+  booktitle = {Proceedings of the 34th Conference on Learning Theory (COLT)},
+  series    = {PMLR},
+  volume    = {134},
+  pages     = {4528--4531},
+  year      = {2021},
+  url       = {https://proceedings.mlr.press/v134/zhang21b.html}
+}
+
+@inproceedings{dann2022epsgreedy,
+  author    = {Dann, Christoph and Mansour, Yishay and Mohri, Mehryar and Sekhari, Ayush and Sridharan, Karthik},
+  title     = {Guarantees for Epsilon-Greedy Reinforcement Learning with Function Approximation},
+  booktitle = {Proceedings of the 39th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {162},
+  pages     = {4666--4689},
+  year      = {2022},
+  url       = {https://proceedings.mlr.press/v162/dann22a.html}
+}
+
+% =====================================================================
+% 6. PPO, policy gradients, action masking, constrained/safe RL, foundations
+% =====================================================================
+
+@misc{schulman2017ppo,
+  author        = {Schulman, John and Wolski, Filip and Dhariwal, Prafulla and Radford, Alec and Klimov, Oleg},
+  title         = {Proximal Policy Optimization Algorithms},
+  year          = {2017},
+  eprint        = {1707.06347},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  url           = {https://arxiv.org/abs/1707.06347}
+}
+
+@inproceedings{schulman2016gae,
+  author    = {Schulman, John and Moritz, Philipp and Levine, Sergey and Jordan, Michael I. and Abbeel, Pieter},
+  title     = {High-Dimensional Continuous Control Using Generalized Advantage Estimation},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year      = {2016},
+  url       = {https://arxiv.org/abs/1506.02438}
+}
+
+@inproceedings{huang2022masking,
+  author    = {Huang, Shengyi and Onta{\~n}{\'o}n, Santiago},
+  title     = {A Closer Look at Invalid Action Masking in Policy Gradient Algorithms},
+  booktitle = {Proceedings of the International FLAIRS Conference},
+  volume    = {35},
+  year      = {2022},
+  doi       = {10.32473/flairs.v35i.130584}
+}
+
+@article{raffin2021sb3,
+  author  = {Raffin, Antonin and Hill, Ashley and Gleave, Adam and Kanervisto, Anssi and Ernestus, Maximilian and Dormann, Noah},
+  title   = {{Stable-Baselines3}: Reliable Reinforcement Learning Implementations},
+  journal = {Journal of Machine Learning Research},
+  volume  = {22},
+  number  = {268},
+  pages   = {1--8},
+  year    = {2021},
+  url     = {https://jmlr.org/papers/v22/20-1364.html}
+}
+
+@book{altman1999cmdp,
+  author    = {Altman, Eitan},
+  title     = {Constrained {Markov} Decision Processes},
+  publisher = {Chapman \& Hall/CRC},
+  year      = {1999},
+  doi       = {10.1201/9781315140223}
+}
+
+@article{garcia2015safe,
+  author  = {Garc{\'i}a, Javier and Fern{\'a}ndez, Fernando},
+  title   = {A Comprehensive Survey on Safe Reinforcement Learning},
+  journal = {Journal of Machine Learning Research},
+  volume  = {16},
+  number  = {42},
+  pages   = {1437--1480},
+  year    = {2015},
+  url     = {https://jmlr.org/papers/v16/garcia15a.html}
+}
+
+@inproceedings{achiam2017cpo,
+  author    = {Achiam, Joshua and Held, David and Tamar, Aviv and Abbeel, Pieter},
+  title     = {Constrained Policy Optimization},
+  booktitle = {Proceedings of the 34th International Conference on Machine Learning (ICML)},
+  series    = {PMLR},
+  volume    = {70},
+  pages     = {22--31},
+  year      = {2017},
+  url       = {https://proceedings.mlr.press/v70/achiam17a.html}
+}
+
+@article{mnih2015dqn,
+  author  = {Mnih, Volodymyr and Kavukcuoglu, Koray and Silver, David and Rusu, Andrei A. and Veness, Joel and Bellemare, Marc G. and Graves, Alex and Riedmiller, Martin and Fidjeland, Andreas K. and Ostrovski, Georg and Petersen, Stig and Beattie, Charles and Sadik, Amir and Antonoglou, Ioannis and King, Helen and Kumaran, Dharshan and Wierstra, Daan and Legg, Shane and Hassabis, Demis},
+  title   = {Human-Level Control through Deep Reinforcement Learning},
+  journal = {Nature},
+  volume  = {518},
+  number  = {7540},
+  pages   = {529--533},
+  year    = {2015},
+  doi     = {10.1038/nature14236}
+}
+
+@book{sutton2018rl,
+  author    = {Sutton, Richard S. and Barto, Andrew G.},
+  title     = {Reinforcement Learning: An Introduction},
+  edition   = {Second},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  year      = {2018},
+  isbn      = {9780262039246}
+}
+
+@book{puterman1994mdp,
+  author    = {Puterman, Martin L.},
+  title     = {Markov Decision Processes: Discrete Stochastic Dynamic Programming},
+  publisher = {John Wiley \& Sons},
+  series    = {Wiley Series in Probability and Statistics},
+  year      = {1994},
+  doi       = {10.1002/9780470316887}
+}

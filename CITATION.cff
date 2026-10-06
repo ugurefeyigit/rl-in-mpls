@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "RL-in-MPLS: a controlled study of sequential reinforcement learning versus contextual decision-making for masked MPLS traffic engineering"
+message: "If you refer to this artifact, please cite it as below. The software is proprietary (see LICENSE); citation does not grant a licence."
+type: software
+authors:
+  - family-names: "Yiğit"
+    given-names: "Uğur Efe"
+repository-code: "https://github.com/ugurefeyigit/rl-in-mpls"
+license: LicenseRef-Proprietary
+version: "2.1.0"
+date-released: "2026-10-07"
+keywords: [traffic engineering, MPLS, reinforcement learning, contextual bandits, PPO, action masking]

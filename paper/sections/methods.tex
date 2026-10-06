@@ -1,0 +1,92 @@
+\section{Methods}
+\label{sec:methods}
+
+All learners see the same observation and the same authoritative mask, train
+on the same randomized scenario for the same number of environment
+transitions, and are evaluated deterministically (masked argmax).
+
+\paragraph{MaskablePPO.}
+We use the \texttt{sb3-contrib} implementation~\citep{raffin2021sb3} with
+invalid-action masking~\citep{huang2022masking}: logits of illegal actions are
+set to $-10^{8}$, so $\pi_\theta(a\mid o,m)\propto m(a)e^{z_\theta(o)_a}$, and the
+same mask is applied in rollouts, gradient steps and inference. Advantages use
+GAE~\citep{schulman2016gae} and the clipped surrogate
+objective~\citep{schulman2017ppo} with value and entropy terms. The study's
+default configuration (inherited unchanged from the closed study) is
+$\gamma=0.995$, $\lambda=0.95$, learning rate $3\cdot10^{-4}$, 16 environments
+$\times$ 512 steps per rollout, batch 512, 8 epochs, clip $0.2$, entropy
+$0.01$, separate $[256,256]$ tanh networks.
+
+\paragraph{Masked neural contextual bandit.}
+A $604$--$256$--$256$--$69$ ReLU network $\hat r_\theta(o,\cdot)$ predicts the
+immediate reward of every action. Actions are chosen by masked
+$\varepsilon$-greedy ($\varepsilon$ linear from $0.2$ to $0.02$ over $2\cdot10^5$
+transitions; random actions are drawn from the legal set). A replay buffer of
+the last $10^5$ tuples $(o,a,m,r)$ is sampled every 64 transitions for one
+Adam step on the Huber loss between the \emph{selected} head and the observed
+reward. There is no next state, discount, target network or bootstrapping.
+At 400k transitions the bandit performs 6{,}187 gradient steps, PPO 6{,}144.
+
+\paragraph{Masked Q-learner with discount $\gamma$.}
+To vary the planning horizon \emph{without changing anything else}, we extend
+the bandit by a single parameter. For $\gamma>0$ the regression target becomes
+the normalized double-DQN~\citep{mnih2015dqn} target
+\begin{equation}
+y=(1-\gamma)\,r+\gamma\,Q_{\bar\theta}\big(o',\textstyle\arg\max_{a':m'(a')=1}Q_\theta(o',a')\big),
+\label{eq:qtarget}
+\end{equation}
+with a target network copied every 250 updates; the maximization is over legal
+successor actions only. The factor $(1-\gamma)$ rescales all action values of
+one $\gamma$ by a common constant and leaves the greedy policy unchanged; it
+keeps the Huber transition point comparable across $\gamma$. With $\gamma=0$
+the learner is the bandit, bit for bit (unit-tested).
+
+\begin{algorithm}[t]
+\caption{Masked value learner (bandit for $\gamma=0$). Source:
+\texttt{experiments/masked\_bandit.py}, \texttt{study/learners.py}.}
+\label{alg:value}
+\small
+\begin{algorithmic}[1]
+\State observe $o$ from 16 environments
+\For{each vector step}
+  \State $m\gets$ masks; $a\gets\arg\max_{a:m(a)=1}Q_\theta(o,a)$, or a uniform legal action w.p.\ $\varepsilon$
+  \State $o',r\gets$ step$(a)$; store $(o,a,m,r[,o',m'])$
+  \If{every 4th vector step \textbf{and} $\ge4096$ stored}
+    \State sample 512 tuples; $y\gets r$ if $\gamma=0$ else Eq.~\eqref{eq:qtarget}
+    \State Adam step on $\mathrm{Huber}(Q_\theta(o,a)-y)$ (selected heads only)
+  \EndIf
+  \State $o\gets o'$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Non-learning controllers.}
+\emph{Static} keeps every demand on $p_{d,0}$. \emph{Greedy} moves the largest
+demand on the hottest link (if above 85\,\%) to the candidate with the lowest
+bottleneck utilization (margin 5\,\%). \emph{CSPF} re-places demands every six
+intervals in priority order onto the cheapest candidate with 10\,\% reservation
+headroom (hysteresis 8\,\%). We add \emph{MILP-track}: every interval it solves
+the classical min-max-utilization path-selection MILP over the four candidates
+per demand (HiGHS via SciPy), with a small penalty for changing a demand's
+path, and, if the optimum lowers the maximum utilization by at least $0.02$,
+submits the single legal move towards it with the largest volume. Because V2
+allows one change per interval, only the first legal proposal of any
+controller is applied.
+
+\paragraph{Clairvoyant lookahead references.}
+\emph{Oracle-$H$} clones the simulator, including the traffic generator, and
+scores each legal first action by the $H$-interval return of taking it and
+then making no further change; it plays the best (ties: no-op). Oracle-1
+maximizes the exact immediate reward, the quantity the bandit estimates; larger
+$H$ adds clairvoyant lookahead. These are references that see the future, not
+deployable controllers and not optimal policies.
+
+\paragraph{Controlled delayed effect.}
+To create a regime in which sequential credit assignment is unavoidable, we
+add a variant in which a move requested at interval $t$ is charged at $t$ but
+takes effect at $t+L$ (actuation latency, or a periodic commit cycle). Pending
+requests lock their demand and are visible in the observation (689 features);
+a request that has become illegal by $t+L$ is cancelled. With $L=0$ the
+variant is bit-identical to the frozen environment (unit-tested). With $L\ge1$
+the immediate reward of a move contains its cost but none of its effect, so a
+bandit cannot credit it.
