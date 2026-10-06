@@ -1,0 +1,30 @@
+# Hypotheses and predictions (recorded before the new learner results)
+
+Committed before any E0–E5 learner evaluation existed (see git history of this
+file). Known at the time of writing: the closed study's reported numbers
+(bandit 18.2 vs PPO 9.0 holdout return, 3/3 roots), the exact reproduction of
+the baselines, and an early, partial sequentiality diagnostic on `full_day`
+(myopic action = 24-step-best action in 35 % of states under clairvoyant
+no-op continuation).
+
+| ID | Hypothesis | Experiment | Prediction that would **support** it | Outcome that would **falsify** it |
+|---|---|---|---|---|
+| H0 | The historical bandit > PPO result reproduces on CPU. | E0 (historical protocol) | bandit − PPO > 0 on most roots; gap of similar order (≈ 9) | gap ≤ 0 on ≥ 2 of 3 roots |
+| H1 | The gap survives an independent protocol and more roots. | E0+E1, validation→test | two-stage CI of bandit − PPO excludes 0 | CI includes 0 or sign flips |
+| H2 | **Horizon is not what PPO's extra machinery buys.** Shortening PPO's horizon does not hurt it. | E2: PPO γ ∈ {0, 0.9, 0.995} | PPO(γ=0) ≥ PPO(γ=0.995) − small | PPO(γ=0) clearly worse than PPO(γ=0.995) |
+| H3 | **Bootstrapping future value does not help a value learner at this budget.** | E2: Q γ ∈ {0, 0.5, 0.9, 0.99} | return non-increasing in γ, or flat | a γ > 0 Q-learner clearly beats the bandit on ≥ 2/3 roots |
+| H4 | PPO's deficit is not a tuning artefact. | E3 | no configuration's validation return exceeds the bandit's on the same root | some configuration reaches or exceeds the bandit on validation *and* test |
+| H5 | The decision problem has measurable non-myopic structure, but most of it comes from (a) one-off move costs vs persistent gains and (b) clairvoyant knowledge of future traffic. | seqdiag live vs frozen; oracle ladder H=1/3/6 | frozen agreement > live agreement; oracle-H gains over oracle-1 small relative to learner–oracle-1 gaps | oracle-6 ≫ oracle-1 and frozen ≈ live |
+| H6 | When effects are delayed (L = 1), the myopic learner fails and sequential learners do better. | E4 | bandit(L=1) ≪ bandit(L=0) and < PPO(L=1), Q-γ0.9(L=1) | bandit(L=1) ≈ PPO(L=1), or both collapse equally |
+| H7 | PPO does not catch up with 3× budget. | E5 | PPO at 1.2M still below bandit at 400k | PPO at 1.2M ≥ bandit |
+| H8 | The bandit wins because it is a good myopic optimizer, not because PPO finds non-myopic value. | model fidelity | bandit top-1 agreement with exact myopic optimum and 1-step regret better than PPO's | PPO's actions have worse 1-step reward but better H-step value |
+
+Interpretation rules fixed in advance:
+
+* A difference is called "robust across roots" only if its two-stage bootstrap
+  interval excludes 0 **and** it has the same sign on every root.
+* With 3 roots, any claim is stated as "on all three roots", not as a
+  population statement.
+* If H6 holds but H2/H3 also hold, the conclusion is conditional: sequential
+  RL is unnecessary *in the frozen environment because its effects are
+  immediate*, not unnecessary for TE in general.
