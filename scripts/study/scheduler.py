@@ -18,13 +18,23 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from mplssim.study.registry import RUNS_DIR, all_runs  # noqa: E402
 
-HEAVY = ("train_v2.py", "scripts/study/job.py", "run_seqdiag.py", "run_oracles.py")
+# Only training-type jobs occupy slots; diagnostics run at low priority alongside.
+HEAVY = ("train_v2.py", "scripts/study/job.py")
 
 
 def heavy_count() -> int:
     out = subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout
-    return sum(1 for line in out.splitlines()
-               if line.startswith("python") and any(h in line for h in HEAVY))
+    count = 0
+    for line in out.splitlines():
+        exe = line.split(" ", 1)[0]
+        if Path(exe).name.startswith("python") and any(h in line for h in HEAVY):
+            count += 1
+    return count
+
+
+def running_ids() -> set[str]:
+    out = subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout
+    return {line.rsplit(" ", 1)[-1] for line in out.splitlines() if "scripts/study/job.py" in line}
 
 
 def main() -> None:
@@ -39,10 +49,12 @@ def main() -> None:
     logs = RUNS_DIR / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     for rid in order:
-        if (runs[rid].run_dir / "eval" / "selection.json").exists():
+        if (runs[rid].run_dir / "eval" / "selection.json").exists() or rid in running_ids():
             continue
         while heavy_count() >= a.slots:
             time.sleep(20)
+        if rid in running_ids():  # started elsewhere while we waited
+            continue
         with (logs / f"{rid}.log").open("a") as fh:
             subprocess.Popen([sys.executable, str(ROOT / "scripts/study/job.py"), rid],
                              cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT,

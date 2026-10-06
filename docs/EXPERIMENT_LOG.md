@@ -25,5 +25,8 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 9 | 22:47 | Mask audit pass 1 (engine-side checks) | 15,480 states, 1,068,120 checks, 0 violations |
 | 10 | 23:00 | Early look at diagnostic (full_day): myopic action agrees with 24-step best in 35 % of states. Added frozen-exogenous counterfactual to separate predictable persistence value from clairvoyant anticipation. | frozen run queued after #5 |
 | 11 | 23:02 | Mask audit pass 2 (+ independent from-scratch projection, + PPO probability mass) | see `docs/MASK_VALIDATION.md` |
+| 12 | 23:00 | Diagnostics launched with `nice` still took ~75 % of CPU: kernel autogroup scheduling ignores niceness across sessions [process] | disabled `kernel.sched_autogroup_enabled`; training throughput restored |
+| 13 | 23:17–23:21 | First reproduction trio finished (bandit r42, PPO r42, PPO r314159); second trio started | evaluated automatically under both protocols |
+| 14 | 23:35 | Study scheduler had never started (it counted the four low-priority diagnostics as occupying slots); on restart it launched 3 jobs because it matched only commands starting with `python` and not `/usr/bin/python` [process] | fixed process matching; scheduler now also skips runs already executing (a restart would otherwise have renamed a live run directory) |
 
-Entries after #11 are appended as experiments complete.
+Entries after #14 are appended as experiments complete.
