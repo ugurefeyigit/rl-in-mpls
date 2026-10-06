@@ -1,0 +1,12 @@
+id: E4_delay
+description: >
+  Controlled temporal coupling: delayed TE activation (mplssim/study/variants.py).
+  A move requested at boundary t takes effect at t+L; its cost is charged at t.
+  L=0 reproduces the frozen V2 environment (tested). Here L=1.
+env: {variant: delayed, delay_steps: 1}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [42, 314159]
+runs:
+  - {tag: L1_bandit, algorithm: masked_bandit}
+  - {tag: L1_ppo,    algorithm: maskable_ppo}
+  - {tag: L1_qg09,   algorithm: masked_q, overrides: {gamma: 0.9}}

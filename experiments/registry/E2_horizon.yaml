@@ -1,0 +1,15 @@
+id: E2_horizon
+description: >
+  Horizon sweep. Within the value-learning family, MaskedQLearner with gamma>0
+  differs from the masked bandit (gamma=0) only by bootstrapping. Within the
+  policy-gradient family, MaskablePPO differs only in gamma (GAE lambda fixed).
+  gamma=0 / 0.995 reference points are E0/E1 runs.
+env: {variant: base}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [42, 314159, 271828]
+runs:
+  - {tag: qg05,  algorithm: masked_q, overrides: {gamma: 0.5}}
+  - {tag: qg09,  algorithm: masked_q, overrides: {gamma: 0.9}}
+  - {tag: qg099, algorithm: masked_q, overrides: {gamma: 0.99}}
+  - {tag: ppog0,  algorithm: maskable_ppo, overrides: {gamma: 0.0}}
+  - {tag: ppog09, algorithm: maskable_ppo, overrides: {gamma: 0.9}}

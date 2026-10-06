@@ -51,7 +51,15 @@ def start(client, **over):
     body = {"scenario": "demo_evening", "algorithms": ["masked_bandit"],
             "seed": 42, "speed": "fast", "autostart": False}
     body.update(over)
-    return client.post("/api/simulation/start", json=body)
+    response = client.post("/api/simulation/start", json=body)
+    # The six frozen study checkpoints live outside Git (docs/REPOSITORY_AUDIT.md).
+    # Skip -- rather than fail -- only when the server reports exactly that.
+    missing = (checkpoints_v2.ARTIFACT_ROOT_ENV in response.text
+               or "checkpoint payload" in response.text and "is missing" in response.text)
+    if response.status_code == 409 and missing:
+        pytest.skip("frozen V2 checkpoints are not present on this machine; set "
+                    f"{checkpoints_v2.ARTIFACT_ROOT_ENV} to the study's worktree root")
+    return response
 
 
 # ==================================================== registry and provenance

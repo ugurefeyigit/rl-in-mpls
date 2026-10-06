@@ -1,0 +1,10 @@
+id: E5_budget
+description: >
+  Training-budget extension: does PPO catch up, does the bandit plateau?
+  1.2M transitions (3x the primary budget), checkpoints every 100k.
+env: {variant: base}
+budget: {transitions: 1200000, checkpoint_interval: 100000, n_envs: 16}
+roots: [42]
+runs:
+  - {tag: bandit_1p2m, algorithm: masked_bandit}
+  - {tag: ppo_1p2m,    algorithm: maskable_ppo}

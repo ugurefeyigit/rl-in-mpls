@@ -1,0 +1,13 @@
+id: E1_main
+description: >
+  Primary learner comparison under the post-V2 protocol (select on VALIDATION
+  seeds, report on TEST seeds). Roots 42/314159/271828 are the closed study's
+  preregistered roots (their governed CPU reproductions are evaluated under the
+  same protocol, see E0 in docs/EXPERIMENT_REGISTRY.md); this family adds two
+  further roots with the identical learner definitions.
+env: {variant: base}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [161803, 141421]
+runs:
+  - {tag: bandit, algorithm: masked_bandit}
+  - {tag: ppo, algorithm: maskable_ppo}

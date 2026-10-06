@@ -17,3 +17,4 @@ results/*.json
 .venv/
 venv/
 
+logs/
