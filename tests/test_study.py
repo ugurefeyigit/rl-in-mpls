@@ -177,3 +177,49 @@ def test_simulate_restores_delayed_variant_state():
     simulate(env, [act], horizon=3)
     assert np.array_equal(env.pending_path, pend)
     assert np.array_equal(env.action_masks(), mask)
+
+
+# ---------------------------------------------------------------- statistics
+def test_stratified_bootstrap_contains_true_mean_and_is_degenerate_for_constants():
+    from mplssim.study.stats import stratified_bootstrap_mean
+    rng = np.random.default_rng(0)
+    strata = np.repeat(np.arange(7), 20)
+    x = rng.normal(1.0, 1.0, size=140) + strata  # stratum offsets
+    ci = stratified_bootstrap_mean(x - strata, strata, n_boot=2000)
+    assert ci.low < 1.0 < ci.high
+    c = stratified_bootstrap_mean(np.full(10, 3.0), np.zeros(10), n_boot=200)
+    assert c.low == c.high == c.estimate == 3.0
+
+
+def test_paired_frame_and_learner_comparison():
+    import pandas as pd
+    from mplssim.study.stats import compare_learners, paired_frame
+    rows = []
+    for root in (1, 2, 3):
+        for s in ("a", "b"):
+            for seed in range(5):
+                base = 10 * (s == "a") + seed
+                rows.append({"policy": "x", "root": root, "scenario": s, "seed": seed,
+                             "operational_return": base + 2.0})
+                rows.append({"policy": "y", "root": root, "scenario": s, "seed": seed,
+                             "operational_return": base})
+    pairs = paired_frame(pd.DataFrame(rows), "x", "y")
+    assert len(pairs) == 30 and np.allclose(pairs["diff"], 2.0)
+    out = compare_learners(pairs, seed=1)
+    assert out["boot_est"] == 2.0 and out["boot_lo"] == out["boot_hi"] == 2.0
+    assert out["roots_positive"] == 3
+
+
+def test_frozen_rollout_holds_traffic_and_restores_state():
+    from mplssim.study.oracles import simulate
+    env = make_env_v2("flash_crowd", root_seed=13)
+    env.reset(options={"episode_seed": 13})
+    for _ in range(15):
+        env.step(0)
+    offered = env.eng.demand_offered.copy()
+    _, frozen_r = simulate(env, [0], horizon=8, frozen=True)
+    assert np.array_equal(env.eng.demand_offered, offered)        # restored
+    assert len(set(np.round(frozen_r, 12))) == 1                   # stationary
+    _, live_r = simulate(env, [0], horizon=8)
+    _, real, _, _, _ = env.step(0)
+    assert live_r[0] == real                                        # live path untouched

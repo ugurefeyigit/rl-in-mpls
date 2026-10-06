@@ -24,6 +24,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import copy
+
 import numpy as np
 
 
@@ -41,8 +43,27 @@ def restore(env: Any, snap: Any) -> None:
         env.eng = snap
 
 
+def freeze_exogenous(env: Any) -> None:
+    """Hold offered traffic and link state at their current values (in place).
+
+    Used only on a state that :func:`simulate` restores afterwards. The frozen
+    rollout answers: *if nothing exogenous changed, what would this move be
+    worth over H intervals?* -- i.e. the value of the move that is predictable
+    from the current observation, without clairvoyance about future traffic,
+    bursts or failures. The AR noise generator still advances but its output
+    is ignored, so the restored state's RNG is untouched either way.
+    """
+    eng = env.eng
+    frozen = eng.demand_offered.copy()
+    traffic = copy.copy(eng.traffic)
+    traffic.volumes = lambda t_min: frozen.copy()
+    eng.traffic = traffic
+    eng._process_link_events = lambda t_from, t_to: None
+
+
 def simulate(env: Any, actions: list[int], continuation: str = "noop",
-             horizon: int | None = None, gamma: float = 1.0) -> tuple[float, list[float]]:
+             horizon: int | None = None, gamma: float = 1.0,
+             frozen: bool = False) -> tuple[float, list[float]]:
     """Return of an action sequence from the current state, then restore.
 
     ``actions`` are applied first; if ``horizon`` exceeds ``len(actions)`` the
@@ -53,6 +74,8 @@ def simulate(env: Any, actions: list[int], continuation: str = "noop",
     saved = snapshot(env)  # restored in ``finally``; the live state is consumed
     rewards: list[float] = []
     try:
+        if frozen:
+            freeze_exogenous(env)
         steps = horizon if horizon is not None else len(actions)
         for i in range(steps):
             a = actions[i] if i < len(actions) else 0

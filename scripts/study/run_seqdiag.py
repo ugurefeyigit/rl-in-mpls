@@ -37,6 +37,8 @@ def main() -> None:
     p.add_argument("--every", type=int, default=4)
     p.add_argument("--h-max", type=int, default=24)
     p.add_argument("--out", type=Path, required=True)
+    p.add_argument("--frozen", action="store_true",
+                   help="hold traffic and link state fixed during rollouts")
     a = p.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
     t0 = time.perf_counter()
@@ -47,7 +49,7 @@ def main() -> None:
                 continue
             df = trajectory_diagnostic(reference_policy(a.reference, seed), scenario, seed,
                                        every=a.every, h_max=a.h_max,
-                                       horizons=DEFAULT_HORIZONS)
+                                       horizons=DEFAULT_HORIZONS, frozen=a.frozen)
             df.to_csv(path, index=False)
             print(f"{scenario} {seed} states={len(df)} t={time.perf_counter()-t0:.0f}s",
                   flush=True)
