@@ -123,10 +123,13 @@ def section_reproduction(data: dict) -> None:
         return
     hist_root = pd.read_csv(ROOT / "results/v2_final_holdout/per_root_metrics.csv")
     hist_scen = pd.read_csv(ROOT / "results/v2_final_holdout/scenario_metrics.csv")
+    # baseline rows carry training_root == "baseline"; keep learner rows with integer roots
+    hist_root = hist_root[hist_root.algorithm.isin(["masked_bandit", "maskable_ppo"])].copy()
+    hist_root["training_root"] = hist_root.training_root.astype(int)
+    hist_scen = hist_scen[hist_scen.algorithm.isin(["masked_bandit", "maskable_ppo"])].copy()
+    hist_scen["training_root"] = hist_scen.training_root.astype(int)
     sel_hist = pd.read_csv(ROOT / "results/v2_three_root_continuity/checkpoint_selection.csv")
     rows = []
-    for (pol, root), g in learner_test(ep, "bandit").groupby(["policy", "root"]):
-        pass
     sel = ep[(ep.kind == "learner") & (ep.role == "selected") & (ep.family == "E0_repro")]
     for (pol, root), g in sel.groupby(["policy", "root"]):
         alg = "masked_bandit" if pol == "bandit" else "maskable_ppo"
