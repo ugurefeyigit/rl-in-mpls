@@ -460,6 +460,49 @@ def section_environment() -> None:
     write_table(pd.DataFrame([{"role": k, "routers": v} for k, v in roles.items()]), "env_roles")
 
 
+def _tex_escape(text: str) -> str:
+    import re
+    text = re.sub(r"`([^`]*)`", r"\\texttt{\1}", text)
+    text = re.sub(r"\*\*([^*]*)\*\*", r"\\textbf{\1}", text)
+    for a, b in (("%", "\\%"), ("&", "\\&"), ("#", "\\#"), ("_", "\\_"), ("≤", "$\\le$"),
+                 ("≈", "$\\approx$"), ("→", "$\\to$"), ("×", "$\\times$"), ("–", "--"),
+                 ("—", "---"), ("·", "$\\cdot$"), ("γ", "$\\gamma$")):
+        text = text.replace(a, b)
+    return text.replace("\\texttt{", "\\texttt{").replace("\\_}", "_}")
+
+
+def section_doc_tables() -> None:
+    gen = ROOT / "docs" / "generated"
+    gen.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for line in (ROOT / "docs" / "EXPERIMENT_LOG.md").read_text().splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+        if len(cells) == 4 and cells[0].isdigit():
+            rows.append(cells)
+    body = "\n".join(f"{c[0]} & {_tex_escape(c[2])} & {_tex_escape(c[3])} \\\\" for c in rows)
+    (gen / "experiment_log_table.tex").write_text(
+        "{\\small\\begin{longtable}{@{}rp{0.5\\textwidth}p{0.38\\textwidth}@{}}\\toprule\n"
+        "\\# & Event & Outcome \\\\\\midrule\n" + body + "\n\\bottomrule\\end{longtable}}\n")
+    f = RAW / "mask_audit" / "summary.json"
+    if f.exists():
+        d = json.loads(f.read_text())
+        c, v = d["counts"], d["violations"]
+        lines = [f"{k.replace('_', ' ')} & {int(val):,} \\\\" for k, val in c.items()]
+        lines += ["\\midrule"] + [f"violation: {k.replace('_', ' ')} & {int(val)} \\\\"
+                                     for k, val in v.items()]
+        (gen / "mask_audit_table.tex").write_text(
+            "\\begin{center}\\small\\begin{tabular}{@{}lr@{}}\\toprule\n" + "\n".join(lines)
+            + "\n\\bottomrule\\end{tabular}\\end{center}\n")
+        num("MaskStates", int(c["states"]))
+        num("MaskChecks", int(c["actions_checked"]))
+        num("MaskLegalApplied", int(c["legal_te_actions"]))
+        num("MaskProtectedMoves", int(c["protected_legal_moves"]))
+        num("MaskViolations", int(sum(v.values())), "{}")
+        num("MaskFailedLinkStates", int(c.get("states_with_failed_link", 0)))
+    else:
+        (gen / "mask_audit_table.tex").write_text("(mask audit pending)\n")
+
+
 def write_numbers() -> None:
     out = ROOT / "paper" / "generated" / "numbers.tex"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -482,6 +525,7 @@ def main() -> None:
             raise
     section_seqdiag()
     section_environment()
+    section_doc_tables()
     write_numbers()
 
 

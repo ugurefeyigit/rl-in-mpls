@@ -1,0 +1,3 @@
+$ENV{'TEXINPUTS'} = '../paper//:' . ($ENV{'TEXINPUTS'} // '');
+$ENV{'BIBINPUTS'} = '../paper//:' . ($ENV{'BIBINPUTS'} // '');
+$pdf_mode = 1;

@@ -1,0 +1,68 @@
+\documentclass[11pt]{report}
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{amsmath,amssymb,booktabs,multirow,array,longtable,graphicx,siunitx,xcolor,microtype}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[hidelinks]{hyperref}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+\graphicspath{{../results/figures/paper/}}
+\sisetup{group-separator={,},group-minimum-digits=4}
+\input{../paper/generated/numbers}
+
+\title{\input{../paper/generated/title}\\[1ex]\large Technical report}
+\author{Uğur Efe Yiğit}
+\date{}
+
+% The report reuses the paper's sections verbatim (so every number and claim
+% is identical) and adds chapters with material that does not fit a paper.
+% Paper-relative \input paths resolve through TEXINPUTS (see latexmkrc).
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter*{Abstract}
+\input{../paper/sections/abstract.tex}
+
+\chapter{Introduction}
+\input{../paper/sections/introduction.tex}
+
+\chapter{Background and related work}
+\input{../paper/sections/related.tex}
+
+\chapter{Problem formulation}
+\input{../paper/sections/formulation.tex}
+\input{../paper/appendix/formulation_details.tex}
+
+\chapter{Methods}
+\input{../paper/sections/methods.tex}
+\input{../paper/appendix/hyperparameters.tex}
+
+\chapter{Experimental setup}
+\input{../paper/sections/setup.tex}
+
+\chapter{Results}
+\input{../paper/sections/results.tex}
+\input{../paper/sections/analysis.tex}
+\input{../paper/appendix/additional_results.tex}
+
+\chapter{Engineering, validation and reproduction}
+\input{chapters/engineering.tex}
+
+\chapter{Discussion and limitations}
+\input{../paper/sections/discussion.tex}
+\input{../paper/sections/limitations.tex}
+
+\chapter{Process record: failures and design history}
+\input{chapters/history.tex}
+
+\chapter{Conclusion}
+\input{../paper/sections/conclusion.tex}
+
+\bibliographystyle{plainnat}
+\bibliography{../paper/references}
+\end{document}

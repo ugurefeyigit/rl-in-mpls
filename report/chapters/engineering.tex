@@ -1,0 +1,30 @@
+\section{Governance and integrity checks}
+Every V2 run is wrapped by \texttt{AuditedV2Env}, which rejects any action that
+is illegal under the authoritative pre-action mask, checks that the post-step
+mask in \texttt{info} equals a fresh mask, checks that the twelve reward
+components sum bit-for-bit to the scalar reward, checks finiteness and flow
+solver convergence, and re-verifies the protected-class projection of every
+protected move. Each check aborts the run on failure; consequently the
+historical ``zero failures'' counters only certify that runs completed. We
+therefore audited the mask independently (Section~\ref{sec:maskaudit}).
+
+The sixteen files that define the V2 problem are pinned to a signed-off commit
+and compared byte-for-byte (line-ending canonicalized) before governed
+training; the ordered candidate-path table is part of every checkpoint's
+identity, because V2 reuses V1's action numbering with different paths.
+
+\section{Action-mask audit}
+\label{sec:maskaudit}
+\input{../../docs/generated/mask_audit_table.tex}
+
+\section{Equivalence and reproduction tests}
+\begin{itemize}
+\item The study evaluator (\texttt{mplssim/study/episode.py}) reproduces the
+governed evaluator's episode summaries exactly (unit test).
+\item The study trainer reproduces the governed trainer's network parameters
+bit for bit after 8{,}192 transitions for both learners (slow test).
+\item The $\gamma=0$ Q-learner is bit-identical to the bandit; the $L=0$ delayed
+variant is bit-identical to the frozen environment (unit tests).
+\item All 21 baseline (policy, scenario) holdout cells of the closed study
+reproduce to within $3\cdot10^{-14}$ on different hardware and operating system.
+\end{itemize}

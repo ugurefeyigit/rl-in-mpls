@@ -1,0 +1,35 @@
+\section{From Environment V1 to V2}
+The repository's first version (V1, branch \texttt{main}) trained a single
+MaskablePPO agent (400k transitions, one seed) on a 586-feature observation and
+a reward whose terms were mostly clipped. The V2 audit recorded in the code
+(\texttt{mplssim/rl/reward\_v2.py}, \texttt{mplssim/sim/engine\_v2.py}) found
+that over 13{,}200 audited V1 intervals the maximum-utilization term was
+saturated 60.2\,\% of the time, loss 41.1\,\% and delay 26.2\,\%, so a link at
+400\,\% utilization scored like one at 100\,\%; that congestion and SLA failures
+were counted twice; and that a flat 0.08 reroute price was repaid by a
+0.027 reduction in utilization. The published V1 PPO policy consequently made
+an accepted TE move in all 3{,}300 evaluation intervals, 91.7\,\% of them
+reversals on \texttt{full\_day}. V1 also processed link events one tick late
+(a controller could act on a topology it was told was healthy), reused episode
+seeds across workers (80 distinct collisions within 30 episodes), admitted two
+candidate paths that transited provider-edge routers, and loaded every hop of
+a path with the full offered demand even after upstream drops.
+
+V2 fixed each of these: right-closed event windows, collision-free seeds,
+role-valid candidates, a carried-flow fixed point, an unsaturated
+severity-ordered utility, a bounded potential-shaping term and a move cost
+proportional to what a move disturbs, plus a hard three-interval dwell. Its
+definition was frozen and signed off (commit \texttt{dca533b}) before any V2
+learner was trained. These V1 findings are historical (reported in code
+documentation, not re-executed here).
+
+\section{The closed V2 study}
+The V2 study was run as a governed sequence: a seed-42 pilot, a three-root
+continuity study, and a single untouched final holdout. Its own failures are
+preserved in its reports: an SB3 seed-propagation bug that invalidated the
+first PPO run (the wrapper now preserves the governed root and the run fails
+closed on any other root), two governance repairs needed to admit the
+preregistered roots, and a CUDA preflight failure before any holdout episode.
+
+\section{Failures in this study}
+\input{../../docs/generated/experiment_log_table.tex}

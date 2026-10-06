@@ -1,0 +1,17 @@
+{\small\begin{longtable}{@{}rp{0.5\textwidth}p{0.38\textwidth}@{}}\toprule
+\# & Event & Outcome \\\midrule
+1 & Full test suite on fresh install & 802 passed, 10 skipped, 16 failed; all failures = missing external checkpoints [process] \\
+2 & 8,192-transition smoke runs of both governed learners (CPU) & ok; 155--157 transitions/s single-process \\
+3 & First launch of 6 governed reproduction runs in the main checkout & \textbf{all 6 aborted at start}: governed trainer refuses a dirty checkout (an untracked \texttt{logs/} directory) [process]. Relaunched in a clean detached worktree at \texttt{1457e9b} (\texttt{.worktrees/repro}). \\
+4 & Relaunch: roots 42, 314159 (PPO), 42 (bandit) first, 3 in parallel & running \\
+5 & Sequentiality diagnostic, greedy reference, seeds 4001--4003, H $\le$ 24, clairvoyant & see \texttt{docs/SEQUENTIALITY\_AUDIT.md} \\
+6 & \texttt{scripts/study/queue.py} crashed on import: module name shadowed stdlib \texttt{queue} (imported by networkx) [process] & renamed to \texttt{scheduler.py} \\
+7 & Study-trainer equivalence test (8,192 transitions, both learners) & \textbf{bit-identical} network parameters to the governed trainer \\
+8 & Baselines on historical holdout seeds 1001--1005 & all 21 (policy, scenario) means reproduce historical values to $\le$ 3e-14 \\
+9 & Mask audit pass 1 (engine-side checks) & 15,480 states, 1,068,120 checks, 0 violations \\
+10 & Early look at diagnostic (full\_day): myopic action agrees with 24-step best in 35 \% of states. Added frozen-exogenous counterfactual to separate predictable persistence value from clairvoyant anticipation. & frozen run queued after \#5 \\
+11 & Mask audit pass 2 (+ independent from-scratch projection, + PPO probability mass) & see \texttt{docs/MASK\_VALIDATION.md} \\
+12 & Diagnostics launched with \texttt{nice} still took ~75 \% of CPU: kernel autogroup scheduling ignores niceness across sessions [process] & disabled \texttt{kernel.sched\_autogroup\_enabled}; training throughput restored \\
+13 & First reproduction trio finished (bandit r42, PPO r42, PPO r314159); second trio started & evaluated automatically under both protocols \\
+14 & Study scheduler had never started (it counted the four low-priority diagnostics as occupying slots); on restart it launched 3 jobs because it matched only commands starting with \texttt{python} and not \texttt{/usr/bin/python} [process] & fixed process matching; scheduler now also skips runs already executing (a restart would otherwise have renamed a live run directory) \\
+\bottomrule\end{longtable}}
