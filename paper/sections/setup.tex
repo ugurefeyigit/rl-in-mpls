@@ -1,0 +1,44 @@
+\section{Experimental Setup}
+\label{sec:setup}
+
+\paragraph{Training.} Every learner trains on \texttt{random\_day} (24\,h, 288
+decisions, randomized bursts, failures and flash crowds per episode) for
+400{,}000 transitions from 16 vectorized environments, with checkpoints every
+50{,}000 transitions. The two learners of a training root share the training
+episode-seed ledger byte for byte, so roots are paired.
+
+\paragraph{Evaluation protocol.} Seven scripted scenarios
+(Table~\ref{tab:scenarios}) are evaluated with three disjoint seed sets that are
+fixed in code before any new result was produced: \emph{validation} seeds
+(2001--2005, 35 episodes) select a checkpoint (highest mean return; ties to the
+earlier); \emph{test} seeds (3001--3020, 140 episodes) are used only for
+reporting, for the selected and for the final checkpoint; and
+\emph{diagnostic} seeds (4001--4003) are used only for structural diagnostics.
+The closed study's selection seeds (101--105) and final-holdout seeds
+(1001--1005) are used only to reproduce its numbers
+(Section~\ref{sec:repro}). Evaluation is deterministic (masked argmax). Because
+traffic is exogenous, every policy faces byte-identical traffic on a given
+(scenario, seed), so all comparisons are paired.
+
+\paragraph{Metric.} The primary metric is the undiscounted operational return
+$R=\sum_t r_t$ of an episode, averaged over the 7 scenarios $\times$ 20 seeds.
+Scenarios have 48--288 decisions, so the average weights long scenarios more;
+we therefore also report per-scenario results and the operational components
+(delivered ratio, SLA-violating demand-intervals, maximum utilization,
+reroutes per hour, moved bandwidth).
+
+\paragraph{Statistics.} We separate two sources of uncertainty. For a
+\emph{fixed} policy, 95\,\% intervals are scenario-stratified bootstrap
+intervals over test episodes (10{,}000 resamples). For a \emph{learner}, the
+experimental unit is the training root: intervals are two-stage bootstrap
+intervals (resample roots, then scenario-stratified episodes within roots), and
+we also report a $t$-interval over root-level means and the number of roots on
+which a difference has a given sign. Paired differences are reported in reward
+units together with the paired standardized effect $d_z$. We do not use
+significance tests as decision rules; with five roots, root-level intervals are
+wide, and we say so where it matters~\citep{agarwal2021precipice,patterson2024empirical}.
+
+\paragraph{Hardware.} All new results were produced on a 4-core Intel Xeon
+(2.1\,GHz) virtual machine without GPU, one thread per run (PyTorch 2.14 CPU,
+SB3/SB3-contrib 2.9.0). The closed study trained on an RTX~4070 laptop GPU; its
+checkpoints were not archived, so we retrained them (Section~\ref{sec:repro}).

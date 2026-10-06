@@ -1,0 +1,54 @@
+\section{Environment details}
+\label{app:formulation}
+
+All values are generated from the configuration files by
+\texttt{scripts/study/analyze.py}. The topology has \NRouters{} routers,
+\NLinks{} bidirectional links (\NDirLinks{} directed), \TotalCapacityGbps{}\,Gb/s
+of total directed capacity, and \NDemands{} demands whose base (profile-peak)
+rates sum to \PeakOfferedGbps{}\,Gb/s.
+
+\begin{table}[h]
+\centering\small
+\caption{Traffic classes. Priority weights $q_d=\pi_d/6$ enter the SLA and
+disconnection terms; protected classes may only be moved onto candidates whose
+projected gross bottleneck utilization is at most 100\,\%.}
+\label{tab:classes}
+\begin{tabular}{@{}lrrrlll@{}}
+\toprule
+Class & Priority & Delay SLA (ms) & Loss SLA (\%) & Protected & Profile & Demands \\
+\midrule
+\input{tables/env_classes}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Scenarios. Learners train only on \texttt{random\_day}, whose bursts,
+single link failure (probability 0.5) and flash crowd (probability 0.3) are
+drawn per episode; all seven evaluation scenarios are scripted and differ from
+the training distribution.}
+\label{tab:scenarios}
+\begin{tabular}{@{}lrrrrl@{}}
+\toprule
+Scenario & Start (h) & Decisions & Multiplier & Noise $\sigma$ & Events \\
+\midrule
+\input{tables/env_scenarios}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Observation (604 features, feature-major, all in $[0,1]$).}
+Per directed link: $\mathrm{sat}(\rho_e)=\rho_e/(1+\rho_e)$ and the up flag
+($2\times64$). Per demand ($28\times17$): $\mathrm{sat}$(offered/base), priority$/6$,
+protected flag, $\mathrm{sat}$(delay/SLA), $\mathrm{sat}$(loss/SLA), path age$/12$
+(capped), dwell$/3$, disconnected flag, one-hot current path (4), one-hot
+previous TE path (4), candidate liveness (4), candidate propagation delay$/100$\,ms
+(4), and $\mathrm{sat}$ of the projected gross bottleneck utilization of moving
+to each candidate (4). Time of day, episode progress and future events are
+deliberately excluded.
+
+\paragraph{Episode boundaries.} Events scheduled at minute $t$ are applied in the
+right-closed window $(t-1,t]$, so the observation at a boundary reflects every
+event up to that time. Episodes never terminate; they are truncated at the
+scenario end, so paired controllers have identical horizons.

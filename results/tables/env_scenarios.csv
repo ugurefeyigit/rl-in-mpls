@@ -1,0 +1,9 @@
+scenario,start_h,decisions,multiplier,noise,events
+full\_day,0,288,1,1,none
+evening\_peak,16,84,1.15,1,none
+flash\_crowd,18,60,1.1,1,flash crowd
+link\_failure,17,60,1.1,1,"link down, link up"
+deceptive\_local\_optimum,9,60,1,0.8,burst
+ood\_double\_failure,10,60,1.1,1,"link down, link up"
+overload\_stress,18,48,1.6,1,none
+random\_day,0,288,1,1,randomized

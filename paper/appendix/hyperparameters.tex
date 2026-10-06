@@ -1,0 +1,32 @@
+\section{Hyper-parameters and budgets}
+\label{app:hyper}
+
+\begin{table}[h]
+\centering\small
+\caption{Learner configurations. All values are read from
+\texttt{configs/training.yaml} (PPO) and \texttt{configs/experiments/learning\_v2.yaml}
+(bandit/Q); the resolved configuration of every run is stored in its manifest.}
+\label{tab:hyper}
+\begin{tabular}{@{}lll@{}}
+\toprule
+ & MaskablePPO & Masked bandit / Q-learner \\
+\midrule
+Network & separate $[256,256]$ tanh (policy, value) & $604$--$256$--$256$--$69$ ReLU \\
+Optimizer & Adam, $3\cdot10^{-4}$, grad-norm clip $0.5$ & Adam, $3\cdot10^{-4}$, grad-norm clip $1.0$ \\
+Discount & $\gamma=0.995$, GAE $\lambda=0.95$ & $\gamma=0$ (bandit); $\{0.5,0.9,0.99\}$ (Q) \\
+Data per update & rollout $16\times512=8192$, 8 epochs, batch 512 & replay $10^5$, batch 512, every 64 transitions \\
+Gradient steps / 400k & 6{,}144 & 6{,}187 \\
+Exploration & policy entropy, coef.\ $0.01$ & masked $\varepsilon$-greedy, $0.2\to0.02$ over $2\cdot10^5$ \\
+Loss & clipped surrogate ($0.2$) + $0.5\times$ value MSE & Huber on selected head \\
+Target & GAE returns & $r$ (bandit); Eq.~\eqref{eq:qtarget}, target copy every 250 updates (Q) \\
+Masking & logits $\to-10^8$ & scores $\to-\infty$; random actions from legal set \\
+Warm-up & -- & 4{,}096 transitions \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{PPO sensitivity grid (E3).} One-factor-at-a-time around the
+default, on training root 42, selected on validation seeds only: learning rate
+$\{10^{-4},10^{-3}\}$; rollout length per environment $\{128\ (\text{batch }256),
+2048\ (\text{batch }1024)\}$; entropy $\{0, 0.03\}$; clip $0.1$; network
+$[64,64]$; and $\gamma\in\{0,0.9\}$ (E2).

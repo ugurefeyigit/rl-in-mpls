@@ -1,0 +1,5 @@
+role,routers
+P,8
+PE_IN,4
+PE_OUT,4
+AGG,2

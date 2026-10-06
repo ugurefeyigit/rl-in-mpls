@@ -420,6 +420,43 @@ def section_compute(data: dict) -> None:
         num(f"Tps{k}", r.tps_mean, "{:.0f}")
 
 
+def section_environment() -> None:
+    """Environment specification tables generated from the YAML configs."""
+    import yaml
+    cfg = ROOT / "configs"
+    topo = yaml.safe_load((cfg / "topology.yaml").read_text())
+    tc = yaml.safe_load((cfg / "traffic_classes.yaml").read_text())
+    sc = yaml.safe_load((cfg / "scenarios.yaml").read_text())["scenarios"]
+    caps = [l["capacity_mbps"] for l in topo["links"]]
+    roles = pd.Series([r["role"] for r in topo["routers"]]).value_counts()
+    num("NRouters", len(topo["routers"]), "{}")
+    num("NLinks", len(topo["links"]), "{}")
+    num("NDirLinks", 2 * len(topo["links"]), "{}")
+    num("NDemands", len(tc["demands"]), "{}")
+    num("TotalCapacityGbps", 2 * sum(caps) / 1000, "{:.1f}")
+    num("PeakOfferedGbps", sum(d["base_mbps"] for d in tc["demands"]) / 1000, "{:.2f}")
+    counts = pd.Series([d["class"] for d in tc["demands"]]).value_counts()
+    rows = []
+    for name, c in tc["classes"].items():
+        rows.append([name, str(c["priority"]), str(c["max_latency_ms"]), f"{c['max_loss_pct']:g}",
+                     "yes" if c["protected"] else "no", c["profile"].replace("_", "\\_"),
+                     str(int(counts.get(name, 0)))])
+    write_table(pd.DataFrame(rows, columns=["class", "priority", "delay_ms", "loss_pct", "protected",
+                                            "profile", "demands"]), "env_classes", latex_rows(rows))
+    rows = []
+    for name in EVAL_SCENARIOS + ("random_day",):
+        s_ = sc[name]
+        ev = s_.get("events", [])
+        kinds = ", ".join(sorted({e["type"].replace("_", " ") for e in ev})) or (
+            "randomized" if s_.get("randomize") else "none")
+        rows.append([name.replace("_", "\\_"), f"{s_['start_hour']:g}",
+                     str(s_["duration_min"] // 5), f"{s_['demand_multiplier']:g}",
+                     f"{s_['noise_sigma']:g}", kinds])
+    write_table(pd.DataFrame(rows, columns=["scenario", "start_h", "decisions", "multiplier",
+                                            "noise", "events"]), "env_scenarios", latex_rows(rows))
+    write_table(pd.DataFrame([{"role": k, "routers": v} for k, v in roles.items()]), "env_roles")
+
+
 def write_numbers() -> None:
     out = ROOT / "paper" / "generated" / "numbers.tex"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -441,6 +478,7 @@ def main() -> None:
             print(f"!! {f.__name__} failed: {type(exc).__name__}: {exc}")
             raise
     section_seqdiag()
+    section_environment()
     write_numbers()
 
 

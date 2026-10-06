@@ -1,0 +1,73 @@
+\section{Background and Related Work}
+\label{sec:related}
+
+\paragraph{MPLS traffic engineering.}
+MPLS-TE steers traffic trunks onto explicitly routed label-switched paths
+(LSPs)~\citep{rfc2702,awduche1999mpls}; RSVP-TE signals them and moves them with
+make-before-break~\citep{rfc3209}, and the same ``choose one of a few candidate
+paths'' primitive applies to segment-routing policies~\citep{rfc8402}.
+Classical TE solves an optimization per traffic matrix---weight
+setting~\citep{fortz2000ospf}, oblivious and semi-oblivious
+routing~\citep{applegate2003oblivious,kumar2018smore}, robust
+TE~\citep{wang2006cope}, multicommodity-flow formulations minimizing the maximum
+link utilization~\citep{wang2008overview}---or adapts online across a fixed set
+of paths~\citep{elwalid2001mate,kandula2005texcp}. Production SDN WANs re-solve
+periodically~\citep{jain2013b4,hong2013swan}. TeXCP~\citep{kandula2005texcp}
+made the point that online TE must be stable as well as responsive, which is
+why our formulation prices moves and imposes a hold-down.
+
+\paragraph{Learning for routing and TE.}
+RL for routing dates to Q-routing~\citep{boyan1993qrouting}. Deep RL has been
+applied to intradomain routing~\citep{valadarsky2017learning,stampa2017drl},
+utility-maximizing TE~\citep{xu2018drlte}, critical-flow
+rerouting~\citep{zhang2020cfrrl,pei2024efficientte}, GNN-based and multi-agent
+TE~\citep{almasan2022drlgnn,hope2021gddr,bernardez2021ml,bernardez2023magnneto,geng2020marlte,gui2024redte}.
+The strongest recent systems, however, are not sequential: Teal argues that a
+TE allocation for one interval does not affect future intervals and reduces
+the RL return to one step~\citep{xu2023teal}; DOTE trains a network end to end
+on the realized utilization and reports that an RL-based scheme is markedly
+worse~\citep{perry2023dote}; FIGRET and HARP are one-shot learned
+TE~\citep{liu2024figret,alqiam2024harp}. Several DRL-TE formulations are, in our
+reading, contextual bandits in disguise: the state is the exogenous traffic
+history and actions do not influence it~\citep{valadarsky2017learning,zhang2020cfrrl}.
+Our setting differs in the property those arguments rely on: the routing
+configuration persists, changes are incremental (one LSP per interval), costly
+and subject to hold-down, so the current assignment is endogenous state.
+
+\paragraph{When simple methods win.}
+Deep-RL results are sensitive to implementation and tuning and need careful
+statistics~\citep{henderson2018matters,engstrom2020implementation,andrychowicz2021matters,agarwal2021precipice,patterson2024empirical};
+random search matches model-free deep RL on standard control
+tasks~\citep{mania2018random}; in networking, a year-long randomized trial found
+that learned bitrate control did not beat a simple buffer-based
+rule~\citep{yan2020puffer}, and a re-examination of RL for optical resource
+allocation found that improved heuristics match or beat the published
+agents~\citep{doherty2025hype}. Our contribution is not another instance of
+this pattern but a controlled attribution of it to horizon versus algorithm.
+
+\paragraph{Contextual bandits and horizon.}
+A regression oracle on immediate rewards with simple exploration is a standard
+contextual-bandit design~\citep{langford2007epoch,foster2020beyond}, and greedy
+methods are competitive when contexts are diverse~\citep{bietti2021bakeoff}.
+Theory shows that long horizons need not make RL much harder than bandits in
+sample complexity~\citep{zhang2021rlbandits}, while a planning horizon or
+discount shorter than the true one can improve learned policies with limited
+data~\citep{jiang2015horizon,petrik2008biasing,amit2020discount}. Laidlaw et
+al.\ define the \emph{effective horizon}, the lookahead depth needed to find the
+optimal action when leaves are evaluated by a base policy, and show it predicts
+deep-RL success~\citep{laidlaw2023effective,laidlaw2024stochastic}. Congested
+bandits formalize rewards that depend on recent actions over a short
+window~\citep{awasthi2022congested}. Potential-based
+shaping~\citep{ng1999shaping} is policy-invariant only for the discount it is
+defined with---a caveat for any $\gamma=0$ learner trained on a shaped reward.
+To our knowledge no TE study measures the sequentiality of its decision problem
+or separates horizon from algorithm in a learner comparison.
+
+\paragraph{Action masking.}
+Masking invalid actions in policy-gradient methods is theoretically justified
+and practically important when many actions are illegal~\citep{huang2022masking}.
+Masks are a form of safe exploration with external knowledge~\citep{garcia2015safe};
+constrained MDPs~\citep{altman1999cmdp,achiam2017cpo} are the alternative we do
+not pursue. Flow-level simulation may not transfer to packet
+dynamics~\citep{boltres2024packerl}; we return to this in
+Section~\ref{sec:limitations}.
