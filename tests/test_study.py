@@ -223,3 +223,20 @@ def test_frozen_rollout_holds_traffic_and_restores_state():
     _, live_r = simulate(env, [0], horizon=8)
     _, real, _, _, _ = env.step(0)
     assert live_r[0] == real                                        # live path untouched
+
+
+def test_milp_target_never_worse_than_current_and_action_is_legal():
+    from mplssim.study.milp import MilpTargetPolicy
+    env = make_env_v2("deceptive_local_optimum", root_seed=21)
+    env.reset(options={"episode_seed": 21})
+    pol = MilpTargetPolicy()
+    for _ in range(20):
+        eng = env.eng
+        target, u_star = pol.target(eng)
+        u_now = float(np.max(eng.gross_link_load / eng.capacity))
+        assert u_star <= u_now + 1e-6
+        mask = env.action_masks()
+        a = pol.act(None, mask, env)
+        assert mask[a]
+        env.step(a)
+    assert pol.failures == 0

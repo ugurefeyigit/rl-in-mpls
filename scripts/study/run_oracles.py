@@ -35,6 +35,9 @@ def make_policy(name: str, seed: int):
         return NoopPolicy()
     if name == "random_valid":
         return UniformValidPolicy(seed=seed)
+    if name == "milp_track":
+        from mplssim.study.milp import MilpTargetPolicy
+        return MilpTargetPolicy()
     if name.startswith("oracle_h"):
         return RolloutOracle(horizon=int(name[len("oracle_h"):]))
     return BaselinePolicy(name, seed=seed)
