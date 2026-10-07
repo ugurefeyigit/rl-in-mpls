@@ -4,7 +4,7 @@
     python scripts/make_paper_figures.py topology seqdiag
 
 Inputs: experiments/processed/*.csv (built by scripts/study/analyze.py) and
-experiments/raw/seqdiag_*/. Outputs: results/figures/paper/*.pdf (+ .png
+experiments/raw/seqdiag_*/. Outputs: results/paper_figures/*.pdf (+ .png
 previews). Colors: the validated reference categorical palette, fixed per
 method (color follows the method in every figure), with marker shapes as
 secondary encoding.
@@ -25,7 +25,7 @@ import yaml  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-OUT = ROOT / "results" / "figures" / "paper"
+OUT = ROOT / "results" / "paper_figures"
 PROC = ROOT / "experiments" / "processed"
 RAW = ROOT / "experiments" / "raw"
 

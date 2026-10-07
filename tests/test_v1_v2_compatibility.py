@@ -10,6 +10,7 @@ differences which do exist are exactly the approved P0/P1 corrections.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import subprocess
@@ -264,8 +265,45 @@ ALLOWED_CONTINUITY_OUTPUT_PREFIX = "results/v2_three_root_continuity/"
 ALLOWED_FINAL_HOLDOUT_OUTPUT_PREFIX = "results/v2_final_holdout/"
 
 
+#: Post-study research layer (docs/REPOSITORY_AUDIT.md). Only *new* files under
+#: these paths are admitted; no existing V1- or V2-governed file may be modified
+#: through this allowance (``_is_added`` checks the git status).
+POST_STUDY_ADDITION_PREFIXES = (
+    "mplssim/study/", "scripts/study/", "experiments/", "paper/", "report/",
+    "slides/", "literature/", "requirements/", "results/tables/",
+    "results/paper_figures/", "docs/generated/", "tests/test_study",
+)
+POST_STUDY_ADDED_FILES = {
+    "CITATION.cff", "pyproject.toml", "scripts/reproduce.py", "scripts/make_paper_figures.py",
+    "tests/conftest.py", "docs/ALGORITHMS.md", "docs/EXPERIMENT_LOG.md",
+    "docs/EXPERIMENT_REGISTRY.md", "docs/HOSTILE_REVIEWS.md", "docs/HYPOTHESES.md",
+    "docs/LIMITATIONS.md", "docs/MASK_VALIDATION.md", "docs/MATHEMATICAL_FORMULATION.md",
+    "docs/PRODUCT_README.md", "docs/REPOSITORY_AUDIT.md", "docs/REPRODUCIBILITY.md",
+    "docs/REPRODUCTION_REPORT.md", "docs/RESEARCH_OVERVIEW.md", "docs/RESULTS_MANIFEST.md",
+    "docs/SEQUENTIALITY_AUDIT.md",
+}
+
+
+@functools.lru_cache(maxsize=1)
+def _added_files() -> frozenset[str]:
+    out = set()
+    for line in _git("diff", "--name-status", AUDITED_BASE_COMMIT).splitlines():
+        if line.startswith("A\t"):
+            out.add(line.split("\t", 1)[1].strip())
+    for line in _git("status", "--porcelain", "-uall").splitlines():
+        if line.startswith("??") or line.startswith("A "):
+            out.add(line[3:].strip().strip('"'))
+    return frozenset(out)
+
+
+def _is_post_study_addition(path: str) -> bool:
+    return ((path in POST_STUDY_ADDED_FILES or path.startswith(POST_STUDY_ADDITION_PREFIXES))
+            and path in _added_files())
+
+
 def _is_allowed(path: str) -> bool:
-    return (path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES
+    return (_is_post_study_addition(path)
+            or path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES
             or path.startswith(ALLOWED_OUTPUT_PREFIX)
             or path.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX)
             or path.startswith(ALLOWED_CONTINUITY_OUTPUT_PREFIX)
@@ -411,6 +449,8 @@ def test_models_results_figures_and_v1_configs_are_byte_identical_to_the_base():
             continue
         if path in ALLOWED_NEW_FILES or path in ALLOWED_MODIFIED_FILES:
             continue
+        if _is_post_study_addition(path):
+            continue
         assert path not in protected_exact, path
         assert not path.startswith(protected_prefixes), path
 
@@ -425,7 +465,8 @@ def test_the_validation_output_carve_out_touches_nothing_v1_owns():
     changed = {line.split("\t", 1)[1].strip() for line in
                _git("diff", "--name-status", AUDITED_BASE_COMMIT).splitlines() if line}
     v1_owned = {p for p in changed
-                if (p.startswith("models/")
+                if not _is_post_study_addition(p)
+                and (p.startswith("models/")
                     or (p.startswith("results/")
                         and not p.startswith(ALLOWED_OUTPUT_PREFIX)
                         and not p.startswith(ALLOWED_LEARNING_OUTPUT_PREFIX)

@@ -86,6 +86,6 @@ not exactly (`docs/REPRODUCTION_REPORT.md`).
 | `experiments/registry/` | experiment definitions | yes |
 | `experiments/raw/` | per-episode evaluation outputs, diagnostics, mask audit, run manifests, per-episode training logs | yes (small) |
 | `experiments/processed/` | tidy tables built by `scripts/study/analyze.py` | yes |
-| `results/tables/`, `results/figures/paper/` | publication tables and figures | yes |
+| `results/tables/`, `results/paper_figures/` | publication tables and figures | yes |
 | `results/v2_*`, `results/environment_v2_validation/` | closed study's compact evidence (historical; untouched) | yes |
 | `runs/`, `.worktrees/` | checkpoints, replay buffers, full step logs | no (`.gitignore`) |

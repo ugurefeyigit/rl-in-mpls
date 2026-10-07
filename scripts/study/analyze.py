@@ -799,7 +799,7 @@ def section_doc_tables() -> None:
 
 ARTIFACTS = [
     # (paper id, output, script, inputs, experiments, seeds)
-    ("Fig. topology", "results/figures/paper/fig_topology.pdf", "scripts/make_paper_figures.py topology",
+    ("Fig. topology", "results/paper_figures/fig_topology.pdf", "scripts/make_paper_figures.py topology",
      "configs/topology.yaml", "--", "--"),
     ("Tab. classes / scenarios", "paper/tables/env_classes.tex, env_scenarios.tex",
      "scripts/study/analyze.py (section_environment)", "configs/traffic_classes.yaml, configs/scenarios.yaml",
@@ -814,7 +814,7 @@ ARTIFACTS = [
     ("Tab. main results, Fig. main", "paper/tables/main_results.tex, main_per_scenario.tex, fig_main.pdf",
      "scripts/study/analyze.py (section_main); scripts/make_paper_figures.py main",
      "experiments/processed/episodes_test.csv", "E0_repro, E1_main, references", "select 2001-2005, test 3001-3020"),
-    ("Fig. learning curves", "results/figures/paper/fig_learning_curves.pdf", "scripts/make_paper_figures.py curves",
+    ("Fig. learning curves", "results/paper_figures/fig_learning_curves.pdf", "scripts/make_paper_figures.py curves",
      "experiments/processed/validation_curves.csv", "E0_repro, E1_main", "2001-2005"),
     ("Tab./Fig. horizon sweep", "paper/tables/horizon_sweep.tex, fig_horizon.pdf",
      "scripts/study/analyze.py (section_horizon); make_paper_figures.py horizon",
@@ -824,7 +824,7 @@ ARTIFACTS = [
      "select 2001-2005, test 3001-3020"),
     ("Tab./Fig. delay", "results/tables/delay_results.csv, fig_delay.pdf", "scripts/study/analyze.py (section_delay)",
      "experiments/processed/episodes_test.csv, experiments/raw/references_delay1/", "E4_delay", "3001-3020"),
-    ("Fig. sequentiality", "results/figures/paper/fig_seqdiag.pdf, results/tables/seqdiag_summary.csv",
+    ("Fig. sequentiality", "results/paper_figures/fig_seqdiag.pdf, results/tables/seqdiag_summary.csv",
      "scripts/study/run_seqdiag.py; analyze.py (section_seqdiag); make_paper_figures.py seqdiag",
      "experiments/raw/seqdiag_greedy*/", "--", "4001-4003"),
     ("Mask audit", "experiments/raw/mask_audit/summary.json, docs/generated/mask_audit_table.tex",
