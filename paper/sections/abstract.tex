@@ -8,9 +8,11 @@ failures and protected-class capacity---formally a Markov decision process.
 On a flow-level 18-router backbone, a masked contextual bandit that regresses
 only the immediate reward of each action beats MaskablePPO on all
 \TestBanditRoots{} training roots (paired return difference \Gap{}; $t$-interval
-over roots [\GapTLo, \GapTHi]) and reaches the return of a non-learning
-per-interval min-max-utilization MILP controller (difference
-\BanditMinusMilp{}, [\BanditMinusMilpTLo, \BanditMinusMilpTHi]). Varying the
+over roots [\GapTLo, \GapTHi]). It reaches the return of an untuned,
+non-learning per-interval min-max-utilization MILP controller, but once that
+controller's two parameters are chosen on validation seeds it is ahead of the
+bandit on every root (by \MilpTunedAhead{}, $t$-interval
+[\MilpTunedAheadTLo, \MilpTunedAheadTHi]). Varying the
 discount within each learner family points to the planning horizon rather
 than the algorithm: PPO with $\gamma=0$ matches the bandit, while with
 $\gamma=0.995$ it oscillates at hold-down expiry on \PPOFlappingRoots{} of \TestPPORoots{} roots and

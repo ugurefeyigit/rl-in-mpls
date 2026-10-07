@@ -89,7 +89,8 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \small
 \begin{itemize}
 \item bandit $-$ PPO $=$ \hl{\Gap}, $t$-interval over roots [\GapTLo, \GapTHi], positive on \GapRootsPositive/\GapRoots{} roots
-\item bandit $-$ MILP-track $=$ \BanditMinusMilp{} [\BanditMinusMilpTLo, \BanditMinusMilpTHi]; MILP has higher utility, more churn
+\item bandit $-$ MILP-track (untuned) $=$ \BanditMinusMilp{} [\BanditMinusMilpTLo, \BanditMinusMilpTHi]
+\item MILP-track tuned on validation: \hl{\TestMilpTuned}, ahead of the bandit on every root
 \item reroutes/h: bandit \TestBanditReroutes, MILP \TestMilpReroutes, PPO \TestPPOReroutes
 \end{itemize}
 \end{columns}
@@ -171,7 +172,7 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \begin{frame}{12. Take-aways and future work}
 \begin{itemize}
 \item measure the value of lookahead (closed loop) before choosing a sequential learner
-\item a myopic learner (or a per-interval optimizer) is the baseline to beat
+\item a tuned per-interval optimizer is the baseline to beat; a myopic learner is next
 \item long horizons can hurt by hiding small immediate costs
 \item future: delayed actuation and elastic traffic; packet-level validation; GNN policies;
   larger topologies; real traffic matrices

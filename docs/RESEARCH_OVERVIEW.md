@@ -30,7 +30,7 @@ exogenous process).
 | # | Finding | Evidence |
 |---|---|---|
 | F1 | The closed predecessor study's bandit result reproduces; its PPO result does not. Training traffic was byte-identical; a change of device and library versions (which alters PPO's action-sampling stream and arithmetic) moved PPO's per-root holdout return by up to 41 points (bandit ≤ 4). The "PPO wins the deceptive scenario" claim does not reproduce. | `docs/REPRODUCTION_REPORT.md` |
-| F2 | The bandit beats PPO on all 5 training roots (paired +24.9; t-interval over roots [3.4, 46.4]). Its return is not detectably different from a non-learning per-interval min-max-utilization MILP controller (+1.2, t-interval [−4.0, 6.3]; not an equivalence claim). MILP-track has higher network utility and higher move costs, and it wins the double-failure scenario. | `results/tables/main_*.csv` |
+| F2 | The bandit beats PPO on all 5 training roots (paired +24.9; t-interval over roots [3.4, 46.4]). Its return is not detectably different from a non-learning per-interval min-max-utilization MILP controller (+1.2, t-interval [−4.0, 6.3]; not an equivalence claim). MILP-track has higher network utility and higher move costs, and it wins the double-failure scenario. **With its two parameters selected on validation seeds, MILP-track reaches 30.9 and is ahead of the bandit on 5/5 roots (+5.7, t-interval [0.5, 10.9])**: per-interval optimization beats both learners. | `results/tables/main_*.csv` |
 | F3 | Most of PPO's deficit is reconfiguration cost (15.4 of the 24.9-point gap; 9.5 is lower network utility): on 3 of 5 roots most of its moves are reversals at hold-down expiry, and its utility varies widely across roots (7.8–32.2 vs 20.9–31.6 for the bandit). Over 6 intervals PPO's chosen actions are worth less than doing nothing on 3/3 analysed roots. | `decomposition_by_root.csv`, `model_fidelity.csv`, case study |
 | F4 | Varying the discount within each family points to the horizon, not the algorithm: PPO with γ = 0 matches the bandit (−0.6; 2/3 roots above) and stops oscillating, and a bootstrapped Q-learner (γ = 0.9) is worse than the bandit (−4.8; 0/3 roots above). PPO with γ = 0.9 lands in between (15.4), close to Q with γ = 0.9 (19.4), and Q with γ = 0.99 falls to 3.3 (0/3 roots above the bandit): return falls with the horizon in both families. A PPO-specific interaction with long horizons is probed by E3 (reward normalization, GAE λ). | `horizon_sweep.csv` |
 | F5 | Closed loop: a clairvoyant controller that re-plans every interval gains only +2.9 (H = 3) and +1.4 (H = 6) over H = 1, while knowing the next interval exactly is worth ≈ 22 over the bandit. Open loop, a move's 24-step value under a no-change continuation ranks moves like the first interval does in 33 % of states under the true future, but in 88 % with traffic held fixed: the open-loop non-myopic value is anticipation of exogenous change, which a re-planning controller can largely obtain by reacting. | `docs/SEQUENTIALITY_AUDIT.md`, `oracle_ladder.csv` |
@@ -38,9 +38,11 @@ exogenous process).
 | F7 | The action mask is consistent and safe: 0 violations of 14 checks over 1,068,120 state–action pairs. | `docs/MASK_VALIDATION.md` |
 | F8 | Adding the time of day to the observation (E7) helps the bandit (+1.9, 2/2 roots) more than Q γ = 0.9 (+0.4, 1/2 roots): the clock serves as context for the immediate reward, not as a basis for planning (H9 not supported). | `rq3_controls.csv` |
 | F9 | The deficit survives tuning. Of 8 one-factor PPO variations on root 42, the best by validation (entropy 0.03) beats the bandit on that root, but retrained on the four other primary roots it falls below the bandit on 4/4 (mean −28.6) and is not better than default PPO on average; two roots still oscillate. The root-42 gain was selection noise and also depended on checkpoint selection. | `ppo_tuning.csv`, `rq3_controls.csv` |
+| F10 | Training the bandit without the shaping term improves it (+6.9; +8.4 / +5.4 on 2 roots): its advantage over PPO does not rest on shaping. | `rq3_controls.csv` |
 
-Pending at the time of writing (see the paper for final status): shaping-free
-bandit on the second root (E6), 1.2M-transition budget (E5), tuned MILP-track on test.
+Pending at the time of writing (see the paper for final status): 1.2M-transition
+budget (E5); sequentiality diagnostic on the delayed variant (H11) and with a
+reactive continuation (H12).
 
 ## What is (and is not) contributed
 

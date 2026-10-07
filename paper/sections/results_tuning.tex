@@ -37,8 +37,10 @@ designed for; for a myopic learner it adds one step of lookahead on the
 potential. \ifmacro{RQThreeNoShaping}{Training the bandit with the shaping
 term removed and evaluating it on the primary reward changes its return by
 \RQThreeNoShaping{} (\RQThreeNoShapingRootsPositive{} of
-\RQThreeNoShapingRoots{} roots higher), so the bandit's advantage does not rest
-on the shaping term.}{(pending)}
+\RQThreeNoShapingRoots{} roots higher): the shaping term costs the bandit return rather than
+helping it, so its advantage over PPO does not rest on shaping, and the shaped bandit
+of the main comparison is not the strongest myopic learner available (we did
+not train PPO without shaping).}{(pending)}
 
 \paragraph{Time of day (E7).} The open-loop diagnostic attributes the
 non-myopic value to anticipation of exogenous change, and the observation has

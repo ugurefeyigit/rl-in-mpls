@@ -663,6 +663,10 @@ def section_milp_tuned(data: dict) -> None:
         num(f"{key}MinusMilpTunedTHi", cl["t_hi"])
         num(f"{key}MinusMilpTunedRootsPositive", int(cl["roots_positive"]), "{}")
         rows.append({"learner": p, "reference": name, **cl})
+        if p == "bandit":
+            num("MilpTunedAhead", -cl["boot_est"])
+            num("MilpTunedAheadTLo", -cl["t_hi"])
+            num("MilpTunedAheadTHi", -cl["t_lo"])
     write_table(pd.DataFrame(rows), "learners_vs_milp_tuned")
 
 

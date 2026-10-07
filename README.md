@@ -13,8 +13,8 @@ why? If not, when would it?
 
 **Principal findings** (numbers in the generated block below and in the paper).
 (1) The myopic bandit beats PPO on all five training roots and reaches the
-return of a non-learning per-interval MILP controller. The two make different
-trade-offs: MILP-track has higher network utility, the bandit reroutes less.
+return of an untuned, non-learning per-interval MILP controller. Tuned on
+validation seeds, that MILP controller beats both learners on every root.
 (2) Varying the discount within each learner family points to the planning
 horizon rather than the algorithm. PPO with γ = 0 matches the bandit; PPO with
 γ = 0.995 oscillates at hold-down expiry on 3 of 5 roots, and reconfiguration
@@ -29,7 +29,8 @@ PPO. MILP-track stays ahead of every learner, so this shows when the myopic
 learner fails, not that long-horizon RL is needed. (5) The predecessor study's
 bandit result reproduces on a different machine and software stack; its PPO
 result does not. Adding the time of day to the observation helps the bandit more than a
-sequential learner. Pending experiments (budget, shaping) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
+sequential learner. Removing reward shaping makes the bandit better, not worse. Pending
+experiments (budget) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
 [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 
 **What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,

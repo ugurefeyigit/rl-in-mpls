@@ -43,8 +43,16 @@ thus corresponds to about half a percentage point of delivered traffic, fewer
 SLA violations and a third of PPO's churn. MILP-track attains higher network utility and pays more in
 move costs, which its objective does not contain (Table~\ref{tab:decomp}); the
 bandit reaches a similar return with \ChurnRatioBanditMilp{} times its reroute
-rate. MILP-track's two parameters were not tuned for this reward; a
-validation-tuned variant is reported in Appendix~\ref{app:results}.
+rate. MILP-track's two parameters (the minimum utilization gain that triggers a
+move, and which mismatched demand to move) were not tuned for this reward.
+Selecting them on the validation seeds (eight combinations; minimum gain
+\MilpTunedGain{}, largest-volume demand first) gives a controller that reaches
+\TestMilpTuned{} [\TestMilpTunedLo, \TestMilpTunedHi] on the test episodes
+with \TestMilpTunedReroutes{} reroutes per hour, ahead of the bandit by
+\MilpTunedAhead{} ($t$-interval [\MilpTunedAheadTLo, \MilpTunedAheadTHi];
+the bandit is ahead on \BanditMinusMilpTunedRootsPositive{} of \GapRoots{}
+roots) and of PPO by more. With a model of the objective and a little tuning,
+per-interval optimization beats both learners here.
 
 \begin{table*}[t]
 \centering\small

@@ -47,12 +47,13 @@ bandit's result reproduces and PPO's does not: a change of device and library
 versions, which alters PPO's sampling stream and arithmetic, moves PPO's
 per-root holdout return by up to \ReproMaxShiftPPO{} points and the bandit's
 by at most \ReproMaxShiftBandit{} (\S\ref{sec:repro}).
-\item \textbf{A controlled comparison with a non-learning optimizer.} On
+\item \textbf{A controlled comparison with non-learning optimizers.} On
 \TestBanditRoots{} training roots and 140 disjoint test episodes the bandit
 beats PPO on every root and reaches the return of a per-interval
 min-max-utilization MILP controller that does not learn at all, with
 different trade-offs: MILP-track attains higher network utility, the bandit
-reroutes less (\S\ref{sec:rq1}).
+reroutes less. A MILP-track whose two parameters are selected on validation
+seeds is better than every learner (\S\ref{sec:rq1}).
 \item \textbf{A mechanism.} Most of PPO's deficit
 (\GapCostSharePct\,\%) is reconfiguration cost: on \PPOFlappingRoots{} of
 \TestPPORoots{} roots it settles into flipping a demand at every hold-down

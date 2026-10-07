@@ -57,5 +57,7 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 41 | 08:51 | E2 Q-learner γ = 0.99, 3 roots | 3.3 (−20.9 vs the bandit; 0/3 roots better). Return falls with the discount in the value family as in PPO; **H3 supported** [science] |
 | 42 | 08:51 | E6 bandit without shaping, root 42 (root 314159 pending) | 26.7 vs 18.3 with shaping (+8.4): shaping does not help the bandit on this root [science] |
 | 43 | 08:52 | MILP-track validation grid complete (#32) | validation means: min_gain 0 / 0.02 (default) / 0.05 / 0.10 with largest-volume moves 18.1 / 20.0 / 22.3 / 24.1; with smallest-volume moves 10.8 / 12.6 / 15.3 / 17.8. Selected **min_gain = 0.10, largest**. The selected value is at the edge of the grid, so a larger threshold might do better still; the grid was not extended (it was fixed before running). Test run of the selected configuration started [science] | running |
+| 44 | 09:07 | Tuned MILP-track (min_gain 0.10, largest) on the 140 test episodes | **30.9 [28.8, 33.0]**, 3.77 reroutes/h; bandit − tuned MILP = −5.7 (t-interval [−10.9, −0.5]; bandit ahead on 0/5 roots); PPO − tuned MILP = −30.6. With two parameters chosen on validation seeds, per-interval optimization beats both learners. The "bandit matches the optimizer" statement now holds only for the untuned default [science] |
+| 45 | 09:07 | E6 bandit without shaping, both roots | +8.4 / +5.4 (28.9 vs 22.0): the shaping term costs the bandit return; its advantage over PPO does not rest on shaping [science] |
 
 Entries after #28 are appended as experiments complete.

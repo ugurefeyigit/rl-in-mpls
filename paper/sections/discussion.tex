@@ -4,7 +4,8 @@
 \paragraph{What the results mean.} In this formulation the current LSP
 assignment is genuine state, and a move constrains the future through
 hold-downs, reversal costs and coupled protected-class legality. Yet a learner
-that ignores the future reaches the return of a per-interval optimizer, and a
+that ignores the future reaches the return of an untuned per-interval
+optimizer (a tuned one is better still), and a
 learner trained with an effective horizon of about 200 intervals
 ($1/(1-\gamma)$, 17 hours) does worse than both. The closed-loop oracle ladder
 shows why there is little to gain from looking ahead: even with perfect
@@ -47,17 +48,19 @@ learning; neither measures (iii) beyond the bound, because their continuation
 never moves again. We recommend reporting both before choosing an algorithm.
 
 \paragraph{When should simpler methods be preferred?} When effects are
-immediate, a myopic learner---or, if a model of the objective is available, a
-per-interval optimizer---reaches a higher return than PPO here. Inference cost
-does not discriminate at a five-minute interval (the bandit needs
-\InfBanditMs{}\,ms per decision, PPO \InfPPOMs{}\,ms, MILP-track
-\InfMilpMs{}\,ms). The bandit and MILP-track trade differently: MILP-track
-attains higher network utility and pays more in move costs, which its
-objective does not contain; the bandit reroutes \ChurnRatioBanditMilp{} times
-as often as MILP-track (\TestBanditReroutes{} vs.\ \TestMilpReroutes{} per
-hour) at a return we cannot distinguish from MILP-track's, which matters
-operationally because every LSP move is signalling and risk. A churn-aware
-optimizer would be the natural stronger baseline.
+immediate and a model of the objective is available, a per-interval optimizer
+is the strongest controller we tested: tuned on validation seeds, MILP-track
+is ahead of the bandit on every root and reroutes less than the untuned
+version (\TestMilpTunedReroutes{} vs.\ \TestMilpReroutes{} per hour, against
+\TestBanditReroutes{} for the bandit). Without such a model, a myopic learner
+reaches the return of the untuned optimizer and is well ahead of PPO.
+Inference cost does not discriminate at a five-minute interval (the bandit
+needs \InfBanditMs{}\,ms per decision, PPO \InfPPOMs{}\,ms, MILP-track
+\InfMilpMs{}\,ms). MILP-track's objective contains neither move costs nor
+the reward's SLA and loss terms; that a hysteresis threshold alone is enough
+to make it the best controller suggests that a churn-aware optimizer is the
+baseline any learned TE controller in this setting should be measured
+against.
 
 \paragraph{Networking implications.} Teal and DOTE treat TE as a one-shot
 problem per traffic matrix. Our results support that treatment in a setting

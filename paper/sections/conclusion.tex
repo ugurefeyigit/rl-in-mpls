@@ -3,7 +3,8 @@
 
 For an incremental, masked MPLS traffic-engineering problem with persistent
 routing state, a masked contextual bandit beats MaskablePPO on every training
-root and reaches the return of a per-interval MILP optimizer. Varying the
+root and reaches the return of an untuned per-interval MILP optimizer; a
+validation-tuned version of that optimizer is better than every learner. Varying the
 discount within each learner family points to the planning horizon rather than
 the learning algorithm: PPO with $\gamma=0$ matches the bandit, PPO with
 $\gamma=0.995$ settles into costly oscillations on most roots, and a
