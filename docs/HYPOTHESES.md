@@ -64,4 +64,6 @@ Outcomes are reported for every hypothesis, including those that failed:
   no-op over 6 intervals on 3/3 roots).
 * **H10**: supported (reversals 52.8 → 1.0).
 * **H13**: supported — without shaping, PPO γ = 0 stays close to the shaping-free bandit (−1.3 / −7.2), Q γ = 0.9 is below it (−13.6 / −15.4) and PPO γ = 0.995 far below (−46.1 / −16.3).
-* **H7, H11, H12**: see the generated table (pending at the time of writing).
+* **H7**: supported on root 42 (PPO at 1.2M 10.7 < bandit at 400k 18.3; still improving).
+* **H11**: supported — under delay the frozen diagnostic's myopic choice captures 0 % of the 24-interval gain (97 % without delay).
+* **H12**: see the generated table (pending at the time of writing).

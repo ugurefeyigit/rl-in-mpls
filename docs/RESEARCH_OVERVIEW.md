@@ -40,10 +40,11 @@ exogenous process).
 | F9 | The deficit survives tuning. Of 8 one-factor PPO variations on root 42, the best by validation (entropy 0.03) beats the bandit on that root, but retrained on the four other primary roots it falls below the bandit on 4/4 (mean −28.6) and is not better than default PPO on average; two roots still oscillate. The root-42 gain was selection noise and also depended on checkpoint selection. | `ppo_tuning.csv`, `rq3_controls.csv` |
 | F10 | Training the bandit without the shaping term changes it by +6.9 (+8.4 / +5.4 on 2 roots), within learner noise (F11): its advantage over PPO does not rest on shaping. | `rq3_controls.csv` |
 | F11 | Learner noise within a root is large: three learner seeds on identical root-42 traffic give the bandit 18.3 / 17.8 / 28.2 (E8). Effects of a few points measured on 1–2 roots are inconclusive; the 5-root main comparison is not affected. | `rq3_controls.csv`, log #47 |
+| F12 | With 3× the budget (1.2M, root 42) PPO improves strongly (−13.7 → 10.7) but stays below the bandit at 400k under every learner seed trained (17.8–28.2); its curve was still rising. | log #49 |
+| F13 | The diagnostic flags the delayed regime: with L = 1 and traffic frozen, the myopic choice captures 0 % of the 24-interval gain (97 % at L = 0) — a simulator-only signal that the bandit will fail (H11, recorded before running). | log #50 |
 
-Pending at the time of writing (see the paper for final status): 1.2M-transition
-budget (E5); sequentiality diagnostic on the delayed variant (H11) and with a
-reactive continuation (H12).
+Pending at the time of writing (see the paper for final status): sequentiality
+diagnostic with a reactive continuation (H12).
 
 ## What is (and is not) contributed
 

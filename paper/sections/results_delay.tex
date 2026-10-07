@@ -32,6 +32,17 @@ in principle, although at this budget neither Q-learner recovers the
 no-delay return---nor that RL beats optimization-based control in this
 regime.
 
+\paragraph{Does the diagnostic see this regime?} We ran the frozen-exogenous
+diagnostic of \S\ref{sec:sequentiality} on the delayed variant before
+looking at its output (H11). It flags the change clearly: with $L=1$ the
+myopic choice is a no-op in every state, because the immediate reward of a
+move contains only its cost; it agrees with the 24-interval best action in
+\SeqDelayFrozenAgreeHTwentyFour\,\% of states (\SeqFrozenAgreeHTwentyFour\,\%
+without delay) and captures \SeqDelayFrozenCapturedHTwentyFour\,\% of the
+24-interval gain (\SeqFrozenCapturedHTwentyFour\,\% without delay). A
+simulator-only measurement thus separates the regime in which the myopic
+learner works from the one in which it fails.
+
 \begin{table}[t]
 \centering\small
 \caption{Delayed TE activation ($L=1$), mean test return per training root

@@ -49,7 +49,11 @@ test of, the advantage-noise hypothesis.}{ (E3b pending.)}
 the budget (1.2M transitions, root 42), PPO reaches \RQThreeBudgetPPOvsBanditA{}
 against \RQThreeBudgetPPOvsBanditB{} for the bandit at 400k (difference
 \RQThreeBudgetPPOvsBandit).\ifmacro{RQThreeBudgetBandit}{ The bandit itself
-changes by \RQThreeBudgetBandit{} with the larger budget.}{}}{(pending)}
+changes by \RQThreeBudgetBandit{} with the larger budget, which is within its
+learner noise on this root.}{} PPO improves strongly with budget on this root,
+its weakest at 400k, and its validation return was still rising at 1.2M; it
+remains below the bandit at 400k under every learner seed we trained, but
+whether it would catch up with more data is open.}{(pending)}
 
 \paragraph{Shaping (E6).} The bandit is trained on the shaped reward, and
 potential-based shaping is policy-invariant only for the discount it was

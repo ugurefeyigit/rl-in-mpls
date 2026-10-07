@@ -1039,8 +1039,11 @@ def _seqdiag_delay(d: pd.DataFrame) -> None:
     fz = d[(d.frozen) & (d.scope == "all") & (d.H == 24)]
     n_files = len(glob.glob(str(RAW / "seqdiag_greedy_delay1_frozen" / "*.csv")))
     if len(fz) and n_files >= 21:
-        status(f"Frozen 24-interval agreement at $L=1$: {100 * fz.agree.iloc[0]:.0f}\\,\\% "
-               f"(vs.\\ \\SeqFrozenAgreeHTwentyFour\\,\\% at $L=0$)", "status_h11")
+        status(f"Supported: with traffic frozen, at $L=1$ the myopic choice agrees with the "
+               f"24-interval best in {100 * fz.agree.iloc[0]:.0f}\\,\\% of states and captures "
+               f"{100 * fz.captured.iloc[0]:.0f}\\,\\% of its gain (at $L=0$: "
+               f"\\SeqFrozenAgreeHTwentyFour\\,\\% and \\SeqFrozenCapturedHTwentyFour\\,\\%)",
+               "status_h11")
     else:
         status(f"pending ({n_files} of 21 episodes)", "status_h11")
 

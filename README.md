@@ -31,8 +31,9 @@ bandit result reproduces on a different machine and software stack; its PPO
 result does not. Adding the time of day to the observation helps the bandit more than a
 sequential learner. The bandit's advantage does not rest on reward shaping. Learner noise within a
 root is large (≈ 10 points across learner seeds), so small effects measured on
-one or two roots are reported as inconclusive. Pending
-experiments (budget) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
+one or two roots are reported as inconclusive. With 3× the training budget PPO improves but
+stays below the bandit on the root tested. A simulator-only diagnostic flags
+the delayed regime in which the bandit fails. Remaining checks are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
 [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 
 **What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,
