@@ -240,3 +240,41 @@ def test_milp_target_never_worse_than_current_and_action_is_legal():
         assert mask[a]
         env.step(a)
     assert pol.failures == 0
+
+
+# ---------------------------------------------------------------- registry / analysis
+def test_registry_loads_every_family_with_unique_ids_and_resolved_configs():
+    from mplssim.study.registry import all_runs
+    runs = all_runs()
+    assert len(runs) == len(set(runs))
+    for rid, spec in runs.items():
+        assert rid == f"{spec.family}__{spec.tag}__r{spec.root}"
+        assert spec.transitions % spec.n_envs == 0
+        assert spec.transitions % spec.checkpoint_interval == 0
+        if spec.algorithm == "maskable_ppo":
+            assert {"learning_rate", "n_steps", "gamma"} <= set(spec.config)
+        if spec.algorithm == "masked_q":
+            assert 0.0 < spec.config["gamma"] < 1.0
+    assert runs["E6_shaping__bandit_noshaping__r42"].eval_env == {"variant": "base"}
+    assert runs["E4_delay__L1_ppo__r42"].eval_env["variant"] == "delayed"
+
+
+def test_protocol_seed_sets_are_disjoint():
+    from mplssim.study.protocol import SEED_SETS
+    sets = [set(v) for v in SEED_SETS.values()]
+    for i in range(len(sets)):
+        for j in range(i + 1, len(sets)):
+            assert not sets[i] & sets[j]
+
+
+def test_latex_macro_names_contain_letters_only():
+    import importlib.util
+    from pathlib import Path
+    path = Path(__file__).resolve().parents[1] / "scripts" / "study" / "analyze.py"
+    spec = importlib.util.spec_from_file_location("analyze", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    for name in ("SeqLiveAgreeH24", "HQ0p995", "HPPO0p0Vs", "Gap"):
+        assert mod.macro_name(name).isalpha()
+    with pytest.raises(ValueError):
+        mod.macro_name("bad-name")
