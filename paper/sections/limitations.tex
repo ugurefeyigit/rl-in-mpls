@@ -37,7 +37,10 @@ traffic matrices or failure traces. No claim of topology generalization is
 made.
 
 \paragraph{Learning.} Five training roots for the primary comparison and
-two to three for ablations; root-level intervals are wide and are reported.
+two to four for ablations; root-level intervals are wide and are reported.
+Learner noise within a root is large (\NoiseBanditSpread{} points across three
+learner seeds of the bandit on identical traffic), so the small ablation
+effects are inconclusive.
 A budget of 400k transitions (about 1{,}390 simulated days), with one longer
 run per learner. PPO received a bounded one-factor sensitivity study, the
 bandit none; neither used graph-structured networks, observation

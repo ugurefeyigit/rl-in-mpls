@@ -20,7 +20,9 @@ hence in floating-point arithmetic and in PPO's action-sampling random stream,
 which SB3 draws from the device's generator; the bandit's exploration and
 replay sampling use a NumPy generator and are device-independent. These
 differences moved PPO's per-root holdout return by up to \ReproMaxShiftPPO{}
-points and the bandit's by at most \ReproMaxShiftBandit{}. The comparison is
+points and the bandit's by at most \ReproMaxShiftBandit{}. The bandit is not
+immune to such changes: on root 42, changing only its learner seed moves its
+test return by up to \NoiseBanditSpread{} (\S\ref{sec:rq3}). The comparison is
 therefore not a pure numerical-perturbation experiment for PPO; it shows that
 PPO's outcome depends strongly on incidental properties of an execution, which
 the spread across our five CPU training roots confirms (root standard

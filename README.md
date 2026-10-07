@@ -29,7 +29,9 @@ PPO. MILP-track stays ahead of every learner, so this shows when the myopic
 learner fails, not that long-horizon RL is needed. (5) The predecessor study's
 bandit result reproduces on a different machine and software stack; its PPO
 result does not. Adding the time of day to the observation helps the bandit more than a
-sequential learner. Removing reward shaping makes the bandit better, not worse. Pending
+sequential learner. The bandit's advantage does not rest on reward shaping. Learner noise within a
+root is large (≈ 10 points across learner seeds), so small effects measured on
+one or two roots are reported as inconclusive. Pending
 experiments (budget) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
 [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 

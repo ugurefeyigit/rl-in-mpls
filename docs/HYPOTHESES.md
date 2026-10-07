@@ -52,7 +52,8 @@ Outcomes are reported for every hypothesis, including those that failed:
 * **H2**: supported (PPO γ = 0: 23.6; γ = 0.995: −6.4).
 * **H3**: supported (Q γ = 0.5 ≈ bandit, 1/3 roots above; γ = 0.9 −4.8, 0/3; γ = 0.99 −20.9, 0/3).
 * **H4**: falsified on the selection root (tuned PPO 20.7 vs bandit 18.3 on root 42 test), supported on fresh roots (E3b: tuned PPO below the bandit on 4/4, mean −28.6).
-* **H9**: not supported (clock adds +1.9 to the bandit, +0.4 to Q γ = 0.9).
+* **H9**: not supported (clock adds +1.9 to the bandit, +0.4 to Q γ = 0.9; both within learner noise).
+* **H14**: falsified — three learner seeds on identical root-42 traffic give the bandit 18.3 / 17.8 / 28.2.
 * **H5**: prediction met, but component (a), one-off cost vs persistent gain,
   is **not** supported: with traffic frozen, cost amortization changes the
   best move in only 12 % of states. The non-myopic value is (b),
@@ -62,4 +63,4 @@ Outcomes are reported for every hypothesis, including those that failed:
 * **H8**: supported (bandit top-1 55 %, PPO 7 %; PPO's actions worth less than
   no-op over 6 intervals on 3/3 roots).
 * **H10**: supported (reversals 52.8 → 1.0).
-* **H7, H11, H12**: see the generated table (pending at the time of writing).
+* **H7, H11, H12, H13**: see the generated table (pending at the time of writing).

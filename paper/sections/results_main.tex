@@ -57,8 +57,9 @@ roots) and of PPO by more. With a model of the objective and a little tuning,
 per-interval optimization beats both learners of the main comparison here.
 The comparison is asymmetric---MILP-track was tuned, the learners were
 not---and one change to the bandit (training without the shaping term,
-\S\ref{sec:rq3}) changes that: shaping-free bandit $-$ tuned MILP-track
-$=$ \NoShapingMinusMilpTunedPerRoot{} on roots 42 / 314159.
+\S\ref{sec:rq3}) changes that on one root: shaping-free bandit $-$ tuned MILP-track
+$=$ \NoShapingMinusMilpTunedPerRoot{} on roots 42 / 314159, differences of the
+size of the bandit's own learner noise (\S\ref{sec:rq3}).
 
 \begin{table*}[t]
 \centering\small

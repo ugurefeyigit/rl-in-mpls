@@ -4,6 +4,17 @@
 % experiment has finished, so the paper compiles at every stage.
 \newcommand{\ifmacro}[3]{\ifcsname #1\endcsname #2\else #3\fi}
 
+\paragraph{Learner noise within a root (E8).} Before reading the control
+experiments, note how much a learner varies on identical training traffic.
+\ifmacro{NoiseBanditSpread}{Retraining the default bandit on root 42 with two
+other learner seeds (network initialization, exploration and replay sampling;
+same episode-seed ledger) gives test returns of \NoiseBanditVals{} (original
+first), a spread of \NoiseBanditSpread{} points. Differences of a few points
+measured on one or two roots---E6 and E7 below---are therefore within learner
+noise, and we treat them as inconclusive. The primary comparison is not
+affected in this way: its $t$-interval is over training roots, each of which
+varies the learner seed as well as the traffic.}{(pending)}
+
 \paragraph{PPO tuning (E3).} Eight one-factor variations of PPO's
 configuration were trained on root 42 and compared with the default on
 validation seeds only (Appendix~\ref{app:hyper}).
@@ -13,7 +24,8 @@ best by validation return is \texttt{\TuneBest} (\TuneBestVal, against
 the same root); Table~\ref{tab:tuning} lists all of them with their test
 returns, which played no role in selection.}{(pending)}
 On root 42 the selected configuration (entropy coefficient $0.03$) is ahead of
-the bandit on validation and test, so H4 fails on the selection root. Root 42
+the bandit on validation and test, so H4 fails on the selection root, by a
+margin smaller than the bandit's learner noise on that root. Root 42
 is also the root on which default PPO was worst, and one-root selection is
 noisy, so the configuration was retrained on the four other primary roots
 (E3b).\ifmacro{RQThreeTunedVsBandit}{ There, tuned PPO minus the bandit is
@@ -45,10 +57,9 @@ designed for; for a myopic learner it adds one step of lookahead on the
 potential. \ifmacro{RQThreeNoShaping}{Training the bandit with the shaping
 term removed and evaluating it on the primary reward changes its return by
 \RQThreeNoShaping{} (\RQThreeNoShapingRootsPositive{} of
-\RQThreeNoShapingRoots{} roots higher): the shaping term costs the bandit return rather than
-helping it, so its advantage over PPO does not rest on shaping, and the shaped bandit
-of the main comparison is not the strongest myopic learner available (we did
-not train PPO without shaping).}{(pending)}
+\RQThreeNoShapingRoots{} roots higher). Given the learner noise above, this does not show that shaping
+hurts the bandit; it does show that the bandit's advantage over PPO does not
+rest on shaping.}{(pending)}
 
 \paragraph{Time of day (E7).} The open-loop diagnostic attributes the
 non-myopic value to anticipation of exogenous change, and the observation has
@@ -59,8 +70,9 @@ bandit's return by \RQThreeTimeBandit{} (\RQThreeTimeBanditRootsPositive{} of
 \RQThreeTimeBanditRoots{} roots higher) and the Q-learner's by
 \RQThreeTimeQ{} (\RQThreeTimeQRootsPositive{} of \RQThreeTimeQRoots{}
 roots higher). The clock helps both learners a little and the myopic one at
-least as much, so in this environment it serves as context for the immediate
-reward rather than as a basis for planning; H9 is not supported.}{(pending)}
+least as much; both changes are within learner noise, so H9 is not
+supported, and the clock does not create a benefit for planning that we can
+detect.}{(pending)}
 
 \begin{table}[t]
 \centering\small

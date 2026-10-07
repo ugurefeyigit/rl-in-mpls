@@ -101,6 +101,10 @@ Ordered roughly by how much each could change the conclusions.
 17d. **Delayed-activation side effects**: a pending request blocks further
     moves of its demand (effective lock L + 3 intervals), and a request that is
     illegal at activation is cancelled but keeps its charge.
+17f. **Learner noise within a root** (round-3 review, E8): three learner
+    seeds on identical root-42 traffic give the bandit 18.3 / 17.8 / 28.2.
+    Single- and two-root effects of a few points (E6, E7, Q γ = 0.5, the
+    root-42 tuning result) are inconclusive.
 17e. **Small-root ablations**: with 2–3 roots the two-stage bootstrap stays
     close to the range of root means; those comparisons are reported per root
     with sign counts.

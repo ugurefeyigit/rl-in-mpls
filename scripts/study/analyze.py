@@ -759,6 +759,36 @@ def section_rq3(data: dict) -> None:
                + f" on root 42: PPO at 1.2M minus bandit at 400k $=$ {d:+.1f}", "status_e5")
     else:
         status("pending", "status_e5")
+    # E8: within-root learner noise (root 42, identical traffic, different learner seeds)
+    e8 = [sel[sel.policy == p_].operational_return.mean() for p_ in ("E8:bandit_ls1", "E8:bandit_ls2")]
+    base42 = sel[(sel.policy == "bandit") & (sel.root == 42)].operational_return.mean()
+    if all(np.isfinite(e8)) and np.isfinite(base42):
+        vals = [base42] + e8
+        num("NoiseBanditVals", " / ".join(f"{v:.1f}" for v in vals))
+        num("NoiseBanditSpread", max(vals) - min(vals))
+        status(f"Falsified: three learner seeds on identical root-42 traffic give "
+               f"{' / '.join(f'{v:.1f}' for v in vals)} (spread {max(vals) - min(vals):.1f}); "
+               "differences of a few points on 1--2 roots are within learner noise"
+               if max(vals) - min(vals) >= 7 else
+               f"Supported: spread {max(vals) - min(vals):.1f} across three learner seeds", "status_h14")
+    else:
+        status("pending", "status_h14")
+    nsh = {k: pair_roots(sel, a_, b_) for k, a_, b_ in (
+        ("Q", "E6b:qg09_noshaping", "E6:bandit_noshaping"),
+        ("PPOZero", "E6b:ppog0_noshaping", "E6:bandit_noshaping"),
+        ("PPO", "E6b:ppo_noshaping", "E6:bandit_noshaping"))}
+    for k, r in nsh.items():
+        if r:
+            num(f"NoShape{k}VsBandit", r["diff"])
+            num(f"NoShape{k}VsBanditPerRoot", r["per_root"])
+            num(f"NoShape{k}VsBanditRootsPositive", r["roots_positive"], "{}")
+            num(f"NoShape{k}VsBanditRoots", r["roots"], "{}")
+    if all(r and r["roots"] >= 2 for r in nsh.values()):
+        status("Shaping-free, minus shaping-free bandit (per root 42 / 314159): "
+               f"Q $\\gamma=0.9$ {nsh['Q']['per_root']}; PPO $\\gamma=0$ {nsh['PPOZero']['per_root']}; "
+               f"PPO $\\gamma=0.995$ {nsh['PPO']['per_root']}", "status_h13")
+    else:
+        status("pending", "status_h13")
     q = sel[sel.policy == "E2:qg099"]
     if q.root.nunique() >= 3:
         r = pair_roots(sel, "E2:qg099", "bandit")
