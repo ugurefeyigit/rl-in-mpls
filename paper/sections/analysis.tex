@@ -57,12 +57,17 @@ this explanation by removing PPO's horizon.
 On states visited by each learner on test episodes we compute, by cloning the
 simulator, the exact one-interval reward of every legal action and the
 six-interval value of the learner's action, of the exact myopic-best action,
-and of no-op (Table~\ref{tab:fidelity}). % CHECK after all roots
-Neither learner is close to the exact
-myopic optimum, but they fail in opposite directions: the bandit is
-conservative (it chooses no-op far more often than the optimum does), PPO
-over-acts, and over six intervals PPO's actions are on average worth less
-than doing nothing on some roots. PPO's frequent moves therefore do not buy
+and of no-op (Table~\ref{tab:fidelity}). Neither learner is close to the exact myopic
+optimum, but they fail in opposite directions. The bandit is conservative: it
+chooses no-op in \FidBanditNoopPolicy\,\% of states although no-op is optimal
+in only \FidBanditNoopOptimal\,\%, and it matches the optimum in
+\FidBanditTopOne\,\% of states (one-interval regret \FidBanditRegret). PPO
+over-acts: it chooses no-op in \FidPPONoopPolicy\,\% of states, matches the
+optimum in \FidPPOTopOne\,\% (regret \FidPPORegret), and over six intervals
+its chosen actions are worth \emph{less than doing nothing} on
+\FidPPONegRoots{} of \FidPPORoots{} roots (mean $\Delta G_6=\FidPPOGSix$
+against \FidBanditGSix{} for the bandit and \FidPPOGSixMyopic{} for the exact
+myopic choice on PPO's states). PPO's frequent moves therefore do not buy
 delayed value that a myopic criterion would miss.
 
 \begin{table}[t]

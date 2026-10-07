@@ -23,4 +23,6 @@
 21 & E1 complete (5 roots per learner) & bandit − PPO positive on 5/5 roots \\
 22 & E2 PPO $\gamma$ = 0, 3 roots & \textbf{23.6 vs bandit 24.2 on the same roots (−0.6 [−5.2, 2.7]); PPO $\gamma$ = 0.995: −6.4.} Flapping disappears ($\le$ 2.4 reversals/episode). Supports H2 and H10 [science] \\
 23 & Compute re-planning ($\approx$34 run-equivalents left). Training slots 3 $\to$ 4; queue reordered by information value (Q $\gamma$0.9 $\to$ E4 $\to$ E7 $\to$ PPO $\gamma$0.9 $\to$ E3 $\to$ rest of E2 $\to$ E6 $\to$ E5). E3 trimmed from 8 to 6 configurations (\texttt{ns128}, \texttt{net64} dropped \textbf{before running}) [process] &  \\
+24 & Oracle-3 complete (5 test seeds) & Oracle-3 − Oracle-1 = +2.9 [1.5, 4.2], versus Oracle-1 − bandit $\approx$ 22 on the same episodes [science] \\
+25 & E2 Q-learner $\gamma$ = 0.9, 3 roots & 19.4 vs bandit 24.2 (−4.8 [−7.0, −2.1]), 0/3 roots better; supports H3 [science] \\
 \bottomrule\end{longtable}}
