@@ -1,1 +1,15 @@
-% TODO conclusion
+\section{Conclusion}
+\label{sec:conclusion}
+
+For an incremental, masked MPLS traffic-engineering problem with persistent
+routing state, a masked contextual bandit beats MaskablePPO on every training
+root and matches a per-interval MILP optimizer. The cause is the planning
+horizon, not the learning algorithm: PPO with $\gamma=0$ matches the bandit,
+while PPO with $\gamma=0.995$ settles into costly oscillations, and a
+bootstrapped value learner does not improve on the bandit. A sequentiality
+diagnostic shows why: almost all of the problem's non-myopic value lies in
+anticipating exogenous change that the controller cannot observe, while the
+predictable part is captured by the first interval's reward. Sequential RL
+should therefore be justified by measured temporal coupling---delayed effects
+or predictable dynamics---rather than assumed from the fact that the problem
+is formally an MDP.
