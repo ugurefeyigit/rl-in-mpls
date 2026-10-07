@@ -81,32 +81,45 @@ Per scenario at H = 24 (agreement / gain captured):
 
 ## 4. Interpretation
 
-1. **Per decision, the problem is not myopic under the true future.** With
-   clairvoyant rollouts the myopic choice agrees with the 24-interval best
-   choice in only about a third of states and the long-horizon best move
-   usually has a *negative* immediate advantage.
-2. **Almost all of that non-myopic value is anticipation of exogenous
-   change.** Holding traffic and link state fixed, the myopic choice is the
-   24-interval best in the large majority of states and captures nearly all of
-   the available gain; sacrifice moves become rare. Moves whose one-off cost
-   exceeds one interval's gain but which pay off by persistence alone exist but
-   are uncommon, because move costs are small relative to congestion
-   penalties.
-3. **The observation can barely support that anticipation.** It contains the
-   current traffic but not the clock, the AR(1) state or scheduled events. A
-   learner can exploit the non-myopic value only to the extent it can predict
-   traffic from current volumes. E7 (time of day added) tests this directly.
-4. Hence the bandit's advantage is consistent with the structure: the part of
-   the problem that is predictable from the observation is close to myopic,
-   and the part that is not myopic is mostly not predictable. This is a
-   statement about this environment, its observation and its traffic model,
-   not about TE in general.
+*Revised after the round-2 hostile review (R5, R6). The first version read
+the clairvoyant open-loop numbers as "non-myopic value that a better learner
+could exploit"; the closed-loop oracle ladder shows that most of it cannot be
+realised by a controller that re-plans every interval.*
+
+1. **Closed loop, lookahead is worth little even with perfect foresight.**
+   Oracle-H re-plans every interval with the true future. Oracle-3 and
+   Oracle-6 gain only +2.9 and +1.4 return over Oracle-1 (5 test seeds), while
+   Oracle-1 is ≈ 22 above the bandit (`results/tables/oracle_ladder.csv`). The
+   headroom above the learners is in estimating the immediate consequence of
+   a move, not in planning ahead.
+2. **Open loop, per decision, the problem looks non-myopic under the true
+   future.** With clairvoyant no-change rollouts the myopic choice agrees with
+   the 24-interval best choice in about a third of states, and the
+   long-horizon best move often has a negative immediate advantage. These
+   open-loop values overstate realisable value: a move that pays off only
+   after traffic changes can also be made when the change arrives.
+3. **That open-loop non-myopic value is anticipation of exogenous change.**
+   With traffic and link state held fixed, the myopic choice is the
+   24-interval best in the large majority of states. With constant exogenous
+   inputs and no further moves, a move's H-interval value is close to H times
+   its per-interval gain minus its one-off cost, so this number measures one
+   thing: how often amortizing a move's cost over a longer stay changes which
+   move is best. It rarely does. It does **not** measure dwell opportunity
+   cost or protected-class coupling, because the continuation never moves
+   again. Those are bounded only by the closed-loop ladder, and checked by
+   a reactive (greedy) continuation (H12).
+4. **The observation does not provide what anticipation needs.** It contains
+   the current traffic but not the clock, the AR(1) state or scheduled events.
+   That is a design choice of the environment, not a property of TE. E7 (time
+   of day added) tests the clock.
+5. This is a statement about this environment, its observation, its traffic
+   model and its heavily loaded regime, not about TE in general.
 
 ## 5. Caveats
 
-* The continuation is no-op. A better continuation can only increase the
-  value of any first action; the diagnostic measures structure, not an
-  optimal policy.
+* The default continuation is no-op. It cannot see value that arises from
+  later moves; a greedy continuation is run as a check (H12). The diagnostic
+  measures structure, not an optimal policy.
 * States come from one reference controller; other controllers visit other
   states.
 * Three diagnostic seeds; per-scenario estimates rest on 45–216 states.
