@@ -81,7 +81,7 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}{5. Result: the bandit beats PPO and reaches the optimizer's return}
+\begin{frame}{5. Result: bandit $>$ PPO; a tuned per-interval optimizer beats both}
 \begin{columns}
 \column{0.62\textwidth}
 \includegraphics[width=\textwidth]{fig_main}
@@ -172,7 +172,8 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 
 \begin{frame}{12. Take-aways and future work}
 \begin{itemize}
-\item measure the value of lookahead (closed loop) before choosing a sequential learner
+\item measure the value of lookahead before choosing a sequential learner: the rollout diagnostic separated the base and the delayed regime without training
+\item learner noise within a root is large (\NoiseBanditSpread{} points): small effects need many roots
 \item a tuned per-interval optimizer is the baseline to beat; a myopic learner is next
 \item long horizons can hurt by hiding small immediate costs
 \item future: delayed actuation and elastic traffic; packet-level validation; GNN policies;

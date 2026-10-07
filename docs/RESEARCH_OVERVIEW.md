@@ -51,11 +51,18 @@ diagnostic with a reactive continuation (H12).
 * **Engineering:** a reproducible study layer on a frozen, governed simulator
   (registry, bit-exact trainer equivalence, paired evaluation, exact
   baseline reproduction, mask audit).
-* **Experimental:** a controlled attribution of the bandit–PPO gap to the
-  discount horizon, and a regime (delayed effects) where the ranking reverses.
-* **Methodological:** a cheap simulator-based sequentiality diagnostic
-  (clairvoyant vs frozen-exogenous rollouts) that predicts whether sequential
-  RL has anything to exploit, applicable before training anything.
+* **Experimental:** a controlled comparison of a myopic learner, PPO and a
+  per-interval optimizer under one protocol, with the horizon varied within
+  each learner family (with and without shaping), PPO tuned on one root and
+  checked on four fresh roots, a learner-noise floor, and a delayed-effect
+  variant in which the myopic learner fails. The strongest controller is a
+  validation-tuned per-interval MILP, not a learner.
+* **Methodological:** a cheap simulator-based rollout diagnostic (clairvoyant
+  vs frozen-exogenous, no-change continuation) that separates the base
+  environment, where the myopic choice captures almost all of the
+  multi-interval gain, from the delayed variant, where it captures none,
+  without training anything. It measures a no-change-continuation planner,
+  not an upper bound on the value of lookahead.
 * **Not contributed:** a new algorithm, a theorem, topology generalization,
   or evidence about real networks.
 
@@ -65,8 +72,8 @@ When an action's effect is felt in the interval in which it is taken and the
 exogenous future is not predictable from the observation, the immediate
 reward already ranks actions almost as well as a longer criterion would, and
 a controller that re-plans every interval loses little by not looking ahead.
-A myopic learner, or a per-interval optimizer, is then the right tool, and a
-long horizon mainly adds estimation noise. Learners of the decision-time
+A per-interval optimizer (or, without a model, a myopic learner) is then the
+right tool, and a long horizon mainly adds estimation noise. Learners of the decision-time
 reward fail when effects are delayed relative to decisions; whether a short
 or a long horizon is then needed is open. Having persistent state is not, by
 itself, a reason to use a sequential learner. All of this holds in a heavily
