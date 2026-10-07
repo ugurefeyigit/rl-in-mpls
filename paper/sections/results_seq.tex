@@ -14,11 +14,12 @@ Oracle-1 reaches \LadderOraclehOne, against \LadderBandit{} for the bandit and
 intervals adds only \OracleThreeMinusOne{} [\OracleThreeMinusOneLo,
 \OracleThreeMinusOneHi] and \OracleSixMinusOne{} [\OracleSixMinusOneLo,
 \OracleSixMinusOneHi] (Oracle-6 is not better than Oracle-3). Even with
-perfect foresight, lookahead beyond one interval is worth a few points to a
-controller that re-plans; knowing the next interval exactly is worth
-\BanditBehindOracleOne{} over the bandit on the full test set. The headroom
-above the learners lies in estimating the \emph{immediate} consequence of a
-move more accurately, not in planning further ahead.
+perfect foresight, lookahead beyond one interval is worth a few points to this
+re-planning controller; knowing the next interval exactly is worth
+\BanditBehindOracleOne{} over the bandit on the full test set. Oracle-1's lead
+over the learners combines an exact model of the reward with knowledge of the
+next interval's traffic, bursts and failures; we did not separate the two. For
+this planner, what matters is the next interval, not the ones after it.
 
 \paragraph{Per decision: open-loop rollouts.} On \SeqLiveStatesHOne{} states
 visited by the greedy controller (diagnostic seeds 4001--4003, every fourth
@@ -49,7 +50,10 @@ observation does not provide information for (no clock, no forecast; \S\ref{sec:
 tests adding the clock). Neither rollout can detect value that arises from
 \emph{later} moves---the opportunity cost of a dwell lock, or a move that
 enables another under the protected-class rule---because the continuation
-never moves again; that value is bounded only by the closed-loop measurement.
+never moves again. The oracle ladder does not bound that value either: it
+shows what a planner with the same no-change continuation gains, and a planner
+with a better continuation could gain more. That Oracle-6 is not better than
+Oracle-3 is consistent with this continuation bias.
 
 \begin{figure}[t]
 \centering

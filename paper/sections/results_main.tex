@@ -9,7 +9,7 @@ over \TestPPORoots{}. On paired episodes the bandit's advantage is \Gap{}
 [\GapLo, \GapHi]); it is positive on \GapRootsPositive{} of \GapRoots{} roots
 and in \GapWinRate\,\% of paired episodes (paired $d_z=\GapDz$, pooled over roots and episodes). The ordering does not
 depend on checkpoint selection: with the final 400k checkpoints the gap is
-\GapFinal{} [\GapFinalLo, \GapFinalHi] (\GapFinalRootsPositive{} of \GapRoots{}
+\GapFinal{} (two-stage bootstrap [\GapFinalLo, \GapFinalHi]) (\GapFinalRootsPositive{} of \GapRoots{}
 roots).
 Per scenario (Table~\ref{tab:perscen}), the bandit is ahead in every
 scenario except the double-failure scenario, where the difference is small
@@ -45,14 +45,20 @@ move costs, which its objective does not contain (Table~\ref{tab:decomp}); the
 bandit reaches a similar return with \ChurnRatioBanditMilp{} times its reroute
 rate. MILP-track's two parameters (the minimum utilization gain that triggers a
 move, and which mismatched demand to move) were not tuned for this reward.
-Selecting them on the validation seeds (eight combinations; minimum gain
-\MilpTunedGain{}, largest-volume demand first) gives a controller that reaches
+Selecting them on the validation seeds (eight combinations; selected:
+minimum gain \MilpTunedGain{}, the largest value in the grid, and
+largest-volume demand first; validation return rose with the threshold, so a
+wider grid might do better still) gives a controller that reaches
 \TestMilpTuned{} [\TestMilpTunedLo, \TestMilpTunedHi] on the test episodes
 with \TestMilpTunedReroutes{} reroutes per hour, ahead of the bandit by
 \MilpTunedAhead{} ($t$-interval [\MilpTunedAheadTLo, \MilpTunedAheadTHi];
 the bandit is ahead on \BanditMinusMilpTunedRootsPositive{} of \GapRoots{}
 roots) and of PPO by more. With a model of the objective and a little tuning,
-per-interval optimization beats both learners here.
+per-interval optimization beats both learners of the main comparison here.
+The comparison is asymmetric---MILP-track was tuned, the learners were
+not---and one change to the bandit (training without the shaping term,
+\S\ref{sec:rq3}) changes that: shaping-free bandit $-$ tuned MILP-track
+$=$ \NoShapingMinusMilpTunedPerRoot{} on roots 42 / 314159.
 
 \begin{table*}[t]
 \centering\small

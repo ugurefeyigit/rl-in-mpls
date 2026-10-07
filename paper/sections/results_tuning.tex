@@ -7,7 +7,7 @@
 \paragraph{PPO tuning (E3).} Eight one-factor variations of PPO's
 configuration were trained on root 42 and compared with the default on
 validation seeds only (Appendix~\ref{app:hyper}).
-\ifmacro{TuneEThreeRuns}{Of the \TuneEThreeRuns{} that have finished, the
+\ifmacro{TuneEThreeRuns}{Of the \TuneEThreeRuns{} configurations, the
 best by validation return is \texttt{\TuneBest} (\TuneBestVal, against
 \TuneDefaultVal{} for the default and \TuneBanditValBest{} for the bandit on
 the same root); Table~\ref{tab:tuning} lists all of them with their test
@@ -23,7 +23,15 @@ noisy, so the configuration was retrained on the four other primary roots
 of \RQThreeTunedVsDefaultRoots{}; Table~\ref{tab:rq3}). The improvement on
 the selection root did not transfer; even there it depended on checkpoint
 selection, since the final checkpoint on root 42 oscillates again. With the tuned
-configuration PPO still oscillates on two of the four fresh roots.}{ (E3b pending.)}
+configuration PPO still oscillates on two of the four fresh roots.
+The two variations that target the proposed mechanism behave differently on
+the selection root: GAE $\lambda=0.8$, which shortens the advantage's credit
+horizon while keeping $\gamma=0.995$, gives the second-best validation return
+and a selected checkpoint that never reverses, but its final checkpoint is far
+worse; reward normalization helps less. Five of the eight selected checkpoints
+and six of the eight final ones reverse most of their moves. On one root this
+is consistent with, but no
+test of, the advantage-noise hypothesis.}{ (E3b pending.)}
 
 \paragraph{Budget (E5).} \ifmacro{RQThreeBudgetPPOvsBandit}{With three times
 the budget (1.2M transitions, root 42), PPO reaches \RQThreeBudgetPPOvsBanditA{}

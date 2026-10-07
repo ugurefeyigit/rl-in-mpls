@@ -2,7 +2,8 @@
 \label{app:hypotheses}
 
 Hypotheses H0--H8 were committed before any new learner result existed
-(\texttt{docs/HYPOTHESES.md}); H9--H11 were added later and are exploratory.
+(\texttt{docs/HYPOTHESES.md}); H9--H14 were added later, each before its
+experiment ran, and are exploratory.
 Three of the five primary training roots are the reproduction runs, whose
 direction was known from the closed study when H1 was written; the two
 additional roots were new. The frozen-exogenous rollout was added after an
@@ -25,7 +26,7 @@ H4 & PPO deficit is not a tuning artefact & \input{generated/status_e3} \\
 H5 & Non-myopic structure exists, mostly from (a) one-off cost vs.\ persistent gain and (b) clairvoyance & Prediction met (frozen agreement \SeqFrozenAgreeHTwentyFour\,\% $>$ live \SeqLiveAgreeHTwentyFour\,\%; Oracle-3/6 gains small). Component (a) \emph{not} supported: cost amortization changes the best move in only \SeqFrozenDisagreeHTwentyFour\,\% of states \\
 H6 & Under delay the bandit fails and sequential learners do better & Bandit fails (\DelayBanditLZero{} $\rightarrow$ \DelayBandit); PPO better on \DelayPPORootsBetter/\DelayPPORoots{} roots; Q $\gamma=0.9$ \DelayQNine{} (\DelayQNineRootsBetter/\DelayQNineRoots{} roots better). No learner reaches MILP-track (\DelayRefmilptrack) \\
 H7 & PPO does not catch up with $3\times$ budget & \input{generated/status_e5} \\
-H8 & The bandit is a good myopic optimizer; PPO does not find non-myopic value & Supported (Table~\ref{tab:fidelity}) \\
+H8 & The bandit is closer to the myopic optimum than PPO; PPO does not find non-myopic value & Supported, though neither learner is close to the optimum (Table~\ref{tab:fidelity}) \\
 \midrule
 H9 & Time of day helps Q $\gamma=0.9$ more than the bandit & \input{generated/status_e7} \\
 H10 & PPO $\gamma=0$ removes most flapping & Supported: reversals \HPPODefaultRev{} $\rightarrow$ \HPPOZeroRev{} per episode \\

@@ -1,4 +1,4 @@
-\section{Why the Bandit Wins}
+\section{Why PPO Falls Behind}
 \label{sec:analysis}
 
 \paragraph{Where the return goes.}
@@ -14,8 +14,10 @@ across roots (\PPOUtilMin{} to \PPOUtilMax, against \BanditUtilMin{} to
 than half of its accepted moves are \emph{reversals} (up to \PPORevShareMax\,\%),
 and its per-root move costs range from \PPOCostMin{} to \PPOCostMax{}, against
 \BanditCostMin{} to \BanditCostMax{} for the bandit. The shaping term
-contributes at most \ShapingMaxAbs{} per episode for any policy, so the
-bandit's use of a shaped reward does not explain its advantage.
+contributes at most \ShapingMaxAbs{} per episode to the evaluated return of
+any policy, but that does not bound its effect on learning: a learner trained
+on the shaped reward sees it at every step, and removing it changes the
+bandit's return by several points (\S\ref{sec:rq3}).
 
 \begin{table}[t]
 \centering\small

@@ -14,7 +14,8 @@ from lookahead beyond the next interval. When a move's effect is felt in the
 interval in which it is made, the immediate reward ranks moves almost as a
 longer criterion would; what is not myopic---anticipating bursts, failures
 and diurnal change---is not provided by an observation without a clock or
-forecasts. A sequential learner pays the price of a long-horizon objective
+forecasts, and adding the clock (\S\ref{sec:rq3}) helps the myopic learner at
+least as much as a sequential one. A sequential learner pays the price of a long-horizon objective
 (noisy advantages, unstable optimization) without access to the signal that
 would make it worthwhile.
 
@@ -26,9 +27,10 @@ the former, so the policy settles into flipping a demand whenever the
 hold-down allows. We have not measured the advantage noise directly. The
 evidence for this explanation is that setting $\gamma=0$ removes the
 oscillation and closes the gap; against it, the critic is not poorly fitted
-in aggregate (explained variance at the last update
-\PPOEVDefaultMin--\PPOEVDefaultMax{} with $\gamma=0.995$, versus
-\PPOEVZeroMin--\PPOEVZeroMax{} with $\gamma=0$), so the failure would have to
+in aggregate: in the \PPOEVOscRuns{} PPO runs whose final checkpoint
+oscillates, its explained variance at the last update is
+\PPOEVOscMin--\PPOEVOscMax{}, against \PPOEVZeroMin--\PPOEVZeroMax{} with
+$\gamma=0$, so the failure would have to
 lie in the small residual differences between moves rather than in the value
 scale; and the PPO roots that do not oscillate fall short through lower network utility
 rather than churn. The discount factor is thus a decisive hyper-parameter here, and the
@@ -41,18 +43,21 @@ effects are delayed relative to the decision, so that the immediate reward
 does not contain them (\S\ref{sec:rq5}); (ii) exogenous dynamics that are
 predictable from the observation, so that anticipation can be learned; and
 (iii) decisions that change the future feasible set substantially. The
-closed-loop oracle ladder of \S\ref{sec:sequentiality} bounds the value of
-lookahead under perfect foresight and the frozen rollout measures how much
-cost amortization changes the ranking of moves, both from a simulator without
-learning; neither measures (iii) beyond the bound, because their continuation
-never moves again. We recommend reporting both before choosing an algorithm.
+closed-loop oracle ladder of \S\ref{sec:sequentiality} measures what one
+simple clairvoyant lookahead planner gains, and the frozen rollout measures
+how much cost amortization changes the ranking of moves, both from a
+simulator without learning. Both score a move as if nothing changed
+afterwards, so they cannot see (iii): their gains are what such a planner
+achieves, not an upper bound on the value of lookahead; a rollout with a
+reactive continuation is the natural next check. We recommend reporting both before choosing an algorithm.
 
 \paragraph{When should simpler methods be preferred?} When effects are
 immediate and a model of the objective is available, a per-interval optimizer
 is the strongest controller we tested: tuned on validation seeds, MILP-track
 is ahead of the bandit on every root and reroutes less than the untuned
 version (\TestMilpTunedReroutes{} vs.\ \TestMilpReroutes{} per hour, against
-\TestBanditReroutes{} for the bandit). Without such a model, a myopic learner
+\TestBanditReroutes{} for the bandit). A myopic learner, whose observation
+contains a one-step projection of every move (\S\ref{sec:limitations}),
 reaches the return of the untuned optimizer and is well ahead of PPO.
 Inference cost does not discriminate at a five-minute interval (the bandit
 needs \InfBanditMs{}\,ms per decision, PPO \InfPPOMs{}\,ms, MILP-track

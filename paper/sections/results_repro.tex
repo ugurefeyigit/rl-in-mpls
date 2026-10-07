@@ -28,10 +28,12 @@ deviation \TestPPORootSd{} for PPO vs.\ \TestBanditRootSd{} for the
 bandit). On
 \ReproPPONeverPositive{} of 3 roots the reproduced PPO never reached a positive
 validation return at any checkpoint. The bandit's advantage reappeared on all
-three roots and grew to \ReproGap{} (two-stage bootstrap 95\,\% CI
-[\ReproGapLo, \ReproGapHi]); the historical deceptive-scenario PPO advantage
+three roots and grew to \ReproGap{} (per root \ReproGapPerRoot{}, roots 42 /
+271828 / 314159; with three roots the $t$-interval [\ReproGapTLo,
+\ReproGapTHi] is uninformative about magnitude); the historical deceptive-scenario PPO advantage
 (\HistDeceptive{} for the bandit) did not reproduce (bandit $-$ PPO
-$=\ReproDeceptive{}$ [\ReproDeceptiveLo, \ReproDeceptiveHi]).
+$=\ReproDeceptive{}$, positive on all three roots and in every paired
+episode).
 
 \begin{table}[t]
 \centering\small

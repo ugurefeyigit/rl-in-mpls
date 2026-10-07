@@ -16,7 +16,7 @@ why? If not, when would it?
 return of an untuned, non-learning per-interval MILP controller. Tuned on
 validation seeds, that MILP controller beats both learners on every root.
 (2) Varying the discount within each learner family points to the planning
-horizon rather than the algorithm. PPO with γ = 0 matches the bandit; PPO with
+horizon rather than the algorithm. PPO with γ = 0 is not detectably different from the bandit (3 roots); PPO with
 γ = 0.995 oscillates at hold-down expiry on 3 of 5 roots, and reconfiguration
 costs make up about 60 % of its deficit. A bootstrapped Q-learner is worse than the bandit with
 γ = 0.9 and much worse with γ = 0.99. A PPO configuration tuned on one root

@@ -86,12 +86,15 @@ the clairvoyant open-loop numbers as "non-myopic value that a better learner
 could exploit"; the closed-loop oracle ladder shows that most of it cannot be
 realised by a controller that re-plans every interval.*
 
-1. **Closed loop, lookahead is worth little even with perfect foresight.**
-   Oracle-H re-plans every interval with the true future. Oracle-3 and
-   Oracle-6 gain only +2.9 and +1.4 return over Oracle-1 (5 test seeds), while
-   Oracle-1 is ≈ 22 above the bandit (`results/tables/oracle_ladder.csv`). The
-   headroom above the learners is in estimating the immediate consequence of
-   a move, not in planning ahead.
+1. **Closed loop, a simple clairvoyant planner gains little from lookahead.**
+   Oracle-H re-plans every interval with the true future, scoring each move
+   with a no-change continuation. Oracle-3 and Oracle-6 gain only +2.9 and
+   +1.4 return over Oracle-1 (5 test seeds), while Oracle-1 is ≈ 22 above the
+   bandit (`results/tables/oracle_ladder.csv`). Oracle-1's lead combines an
+   exact reward model with clairvoyant next-interval traffic (not separated).
+   These gains are a property of this planner, not an upper bound on the
+   value of lookahead (round-3 review R6); Oracle-6 < Oracle-3 is consistent
+   with continuation bias.
 2. **Open loop, per decision, the problem looks non-myopic under the true
    future.** With clairvoyant no-change rollouts the myopic choice agrees with
    the 24-interval best choice in about a third of states, and the

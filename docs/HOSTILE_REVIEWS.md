@@ -120,3 +120,50 @@ counts, win rate, d_z; per-root returns; bandit − MILP and PPO − MILP;
 reproduction numbers; horizon sweep; delay table values; seqdiag H = 24
 values; oracle ladder; model-fidelity means; decomposition; gradient-step
 counts.
+
+---
+
+## Round 3
+
+Written at about 09:15 UTC by an independent reviewing agent on the paper
+revised after round 2, with the E3/E3b, E6, E7, Q γ = 0.99, PPO γ = 0.9 and
+tuned-MILP results in. Responses checked against the repository.
+
+### Unresolved round-2 items
+
+| # | Criticism | Sev. | Response / action |
+|---|---|---|---|
+| R8 | §5 still argued that shaping (≤ 0.02 per episode) cannot explain the bandit's advantage, though E6 shows removing it moves the bandit by ≈ 7. | major | Sentence replaced: the evaluated contribution is tiny, but that does not bound its effect on learning; points to E6. |
+| R6 | "Bounds the value of lookahead" is wrong: Oracle-H uses a no-change continuation, so its gains are what one planner achieves, not an upper bound; Oracle-6 < Oracle-3 suggests continuation bias. | major | Abstract, RQ4, discussion, conclusion and `SEQUENTIALITY_AUDIT.md` reworded; H12 (greedy continuation) is the check. |
+| R3 | `rewnorm`/`gae08` "probe" the mechanism but are never interpreted. | moderate | RQ3 now interprets them, with the one-root caveat. |
+| R1 | Reproduction gap still labelled "95 % CI" with 3 roots. | moderate | Per-root values and the (uninformative) t-interval reported instead. |
+| P2 | "PPO with γ = 0 matches the bandit" is equivalence wording. | minor | "Not detectably different at three roots" (abstract, conclusion, README, overview). |
+| R5 | Intro/conclusion overstate what the frozen rollout shows. | minor | Qualified to "value visible to a no-change continuation". |
+
+### Networking, RL and paper reviewers
+
+| # | Criticism | Sev. | Response / action |
+|---|---|---|---|
+| N1 | Tuned-MILP grid edge not disclosed. | moderate | Stated in RQ1 (and log #43); the lead is likely conservative. |
+| N2 | Tuned MILP missing from the main table. | major | Row added to Table 2 and README results block. |
+| N3 | "Without such a model" ignores the bandit's one-step projection features. | moderate | Reworded. |
+| N4 | Oracle-1's lead mixes an exact reward model with clairvoyant traffic. | moderate | Stated as not separated; claim softened. A persistence oracle was not run. |
+| N5 | "Environment frozen" is not a reason for not ablating features (variants were run). | minor | Reason given as compute. |
+| N6 | E7's negative result not used in the discussion. | moderate | Integrated. |
+| R-a | "Tuned MILP beats every learner" is false for the shaping-free bandit on one root (31.2 vs 30.9); tuning was asymmetric. | major | Verified. Restated as "both learners of the main comparison"; per-root shaping-free bandit − tuned MILP reported; asymmetry stated. |
+| R-b | Shaping confounds the horizon sweep (policy-invariant only for γ = 0.995; ≈ 7-point effect at γ = 0). | major | **Experiment E6b** (Q γ = 0.9, PPO γ = 0, PPO γ = 0.995 without shaping; H13, registered before running). RQ2 will state the confound and the E6b outcome. |
+| R-c | No within-root noise floor for the 2–8-point effects of E6/E7/Q γ = 0.5. | moderate | **Experiment E8** (bandit, root 42, two learner seeds on identical traffic; H14). |
+| R-d | "Monotonically" holds for means only. | minor | "Mean return falls … on two of three roots individually". |
+| R-e | EV argument used non-oscillating roots. | minor | Now uses the PPO runs whose final checkpoint oscillates (generated). |
+| R-f | Pre-write both readings of pending outcomes. | — | H11–H14 state support and falsification conditions before running. |
+| P-a | Stale text (E3 "finished", "two further roots", "H9–H11"). | minor | Fixed. |
+| P-b | H8 abridged too strongly. | moderate | "Closer to the myopic optimum than PPO; neither is close". |
+| P-c | "Frozen" has three meanings. | minor | L = 0 environment renamed "base environment". |
+| P-d | Abstract too long; §5 title. | minor | Abstract cut to ≈ 240 words; §5 retitled "Why PPO Falls Behind". |
+| P-e | Interval labels. | minor | Final-checkpoint gap labelled as two-stage bootstrap; ladder n stated. |
+| P-f | Strongest practical finding buried in intro bullet 2. | minor | Bullet reordered: tuned MILP first. |
+
+**Verdict recorded by the reviewer:** weak accept for a networking venue as a
+careful negative and measurement study; borderline for an ML venue until the
+lookahead claims are framed as properties of a no-change-continuation planner
+(done) and the shaping confound is resolved (E6b running).

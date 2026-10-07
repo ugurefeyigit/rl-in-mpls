@@ -191,6 +191,10 @@ def section_reproduction(data: dict) -> None:
         num("ReproGap", cl["boot_est"])
         num("ReproGapLo", cl["boot_lo"])
         num("ReproGapHi", cl["boot_hi"])
+        num("ReproGapTLo", cl["t_lo"])
+        num("ReproGapTHi", cl["t_hi"])
+        num("ReproGapPerRoot", " / ".join(
+            f"{v:+.1f}" for v in pairs.groupby("root")["diff"].mean().values))
         num("ReproRootsPositive", int(cl["roots_positive"]), "{}")
         num("ReproRoots", int(cl["roots"]), "{}")
         hb = hist_root[hist_root.algorithm == "masked_bandit"].operational_return_mean.mean()
@@ -271,6 +275,22 @@ def section_main(data: dict) -> None:
         num(f"Test{key}LossPct", 100 * s["loss"], "{:.1f}")
         num(f"Test{key}Delivered", 100 * s["delivered"], "{:.2f}")
         num(f"Test{key}DecisionMs", s["decision_ms"], "{:.2f}")
+    tdir = RAW / "references_milp_tuned"
+    if tdir.exists():
+        sys.path.insert(0, str(ROOT / "scripts/study"))
+        from run_oracles import load_dir
+        tm = load_dir(tdir)
+        if len(tm) >= 140:
+            s = policy_summary(tm, False)
+            s["policy"] = "milp_tuned"
+            rows.append(s)
+            # insert right after the untuned MILP-track row
+            at = next((i + 1 for i, r in enumerate(latex) if r[0] == "MILP-track"), len(latex))
+            latex.insert(at, ["MILP-track (tuned)", ci_str(s["mean"], s["lo"], s["hi"]),
+                              f"{s['per_interval']:.3f}", f"{s['delivered']:.4f}", f"{s['sla']:.0f}",
+                              f"{s['maxutil']:.3f}", f"{s['reroutes']:.2f}", f"{s['moved']:.0f}"])
+            num("TestMilpTunedDelivered", 100 * s["delivered"], "{:.2f}")
+            num("TestMilpTunedSla", s["sla"], "{:.0f}")
     main = pd.DataFrame(rows)
     write_table(main, "main_results", latex_rows(latex))
     bt = learner_test(ep, "bandit") if "bandit" in learners else None
@@ -477,6 +497,20 @@ def section_ppo_critic() -> None:
         return
     d = pd.DataFrame(rows)
     write_table(d, "ppo_critic")
+    # Runs whose FINAL checkpoint oscillates (reversals > half of accepted moves on
+    # test): the critic at the last update belongs to that checkpoint.
+    osc = []
+    for r in d[d.variant == "base"].itertuples():
+        f = RAW / "learner_eval" / r.run_id / "test__selected_and_final.csv"
+        if f.exists():
+            t = pd.read_csv(f)
+            t = t[t.role == "final"]
+            if len(t) and t.te_reversals.sum() > 0.5 * t.accepted_te_changes.sum():
+                osc.append(r.explained_variance)
+    if osc:
+        num("PPOEVOscMin", min(osc), "{:.2f}")
+        num("PPOEVOscMax", max(osc), "{:.2f}")
+        num("PPOEVOscRuns", len(osc), "{}")
     base = d[(d.variant == "base") & d.run_id.str.match(r"E[12]_")]  # default configuration only
     for gamma, tag in ((0.995, "Default"), (0.0, "Zero"), (0.9, "PointNine")):
         g = base[np.isclose(base.gamma, gamma)].explained_variance
@@ -667,6 +701,15 @@ def section_milp_tuned(data: dict) -> None:
             num("MilpTunedAhead", -cl["boot_est"])
             num("MilpTunedAheadTLo", -cl["t_hi"])
             num("MilpTunedAheadTHi", -cl["t_lo"])
+    ns = learner_test(ep, "E6:bandit_noshaping")
+    if len(ns):
+        j = fixed_pairs(ns, t)
+        per = j.groupby("root")["diff"].mean()
+        num("NoShapingMinusMilpTunedPerRoot", " / ".join(f"{v:+.1f}" for v in per.values))
+        num("NoShapingMinusMilpTunedRootsPositive", int((per > 0).sum()), "{}")
+        num("NoShapingMinusMilpTunedRoots", len(per), "{}")
+        rows.append({"learner": "E6:bandit_noshaping", "reference": name,
+                     **compare_learners(j[["root", "scenario", "seed", "diff"]])})
     write_table(pd.DataFrame(rows), "learners_vs_milp_tuned")
 
 
@@ -1173,7 +1216,8 @@ def section_readme() -> None:
         return
     m = pd.read_csv(f)
     lab = {"bandit": "Masked contextual bandit (γ=0)", "ppo": "MaskablePPO (γ=0.995)",
-           "milp_track": "MILP-track (per-interval min-max-util, no learning)", "greedy": "Greedy",
+           "milp_track": "MILP-track (per-interval min-max-util, no learning)",
+           "milp_tuned": "MILP-track, two parameters tuned on validation seeds", "greedy": "Greedy",
            "cspf": "CSPF", "static": "Static shortest path", "noop": "No-op",
            "random_valid": "Random valid", "oracle_h1": "Oracle-1 † (exact next-interval reward)"}
     rows = ["| Policy | Test return [95 % CI] | Roots | Delivered | SLA viol. | Reroutes/h |",

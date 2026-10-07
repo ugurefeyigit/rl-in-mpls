@@ -87,6 +87,6 @@ add a variant in which a move requested at interval $t$ is charged at $t$ but
 takes effect at $t+L$ (actuation latency, or a periodic commit cycle). Pending
 requests lock their demand and are visible in the observation (689 features);
 a request that has become illegal by $t+L$ is cancelled. With $L=0$ the
-variant is bit-identical to the frozen environment (unit-tested). With $L\ge1$
+variant is bit-identical to the base environment (unit-tested). With $L\ge1$
 the immediate reward of a move contains its cost but none of its effect, so a
 bandit cannot credit it.
