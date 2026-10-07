@@ -17,6 +17,40 @@ $\mathcal P_d=(p_{d,0},\dots,p_{d,3})$, computed once by Yen's algorithm under
 role, hop-count and propagation-delay constraints; $p_{d,0}$ is the
 administratively shortest valid path.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_topology}
+\caption{Backbone topology: 4 ingress and 4 egress PE routers (squares), 8 core
+(circles) and 2 aggregation routers (diamonds); line width encodes per-direction
+capacity. L11 and L20 are the links whose failure or saturation the scripted
+scenarios stress.}
+\label{fig:topology}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[x=1.15cm,y=0.5cm,font=\scriptsize]
+\draw[->] (-0.2,0)--(5.3,0) node[right]{time};
+\foreach \t/\l in {0/$t$,2/$t{+}1$,4/$t{+}2$} {\draw (\t,0.15)--(\t,-0.15) node[below=1pt]{\l};}
+\foreach \x in {0.4,0.8,1.2,1.6,2.4,2.8,3.2,3.6} \draw (\x,0.07)--(\x,-0.07);
+\node[anchor=south west] at (-0.2,2.6) {decide $a_t$ from $o_t,m_t$};
+\draw[->,thick] (0,2.55)--(0,1.85);
+\node[anchor=east] at (-0.25,1.4) {$L{=}0$};
+\fill[blue!25] (0,1.1) rectangle (2,1.7); \node at (1,1.4) {effect};
+\node[anchor=west] at (2.05,1.4) {$r_t$ = effect + cost};
+\node[anchor=east] at (-0.25,-1.3) {$L{=}1$};
+\fill[orange!30] (2,-1.6) rectangle (4,-1.0); \node at (3,-1.3) {effect};
+\node[anchor=west] at (4.05,-1.3) {in $r_{t+1}$};
+\node[anchor=west] at (0.0,-2.2) {$r_t$ = cost only};
+\end{tikzpicture}
+\caption{Decision timing. Each 5-minute interval is simulated as five one-minute
+ticks. In the frozen environment ($L=0$) a legal move takes effect at the
+boundary at which it is chosen, so the immediate reward contains its first
+interval of effect. The delayed variant ($L=1$) charges the move at $t$ and
+applies it at $t+1$.}
+\label{fig:timing}
+\end{figure}
+
 \paragraph{Exogenous traffic.}
 The offered rate of demand $d$ is
 $v_d(t)=b_d\,f_{\kappa(d)}(h(t))\,m\,\eta_d(t)\,\mathrm{clip}(1+n_d(t),0.4,2)$:
@@ -40,7 +74,7 @@ triggers immediate, free fast-reroute of the affected demands to their
 cheapest live candidate. Because $\xi$ is action-independent,
 \begin{equation}
 P(s_{t+1}\mid s_t,a_t)=P_\xi(\xi_{t+1}\mid\xi_t)\;
-\mathbb 1\!\left[y_{t+1}=\Psi(y_t,a_t,\xi_{t:t+1})\right],
+\mathbf{1}\!\left[y_{t+1}=\Psi(y_t,a_t,\xi_{t:t+1})\right],
 \label{eq:transition}
 \end{equation}
 so an action influences the future \emph{only} through the routing state,
@@ -51,9 +85,10 @@ $\mathcal A=\{0\}\cup\{(d,p)\}$, $|\mathcal A|=69$: action $0$ changes nothing;
 $(d,p)$ moves demand $d$ to candidate $p$. At most one TE change is made per
 interval. The legality mask is
 \begin{equation}
-m_t(d,p)=\mathbb 1[\text{$p_{d,p}$ is up}]\,\mathbb 1[p\neq x_d]\,
-\mathbb 1[\omega_d=0]\,
-\mathbb 1\!\left[\neg\mathrm{prot}_d\ \vee\ \max_{e\in p_{d,p}}\hat G_e/c_e\le1\right],
+\begin{split}
+m_t(d,p)={}&\mathbf{1}[\text{$p_{d,p}$ up}]\;\mathbf{1}[p\neq x_d]\;\mathbf{1}[\omega_d=0]\\
+&\times\mathbf{1}\!\left[\neg\mathrm{prot}_d\ \vee\ \max_{e\in p_{d,p}}\hat G_e/c_e\le1\right],
+\end{split}
 \label{eq:mask}
 \end{equation}
 with $m_t(0)=1$, where $\hat G_e$ is the projected gross load on link $e$ after
@@ -66,9 +101,10 @@ With $\mathrm{DR}$ the delivered ratio, PD/UD the priority-weighted protected
 and unprotected disconnected fractions, SEV a bounded priority-weighted SLA
 severity, $\rho^{\max}$ the worst link utilization and OV the overload ratio,
 \begin{equation}
-r_t=\underbrace{2\mathrm{DR}-30\mathrm{PD}-8\mathrm{UD}-6\mathrm{SEV}
--2g(\rho^{\max})-6\mathrm{OV}}_{U_t}
-+0.2\big(0.995\,\Phi_{t+1}-\Phi_t\big)-C^{\mathrm{TE}}_t-0.05\,\mathbb 1[\text{rejected}],
+\begin{split}
+U_t&=2\,\mathrm{DR}-30\,\mathrm{PD}-8\,\mathrm{UD}-6\,\mathrm{SEV}-2\,g(\rho^{\max})-6\,\mathrm{OV},\\
+r_t&=U_t+0.2\big(0.995\,\Phi_{t+1}-\Phi_t\big)-C^{\mathrm{TE}}_t-0.05\,\mathbf{1}[\text{rejected}],
+\end{split}
 \label{eq:reward}
 \end{equation}
 where $g(\rho)=\log(1+\max(0,(\rho-0.7)/0.3))$, $\Phi=\tanh(U/10)$ evaluated at
@@ -91,5 +127,5 @@ $\mathbb E[r_t\mid o_t,a_t]$ discards the persistence of a new configuration
 beyond the first interval, the opportunity cost of the dwell lock, future
 reversal costs and the effect on other demands' legal sets. It keeps the first
 interval of a move's effect because, in the frozen environment, a move carries
-traffic in the interval in which it is made. Section~\ref{sec:sequentiality}
+traffic in the interval in which it is made (Fig.~\ref{fig:timing}). Section~\ref{sec:sequentiality}
 measures how much the discarded terms matter.
