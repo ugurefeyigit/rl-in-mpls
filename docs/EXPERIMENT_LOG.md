@@ -42,5 +42,6 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 26 | 04:07 | E4 delayed activation (L = 1), bandit and PPO, roots 42/314159 | bandit 22.0 → −30.3; PPO 1.6 → 1.2; PPO − bandit = +31.5 [20.6, 42.6] under delay, 2/2 roots. Supports H6 [science] |
 | 27 | 04:10 | Oracle-6 complete (5 test seeds) | Oracle-6 − Oracle-1 = +1.4 [0.5, 2.5]; Oracle-1 − bandit ≈ 22 [science] |
 | 28 | 04:25 | E3 extended (post-hoc, before any E3 result): `rewnorm` (reward normalization) and `gae08` (GAE λ = 0.8), variance-reduction knobs that target the proposed mechanism while keeping γ = 0.995 | queued |
+| 29 | 04:45 | **E3 selection rule fixed before any E3 result:** each configuration's score is the validation mean (seeds 2001–2005, 35 episodes) of its best checkpoint, exactly as checkpoint selection for every learner. The configuration with the highest score is retrained on roots 314159 and 271828 (E3b) if its score exceeds the default PPO's root-42 validation score; otherwise E3 is reported as "no configuration improved validation return" and E3b is not run. Test returns of E3 runs are reported for completeness only and play no role in selection. Caveat recorded in advance: one-root selection is noisy, given per-root shifts of up to 41 points from numerical noise alone (#15) [process] | |
 
 Entries after #28 are appended as experiments complete.

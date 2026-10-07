@@ -1,1 +1,40 @@
-% TODO reproducibility
+\section{Reproducibility}
+\label{app:repro}
+
+\paragraph{Software and hardware.} Python 3.13, PyTorch 2.14 (CPU build),
+Stable-Baselines3 and SB3-contrib 2.9, SciPy HiGHS for MILP-track; exact
+versions are pinned in \texttt{requirements/lock-cpu-py313.txt}. All post-V2
+results were produced on one 4-core x86-64 CPU machine without a GPU, with one
+PyTorch thread per training process and at most four concurrent training
+processes. Training a learner for 400k transitions took 0.5--1\,h of wall
+time on this machine.
+
+\paragraph{Determinism.} Episode seeds are derived from the training root
+(training) or listed explicitly (evaluation); traffic is generated from
+per-episode generators that no routing decision consumes, so every controller
+sees identical traffic on a given episode. On CPU with one thread a training
+run is deterministic given its root; the study trainer reproduces the closed
+study's trainer bit for bit (a slow test checks the network parameters). The
+closed study's own learner runs used CUDA and are therefore reproduced
+statistically, not exactly (\S\ref{sec:repro}); its baselines reproduce
+exactly.
+
+\paragraph{One-command entry points.}
+\texttt{python scripts/reproduce.py --suite sanity} (tests, exact baseline
+reproduction, a short training and evaluation of both learners; minutes),
+\texttt{--suite core} (one further 400k root of both learners and all
+reference policies; hours) and \texttt{--suite full} (every registered run;
+about a day on the machine above). \texttt{--suite analysis} rebuilds every
+table, every number in this paper (\texttt{paper/generated/numbers.tex}), the
+figures and the PDF from the stored per-episode results.
+
+\paragraph{Provenance.} Every experiment is declared in
+\texttt{experiments/registry/*.yaml} before it runs; each run writes a
+manifest with the git commit, resolved configuration, environment
+specification, seeds, integrity counters and wall time. Per-episode test
+results of every checkpoint that was evaluated, the mask audit and the
+sequentiality diagnostic are versioned under \texttt{experiments/raw/}.
+Deviations from the preregistered plan (\texttt{docs/HYPOTHESES.md}) and
+failed or interrupted runs are recorded in \texttt{docs/EXPERIMENT\_LOG.md};
+interrupted runs were restarted from scratch with the same root and their
+partial outputs kept.

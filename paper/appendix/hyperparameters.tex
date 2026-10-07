@@ -25,8 +25,15 @@ Warm-up & -- & 4{,}096 transitions \\
 \end{tabular}
 \end{table}
 
-\paragraph{PPO sensitivity grid (E3).} One-factor-at-a-time around the
+\paragraph{PPO sensitivity grid (E3).} One factor at a time around the
 default, on training root 42, selected on validation seeds only: learning rate
-$\{10^{-4},10^{-3}\}$; rollout length per environment $\{128\ (\text{batch }256),
-2048\ (\text{batch }1024)\}$; entropy $\{0, 0.03\}$; clip $0.1$; network
-$[64,64]$; and $\gamma\in\{0,0.9\}$ (E2).
+$\{10^{-4},10^{-3}\}$; rollout length per environment 2048 (batch 1024);
+entropy coefficient $\{0, 0.03\}$; clip range $0.1$; and, added after the
+return decomposition because they target the proposed mechanism (noisy
+advantages hiding small immediate costs) while keeping $\gamma=0.995$, reward
+normalization (running return scale, observations untouched) and GAE
+$\lambda=0.8$. Two planned variations (rollout 128, network $[64,64]$) were
+dropped for compute before they ran. The discount is varied separately (E2,
+$\gamma\in\{0,0.9\}$). The configuration with the best validation return is
+retrained on two further roots (E3b) and compared with the default on the same
+roots.
