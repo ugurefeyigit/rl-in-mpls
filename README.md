@@ -18,8 +18,9 @@ trade-offs: MILP-track has higher network utility, the bandit reroutes less.
 (2) Varying the discount within each learner family points to the planning
 horizon rather than the algorithm. PPO with γ = 0 matches the bandit; PPO with
 γ = 0.995 oscillates at hold-down expiry on 3 of 5 roots, and reconfiguration
-costs make up about 60 % of its deficit. A bootstrapped Q-learner with γ = 0.9
-is worse than the bandit. (3) Lookahead is worth little here even with perfect
+costs make up about 60 % of its deficit. A bootstrapped Q-learner is worse than the bandit with
+γ = 0.9 and much worse with γ = 0.99. A PPO configuration tuned on one root
+falls below the bandit on all four fresh roots. (3) Lookahead is worth little here even with perfect
 foresight: a clairvoyant controller that re-plans every interval gains only
 1–3 return points from looking 3 or 6 intervals ahead instead of 1.
 (4) When a move's effect is delayed by one interval, the bandit's
@@ -27,8 +28,8 @@ decision-time target loses the move's benefit, and the bandit collapses below
 PPO. MILP-track stays ahead of every learner, so this shows when the myopic
 learner fails, not that long-horizon RL is needed. (5) The predecessor study's
 bandit result reproduces on a different machine and software stack; its PPO
-result does not. Pending experiments (PPO tuning, budget, shaping, time of
-day) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
+result does not. Adding the time of day to the observation helps the bandit more than a
+sequential learner. Pending experiments (budget, shaping) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
 [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 
 **What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,

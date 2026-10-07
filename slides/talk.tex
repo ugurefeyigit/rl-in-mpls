@@ -109,7 +109,9 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \item PPO with $\gamma=0$: \hl{\HPPOZero} vs bandit \HQZero{} on the same roots
 \item difference \HPPOZeroVs{} [\HPPOZeroVsLo, \HPPOZeroVsHi]
 \item flapping disappears
-\item small one-off costs are drowned by long-horizon advantage noise
+\item return falls with $\gamma$ in both families (PPO $\gamma=0.9$: \HPPOPointNine; Q $\gamma=0.99$: \HQPointNineNine)
+\item tuned PPO (best of 8 on one root) below the bandit on all \RQThreeTunedVsBanditRoots{} fresh roots
+\item hypothesis: small one-off costs drowned by long-horizon advantage noise
 \end{itemize}
 \end{columns}
 \end{frame}
