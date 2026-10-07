@@ -26,6 +26,16 @@ one-off move cost and a persistent gain. That value is visible to a learner
 only to the extent that future traffic is predictable from the observation,
 which contains current volumes but not the clock.
 
+The same conclusion follows from using the rollouts as controllers. On the
+first five test seeds (35 episodes), the clairvoyant one-interval oracle
+reaches \LadderOraclehOne, against \LadderBandit{} for the bandit and
+\LadderMilptrack{} for MILP-track; extending its lookahead to three or six
+intervals adds only \OracleThreeMinusOne{} [\OracleThreeMinusOneLo,
+\OracleThreeMinusOneHi] and \OracleSixMinusOne{} [\OracleSixMinusOneLo,
+\OracleSixMinusOneHi]. The headroom above the learners lies in estimating the
+\emph{immediate} consequence of a move more accurately (the oracle knows the
+next five minutes of traffic exactly), not in planning further ahead.
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig_seqdiag}

@@ -223,3 +223,6 @@ E4_delay__L1_ppo__r42,E4:L1_ppo,E4_delay,L1_ppo,42,validation,250000,-27.2927660
 E4_delay__L1_ppo__r42,E4:L1_ppo,E4_delay,L1_ppo,42,validation,300000,-27.57997564825229,35
 E4_delay__L1_ppo__r42,E4:L1_ppo,E4_delay,L1_ppo,42,validation,350000,-19.36932111313451,35
 E4_delay__L1_ppo__r42,E4:L1_ppo,E4_delay,L1_ppo,42,validation,400000,-11.699256037323075,35
+E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,50000,-66.11622067572992,35
+E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,100000,-51.69478488767986,35
+E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,150000,-18.059769039418633,35
