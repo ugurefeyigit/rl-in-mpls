@@ -19,6 +19,7 @@ from mplssim.study.oracles import MyopicOracle  # noqa: E402
 from mplssim.study.protocol import DIAGNOSTIC, EVAL_SCENARIOS  # noqa: E402
 from mplssim.study.provenance import run_record  # noqa: E402
 from mplssim.study.seqdiag import DEFAULT_HORIZONS, trajectory_diagnostic  # noqa: E402
+from mplssim.study.variants import make_variant_factory  # noqa: E402
 
 
 def reference_policy(name: str, seed: int):
@@ -39,7 +40,11 @@ def main() -> None:
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--frozen", action="store_true",
                    help="hold traffic and link state fixed during rollouts")
+    p.add_argument("--env", default='{"variant": "base"}',
+                   help="environment variant spec (JSON), e.g. '{\"variant\": \"delayed\", \"delay_steps\": 1}'")
     a = p.parse_args()
+    env_spec = json.loads(a.env)
+    factory = None if env_spec.get("variant", "base") == "base" else make_variant_factory(env_spec)
     a.out.mkdir(parents=True, exist_ok=True)
     t0 = time.perf_counter()
     for scenario in a.scenarios:
@@ -49,12 +54,13 @@ def main() -> None:
                 continue
             df = trajectory_diagnostic(reference_policy(a.reference, seed), scenario, seed,
                                        every=a.every, h_max=a.h_max,
-                                       horizons=DEFAULT_HORIZONS, frozen=a.frozen)
+                                       horizons=DEFAULT_HORIZONS, frozen=a.frozen,
+                                       env_factory=factory)
             df.to_csv(path, index=False)
             print(f"{scenario} {seed} states={len(df)} t={time.perf_counter()-t0:.0f}s",
                   flush=True)
     (a.out / "run_record.json").write_text(json.dumps(run_record(
-        kind="seqdiag", args=vars(a), wall_seconds=time.perf_counter() - t0),
+        kind="seqdiag", args=vars(a), env=env_spec, wall_seconds=time.perf_counter() - t0),
         indent=1, default=str))
 
 
