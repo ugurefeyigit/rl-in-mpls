@@ -6,7 +6,10 @@ bandit (mean difference \HQPointFiveVs, better on \HQPointFiveRootsBetter{} of
 \HQZero; mean difference \HQPointNineVs, better than the bandit on
 \HQPointNineRootsBetter{} of \HQPointNineRoots{} roots), mainly through lower
 network utility rather than higher churn (\HQPointNineRev{} reversals per
-episode). This matches the sequentiality diagnostic: the part of the future
+episode); with $\gamma=0.99$ it falls to \HQPointNineNine{} (mean difference
+\HQPointNineNineVs, better on \HQPointNineNineRootsBetter{} of
+\HQPointNineNineRoots{} roots). In both families the return decreases as the
+discount grows beyond $0.5$. This matches the sequentiality diagnostic: the part of the future
 that a learner could exploit from its observation is small, so a bootstrapped
 target adds estimation error without adding much signal---the effect of a
 shorter planning horizon under limited data~\citep{jiang2015horizon,amit2020discount}.
