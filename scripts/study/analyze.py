@@ -288,7 +288,13 @@ def section_main(data: dict) -> None:
         num("GapFinalRootsPositive", int(cf["roots_positive"]), "{}")
         # per-root table
         pr = sel.groupby(["policy", "root"]).operational_return.mean().unstack(0)
-        write_table(pr.reset_index(), "main_per_root")
+        fr = fin.groupby(["policy", "root"]).operational_return.mean().unstack(0)
+        sc = sel.groupby(["policy", "root"]).checkpoint.first().unstack(0)
+        write_table(pr.reset_index(), "main_per_root", latex_rows([[
+            str(int(r)), f"{int(sc.loc[r, 'bandit']) // 1000}k", f"{pr.loc[r, 'bandit']:.1f}",
+            f"{fr.loc[r, 'bandit']:.1f}", f"{int(sc.loc[r, 'ppo']) // 1000}k",
+            f"{pr.loc[r, 'ppo']:.1f}", f"{fr.loc[r, 'ppo']:.1f}"]
+            for r in pr.index if r in sc.index and not pd.isna(pr.loc[r, "ppo"])]))
     # learners vs references (episode-paired, root means)
     comps = []
     for p in learners:
@@ -305,7 +311,11 @@ def section_main(data: dict) -> None:
             num(key + "Lo", cl["boot_lo"])
             num(key + "Hi", cl["boot_hi"])
     if comps:
-        write_table(pd.DataFrame(comps), "learners_vs_references")
+        lv = pd.DataFrame(comps)
+        write_table(lv, "learners_vs_references", latex_rows([[
+            POLICY_LABEL[r.learner], POLICY_LABEL.get(r.reference, r.reference),
+            ci_str(r.boot_est, r.boot_lo, r.boot_hi), f"{int(r.roots_positive)}/{int(r.roots)}"]
+            for r in lv.itertuples()]))
     # references among themselves (fixed policies, episode-paired)
     rr = []
     for a_, b_ in (("milp_track", "greedy"), ("oracle_h1", "greedy"), ("oracle_h1", "milp_track"),
@@ -593,6 +603,17 @@ def section_seqdiag() -> None:
             cells.append(f"{100 * r.agree.iloc[0]:.0f} % / {100 * r.captured.iloc[0]:.0f} %"
                          if len(r) else "pending")
         md.append(f"| {sc} | {cells[0]} | {cells[1]} |")
+    lat = []
+    for sc in EVAL_SCENARIOS:
+        cells = [SCEN_LABEL[sc]]
+        for fr in (False, True):
+            r = h24[(h24.scope == sc) & (h24.frozen == fr)]
+            cells += ([f"{100 * r.agree.iloc[0]:.0f}", f"{100 * r.captured.iloc[0]:.0f}",
+                       f"{100 * r.best_is_sacrifice.iloc[0]:.0f}"] if len(r) else ["--"] * 3)
+        cells.insert(1, str(int(h24[(h24.scope == sc) & (~h24.frozen)].states.iloc[0]))
+                     if len(h24[(h24.scope == sc) & (~h24.frozen)]) else "--")
+        lat.append(cells)
+    (PTABLES / "seqdiag_per_scenario.tex").write_text(latex_rows(lat))
     doc = ROOT / "docs" / "SEQUENTIALITY_AUDIT.md"
     text = doc.read_text()
     a, b = "<!-- SEQ:BEGIN -->", "<!-- SEQ:END -->"

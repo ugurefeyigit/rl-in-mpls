@@ -1,0 +1,39 @@
+\subsection{RQ4: How sequential is the decision problem?}
+\label{sec:sequentiality}
+
+Formally the problem is an MDP (\S\ref{sec:formulation}); the question is how
+much the omitted future terms matter. On \SeqLiveStates{} states visited by
+the greedy controller (diagnostic seeds 4001--4003, every fourth decision), we
+roll the cloned simulator forward from every legal action for up to 24
+intervals---the action, then no further change---and compare the action that
+is best for the first interval with the action that is best over $H$
+intervals (Fig.~\ref{fig:seqdiag}). This is the effective-horizon idea of
+Laidlaw et al.~\citep{laidlaw2023effective} with a no-change base policy.
+
+\emph{Under the true future}, the problem is far from myopic per decision: the
+first-interval choice is the 24-interval choice in only
+\SeqLiveAgreeHTwentyFour\,\% of states, it captures \SeqLiveCapturedHTwentyFour\,\%
+of the available 24-interval gain, and in \SeqLiveSacrificeHTwentyFour\,\% of
+states the 24-interval best move has a \emph{negative} immediate advantage.
+\emph{Holding traffic and link state at their current values} during the same
+rollouts, the picture reverses: agreement is \SeqFrozenAgreeHTwentyFour\,\%,
+the myopic choice captures \SeqFrozenCapturedHTwentyFour\,\% of the gain, and
+such ``sacrifice'' moves occur in \SeqFrozenSacrificeHTwentyFour\,\% of states.
+The pattern holds in every scenario (Appendix~\ref{app:results}). Almost all
+of the non-myopic value is therefore \emph{anticipation of exogenous change}
+(traffic growth, bursts, failures and recoveries), not the trade-off between a
+one-off move cost and a persistent gain. That value is visible to a learner
+only to the extent that future traffic is predictable from the observation,
+which contains current volumes but not the clock.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_seqdiag}
+\caption{Sequentiality diagnostic on \SeqLiveStates{} paired states. Left:
+probability that the action with the best first-interval reward is also the
+best over $H$ intervals (``take it, then change nothing''). Right: share of the
+best $H$-interval gain that the myopic action captures. Solid: rollouts carry
+the episode's true future traffic and failures (clairvoyant). Dashed: traffic
+and link state held at their current values.}
+\label{fig:seqdiag}
+\end{figure}

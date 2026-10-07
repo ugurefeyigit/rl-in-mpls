@@ -1,1 +1,67 @@
-% TODO additional_results
+\section{Additional results}
+\label{app:results}
+
+\begin{table}[h]
+\centering\small
+\caption{Primary comparison per training root (mean test return over 140
+episodes): selected checkpoint (validation seeds) and final 400k checkpoint.}
+\label{tab:perroot}
+\begin{tabular}{@{}rrrrrrr@{}}
+\toprule
+ & \multicolumn{3}{c}{Masked bandit} & \multicolumn{3}{c}{MaskablePPO} \\
+\cmidrule(lr){2-4}\cmidrule(l){5-7}
+Root & Selected & Return & Final & Selected & Return & Final \\
+\midrule
+\tabinput{tables/main_per_root}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Learner minus reference, paired test returns (two-stage bootstrap 95\,\%
+CI over roots and episodes) and the number of roots on which the difference is
+positive.}
+\label{tab:vsref}
+\begin{tabular}{@{}llrr@{}}
+\toprule
+Learner & Reference & Difference [95\,\% CI] & Roots $>0$ \\
+\midrule
+\tabinput{tables/learners_vs_references}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Sequentiality diagnostic per scenario at $H=24$ (states with at least 24
+remaining intervals): agreement of the myopic and the 24-interval best action,
+share of the 24-interval gain captured by the myopic action, and share of states
+in which the 24-interval best action has negative immediate advantage, under
+clairvoyant and frozen-exogenous rollouts (\%).}
+\label{tab:seqscen}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+ & & \multicolumn{3}{c}{Clairvoyant} & \multicolumn{3}{c}{Frozen exogenous} \\
+\cmidrule(lr){3-5}\cmidrule(l){6-8}
+Scenario & States & Agree & Captured & Sacrifice & Agree & Captured & Sacrifice \\
+\midrule
+\tabinput{tables/seqdiag_per_scenario}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering\small
+\caption{Inference cost per decision (process CPU time, one thread, 60 states of
+a test episode) and training cost (400k transitions, wall time and throughput
+measured with 3--6 concurrent jobs on 4 cores; the simulator dominates).}
+\label{tab:compute}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Policy & Parameters & Train (min) & Transitions/s & ms / decision & p95 ms \\
+\midrule
+\tabinput{tables/compute}
+\bottomrule
+\end{tabular}
+\end{table}
