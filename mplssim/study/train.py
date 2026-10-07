@@ -130,6 +130,11 @@ def train_run(*, run_dir: Path, algorithm: str, root: int, config: dict[str, Any
         raise ValueError(algorithm)
     if transitions % n_envs or checkpoint_interval % n_envs or transitions % checkpoint_interval:
         raise ValueError("budgets must be exact multiples of n_envs and the checkpoint interval")
+    # The training root fixes the episode-seed ledger (traffic). ``learner_seed``
+    # (default: the root) seeds network initialization, exploration and replay
+    # sampling only, so a run can be repeated on identical traffic with a
+    # different learner seed to measure within-root learner noise.
+    lseed = int(config.get("learner_seed", root))
     run_dir.mkdir(parents=True, exist_ok=False)
     ckpt = run_dir / "checkpoints"
     ckpt.mkdir()
@@ -163,7 +168,7 @@ def train_run(*, run_dir: Path, algorithm: str, root: int, config: dict[str, Any
                 gae_lambda=float(config["gae_lambda"]), clip_range=float(config["clip_range"]),
                 ent_coef=float(config["ent_coef"]), vf_coef=float(config["vf_coef"]),
                 max_grad_norm=float(config["max_grad_norm"]),
-                policy_kwargs=dict(config["policy_kwargs"]), seed=int(root),
+                policy_kwargs=dict(config["policy_kwargs"]), seed=lseed,
                 device="cpu", verbose=0)
             cb = _PpoCallback(log, ckpt, checkpoint_interval, transitions)
             model.learn(total_timesteps=transitions, callback=cb, progress_bar=False)
@@ -175,7 +180,7 @@ def train_run(*, run_dir: Path, algorithm: str, root: int, config: dict[str, Any
         else:
             cls = MaskedContextualBandit if algorithm == "masked_bandit" else MaskedQLearner
             learner = cls(int(vec.observation_space.shape[0]), int(vec.action_space.n),
-                          torch.device("cpu"), int(root), config)
+                          torch.device("cpu"), lseed, config)
             use_next = algorithm == "masked_q"
             obs = vec.reset()
             every = int(config["update_every_vector_steps"])

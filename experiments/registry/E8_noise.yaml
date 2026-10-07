@@ -1,0 +1,12 @@
+id: E8_noise
+description: >
+  Round-3 review R-c (added 09:17 UTC, before any result): within-root learner
+  noise floor. The default (shaped) bandit is retrained on root 42 with
+  identical training traffic (same episode-seed ledger) but a different
+  learner seed (network initialization, exploration, replay sampling).
+env: {variant: base}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [42]
+runs:
+  - {tag: bandit_ls1, algorithm: masked_bandit, overrides: {learner_seed: 9001}}
+  - {tag: bandit_ls2, algorithm: masked_bandit, overrides: {learner_seed: 9002}}

@@ -1,0 +1,16 @@
+id: E6b_noshaping_horizon
+description: >
+  Round-3 review R-b (added 09:17 UTC, before any result): the shaped reward is
+  policy-invariant only for gamma=0.995, and E6 showed that removing shaping
+  moves the gamma=0 bandit by about 7 points, the size of several RQ2
+  differences. The key horizon contrasts are re-run without shaping on the E6
+  roots and evaluated on the primary reward, to compare with E6's
+  shaping-free bandit.
+env: {variant: noshaping}
+eval_env: {variant: base}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [42, 314159]
+runs:
+  - {tag: qg09_noshaping,  algorithm: masked_q,     overrides: {gamma: 0.9}}
+  - {tag: ppog0_noshaping, algorithm: maskable_ppo, overrides: {gamma: 0.0}}
+  - {tag: ppo_noshaping,   algorithm: maskable_ppo}
