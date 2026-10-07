@@ -29,9 +29,9 @@ historical numbers come from `results/v2_final_holdout/` and
 | Training traffic of each root | **reproduced exactly** | all 6 episode-seed ledgers match the recorded SHA-256 (after CRLF→LF) |
 | Bandit holdout return 18.22 (3-root mean) | **reproduced** | 18.04 (roots: 14.67 / 17.21 / 22.23 vs historical 16.13 / 20.55 / 17.99) |
 | PPO holdout return 9.04 | **not reproduced** | −12.04 (roots: −20.13 / 12.99 / −28.97 vs historical 6.57 / 8.30 / 12.24) |
-| Bandit beats PPO on 3/3 roots, by 9.19 | **direction reproduced, magnitude not** | 3/3 roots, gap 30.1, two-stage bootstrap 95 % CI [4.4, 50.8]; t-interval over 3 roots [−29.2, 89.3]. Historical gap's 3-root t-interval: [1.1, 17.3] |
-| PPO best in `deceptive_local_optimum` (+1.11 over bandit) | **not reproduced** | bandit − PPO = +14.7 [10.6, 18.9], bandit ahead in 15/15 paired episodes |
-| Bandit beats PPO in 6/7 scenarios | **reproduced in direction** | bandit ahead in 6/7; `ood_double_failure` −5.1 [−13.3, 2.6] (historical +1.7) |
+| Bandit beats PPO on 3/3 roots, by 9.19 | **direction reproduced, magnitude not** | 3/3 roots, gap 30.1, two-stage bootstrap [4.4, 50.8] (with 3 roots this is close to the range of the root means, not a population interval); t-interval over 3 roots [−29.2, 89.3]. Historical gap's 3-root t-interval: [1.1, 17.3] |
+| PPO best in `deceptive_local_optimum` (+1.11 over bandit) | **not reproduced** | bandit − PPO = +14.7 (two-stage bootstrap over roots then episodes [8.0, 23.3]; positive on 3/3 roots), bandit ahead in 15/15 paired episodes |
+| Bandit beats PPO in 6/7 scenarios | **reproduced in direction** | bandit ahead in 6/7; `ood_double_failure` −5.1 [−24.2, 11.9], positive on 1/3 roots (historical +1.7) |
 | Zero invalid actions / mask disagreements / solver / safety failures | **reproduced** (and independently audited) | all reproduced runs completed; mask audit in `docs/MASK_VALIDATION.md` |
 | Selected checkpoints (bandit 250k/300k/400k; PPO 250k/350k/150k) | **not reproduced** (expected) | bandit 400k/250k/350k; PPO 350k/200k/400k — selection is sensitive to small curve differences |
 | PPO learning curve "non-monotonic" | **reproduced qualitatively** | see below |

@@ -77,15 +77,41 @@ Ordered roughly by how much each could change the conclusions.
     policy. The MILP baseline optimizes gross maximum utilization only (no
     loss, delay or protected-class terms) and is tracked one move at a time.
 16. **The sequentiality diagnostic uses a fixed reference trajectory**
-    (greedy controller) and no-op continuations on three diagnostic seeds; it
-    characterizes the states that controller visits.
+    (greedy controller) on three diagnostic seeds, so it characterizes the
+    states that controller visits. With the default no-change continuation it
+    cannot see value from later moves (dwell opportunity cost, protected-class
+    coupling); a reactive (greedy) continuation is run as a check (H12), and
+    the closed-loop oracle ladder bounds that value under perfect foresight.
+    Open-loop values overstate what a re-planning controller can realise.
+
+17a. **Heavily loaded regime** (round-2 review N2). In the test scenarios the
+    mean per-interval maximum link utilization is about 1.0 even for the best
+    controllers (MILP-track 1.00, bandit 1.03, no TE 1.38), and about 4.5 % of
+    offered traffic is lost. TE here mostly decides where traffic is lost.
+    Headroom planning in a provisioned backbone is a plausible source of
+    sequential value that is not tested.
+17b. **The observation contains a one-step model** (round-2 review N5): for
+    every candidate move, the projected gross bottleneck utilization it would
+    create (features 536–604). This makes the immediate consequence of a move
+    nearly observable and favours a learner of the immediate reward. Not
+    ablated (frozen environment).
+17c. **Q-learner budget** (round-2 review R4): one gradient step per 64
+    transitions (≈ 6,200 in total), target update every 250 steps, time-limit
+    ends treated as terminal. γ > 0 results are statements about this budget.
+17d. **Delayed-activation side effects**: a pending request blocks further
+    moves of its demand (effective lock L + 3 intervals), and a request that is
+    illegal at activation is cancelled but keeps its charge.
+17e. **Small-root ablations**: with 2–3 roots the two-stage bootstrap stays
+    close to the range of root means; those comparisons are reported per root
+    with sign counts.
 
 ## Reproducibility
 
 17. The closed V2 study's checkpoints and per-episode holdout data were not
     archived in the repository. Its learner results are reproduced
-    statistically on different hardware (CPU instead of CUDA), not exactly; its
-    baselines reproduce exactly.
+    statistically on a different machine and software stack (CPU instead of
+    CUDA; different torch/numpy/Python versions; PPO's action-sampling stream
+    therefore differs), not exactly; its baselines reproduce exactly.
 18. Five normative design documents referenced by the V2 code were never
     committed; the formulation was reconstructed from the code.
 
