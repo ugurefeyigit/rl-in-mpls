@@ -1,6 +1,9 @@
 run_id,gamma,variant,explained_variance
 E1_main__ppo__r141421,0.995,base,0.8375629782676697
 E1_main__ppo__r161803,0.995,base,0.8600843548774719
+E2_horizon__ppog09__r271828,0.9,base,0.8344173431396484
+E2_horizon__ppog09__r314159,0.9,base,0.8297631740570068
+E2_horizon__ppog09__r42,0.9,base,0.8362522125244141
 E2_horizon__ppog0__r271828,0.0,base,0.7278769016265869
 E2_horizon__ppog0__r314159,0.0,base,0.7131849527359009
 E2_horizon__ppog0__r42,0.0,base,0.7195732593536377
