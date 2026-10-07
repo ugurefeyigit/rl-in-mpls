@@ -40,8 +40,26 @@ POLICY_LABEL = {"bandit": "Masked bandit", "ppo": "MaskablePPO", "static": "Stat
                 "oracle_h6": "Oracle-6$^\\dagger$"}
 
 
+_WORDS = {"0": "Zero", "1": "One", "2": "Two", "3": "Three", "4": "Four", "5": "Five",
+          "6": "Six", "7": "Seven", "8": "Eight", "9": "Nine", "12": "Twelve", "24": "TwentyFour",
+          "05": "PointFive", "09": "PointNine", "099": "PointNineNine", "0995": "Default"}
+
+
+def macro_name(name: str) -> str:
+    """LaTeX control words may contain letters only: spell out digit runs."""
+    import re
+    name = name.replace("0p995", "Default").replace("0p99", "PointNineNine") \
+               .replace("0p9", "PointNine").replace("0p5", "PointFive").replace("0p0", "Zero")
+    out = re.sub(r"\d+", lambda m: _WORDS.get(m.group(0), "N" + "".join(
+        _WORDS[c] for c in m.group(0))), name)
+    if not re.fullmatch(r"[A-Za-z]+", out):
+        raise ValueError(f"cannot make a LaTeX macro name from {name!r}")
+    return out
+
+
 def num(name: str, value: float | int | str, fmt: str = "{:.1f}") -> None:
     """Register a LaTeX macro \\<name> holding a formatted result."""
+    name = macro_name(name)
     if isinstance(value, str):
         NUMBERS[name] = value
     elif isinstance(value, (int, np.integer)) and fmt == "{:.1f}":

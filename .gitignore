@@ -18,3 +18,16 @@ results/*.json
 venv/
 
 logs/
+*.aux
+*.fls
+*.fdb_latexmk
+*.blg
+*.out
+*.toc
+*.synctex.gz
+paper/*.log
+report/*.log
+slides/*.log
+*.nav
+*.snm
+*.vrb

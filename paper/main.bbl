@@ -1,0 +1,484 @@
+\begin{thebibliography}{57}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Achiam et~al.(2017)Achiam, Held, Tamar, and Abbeel]{achiam2017cpo}
+Joshua Achiam, David Held, Aviv Tamar, and Pieter Abbeel.
+\newblock Constrained policy optimization.
+\newblock In \emph{Proceedings of the 34th International Conference on Machine
+  Learning (ICML)}, volume~70 of \emph{PMLR}, pages 22--31, 2017.
+\newblock URL \url{https://proceedings.mlr.press/v70/achiam17a.html}.
+
+\bibitem[Agarwal et~al.(2021)Agarwal, Schwarzer, Castro, Courville, and
+  Bellemare]{agarwal2021precipice}
+Rishabh Agarwal, Max Schwarzer, Pablo~Samuel Castro, Aaron Courville, and
+  Marc~G. Bellemare.
+\newblock Deep reinforcement learning at the edge of the statistical precipice.
+\newblock In \emph{Advances in Neural Information Processing Systems 34
+  (NeurIPS 2021)}, 2021.
+\newblock URL \url{https://arxiv.org/abs/2108.13264}.
+\newblock Outstanding Paper Award. arXiv:2108.13264.
+
+\bibitem[Almasan et~al.(2022)Almasan, Su{\'a}rez-Varela, Rusek, Barlet-Ros, and
+  Cabellos-Aparicio]{almasan2022drlgnn}
+Paul Almasan, Jos{\'e} Su{\'a}rez-Varela, Krzysztof Rusek, Pere Barlet-Ros, and
+  Albert Cabellos-Aparicio.
+\newblock Deep reinforcement learning meets graph neural networks: Exploring a
+  routing optimization use case.
+\newblock \emph{Computer Communications}, 196:\penalty0 184--194, 2022.
+\newblock \doi{10.1016/j.comcom.2022.09.029}.
+\newblock arXiv:1910.07421.
+
+\bibitem[AlQiam et~al.(2024)AlQiam, Yao, Wang, Ahuja, Zhang, Rao, Ribeiro, and
+  Tawarmalani]{alqiam2024harp}
+Abd~AlRhman AlQiam, Yuanjun Yao, Zhaodong Wang, Satyajeet~Singh Ahuja, Ying
+  Zhang, Sanjay~G. Rao, Bruno Ribeiro, and Mohit Tawarmalani.
+\newblock Transferable neural {WAN} {TE} for changing topologies.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2024}, pages 86--102, 2024.
+\newblock \doi{10.1145/3651890.3672237}.
+
+\bibitem[Altman(1999)]{altman1999cmdp}
+Eitan Altman.
+\newblock \emph{Constrained {Markov} Decision Processes}.
+\newblock Chapman \& Hall/CRC, 1999.
+\newblock \doi{10.1201/9781315140223}.
+
+\bibitem[Amit et~al.(2020)Amit, Meir, and Ciosek]{amit2020discount}
+Ron Amit, Ron Meir, and Kamil Ciosek.
+\newblock Discount factor as a regularizer in reinforcement learning.
+\newblock In \emph{Proceedings of the 37th International Conference on Machine
+  Learning (ICML)}, volume 119 of \emph{PMLR}, 2020.
+\newblock URL \url{https://arxiv.org/abs/2007.02040}.
+
+\bibitem[Andrychowicz et~al.(2021)Andrychowicz, Raichuk, Sta{\'n}czyk, Orsini,
+  Girgin, Marinier, Hussenot, Geist, Pietquin, Michalski, Gelly, and
+  Bachem]{andrychowicz2021matters}
+Marcin Andrychowicz, Anton Raichuk, Piotr Sta{\'n}czyk, Manu Orsini, Sertan
+  Girgin, Rapha{\"e}l Marinier, L{\'e}onard Hussenot, Matthieu Geist, Olivier
+  Pietquin, Marcin Michalski, Sylvain Gelly, and Olivier Bachem.
+\newblock What matters for on-policy deep actor-critic methods? {A} large-scale
+  study.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2021.
+\newblock URL \url{https://openreview.net/forum?id=nIAxjsniDzg}.
+
+\bibitem[Applegate and Cohen(2003)]{applegate2003oblivious}
+David Applegate and Edith Cohen.
+\newblock Making intra-domain routing robust to changing and uncertain traffic
+  demands.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2003}, pages 313--324, 2003.
+\newblock \doi{10.1145/863955.863991}.
+
+\bibitem[Awasthi et~al.(2022)Awasthi, Bhatia, Gollapudi, and
+  Kollias]{awasthi2022congested}
+Pranjal Awasthi, Kush Bhatia, Sreenivas Gollapudi, and Kostas Kollias.
+\newblock Congested bandits: Optimal routing via short-term resets.
+\newblock In \emph{Proceedings of the 39th International Conference on Machine
+  Learning (ICML)}, volume 162 of \emph{PMLR}, pages 1078--1100, 2022.
+\newblock URL \url{https://proceedings.mlr.press/v162/awasthi22a.html}.
+
+\bibitem[Awduche et~al.(1999)Awduche, Malcolm, Agogbua, O'Dell, and
+  McManus]{rfc2702}
+D.~Awduche, J.~Malcolm, J.~Agogbua, M.~O'Dell, and J.~McManus.
+\newblock Requirements for traffic engineering over {MPLS}.
+\newblock RFC 2702, September 1999.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc2702}.
+
+\bibitem[Awduche et~al.(2001)Awduche, Berger, Gan, Li, Srinivasan, and
+  Swallow]{rfc3209}
+D.~Awduche, L.~Berger, D.~Gan, T.~Li, V.~Srinivasan, and G.~Swallow.
+\newblock {RSVP-TE}: Extensions to {RSVP} for {LSP} tunnels.
+\newblock RFC 3209, December 2001.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc3209}.
+
+\bibitem[Awduche(1999)]{awduche1999mpls}
+Daniel~O. Awduche.
+\newblock {MPLS} and traffic engineering in {IP} networks.
+\newblock \emph{IEEE Communications Magazine}, 37\penalty0 (12):\penalty0
+  42--47, 1999.
+\newblock \doi{10.1109/35.809383}.
+
+\bibitem[Bern{\'a}rdez et~al.(2021)Bern{\'a}rdez, Su{\'a}rez-Varela, L{\'o}pez,
+  Wu, Xiao, Cheng, Barlet-Ros, and Cabellos-Aparicio]{bernardez2021ml}
+Guillermo Bern{\'a}rdez, Jos{\'e} Su{\'a}rez-Varela, Albert L{\'o}pez, Bo~Wu,
+  Shihan Xiao, Xiangle Cheng, Pere Barlet-Ros, and Albert Cabellos-Aparicio.
+\newblock Is machine learning ready for traffic engineering optimization?
+\newblock In \emph{Proceedings of the 29th IEEE International Conference on
+  Network Protocols (ICNP)}, 2021.
+\newblock \doi{10.1109/ICNP52444.2021.9651930}.
+
+\bibitem[Bern{\'a}rdez et~al.(2023)Bern{\'a}rdez, Su{\'a}rez-Varela, L{\'o}pez,
+  Shi, Xiao, Cheng, Barlet-Ros, and Cabellos-Aparicio]{bernardez2023magnneto}
+Guillermo Bern{\'a}rdez, Jos{\'e} Su{\'a}rez-Varela, Albert L{\'o}pez, Xiang
+  Shi, Shihan Xiao, Xiangle Cheng, Pere Barlet-Ros, and Albert
+  Cabellos-Aparicio.
+\newblock {MAGNNETO}: A graph neural network-based multi-agent system for
+  traffic engineering.
+\newblock \emph{IEEE Transactions on Cognitive Communications and Networking},
+  9\penalty0 (2):\penalty0 494--506, 2023.
+\newblock \doi{10.1109/TCCN.2023.3235719}.
+
+\bibitem[Bietti et~al.(2021)Bietti, Agarwal, and Langford]{bietti2021bakeoff}
+Alberto Bietti, Alekh Agarwal, and John Langford.
+\newblock A contextual bandit bake-off.
+\newblock \emph{Journal of Machine Learning Research}, 22\penalty0
+  (133):\penalty0 1--49, 2021.
+\newblock URL \url{https://jmlr.org/papers/v22/18-863.html}.
+
+\bibitem[Boltres et~al.(2024)Boltres, Freymuth, Jahnke, Karl, and
+  Neumann]{boltres2024packerl}
+Andreas Boltres, Niklas Freymuth, Patrick Jahnke, Holger Karl, and Gerhard
+  Neumann.
+\newblock Learning sub-second routing optimization in computer networks
+  requires packet-level dynamics.
+\newblock \emph{Transactions on Machine Learning Research}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2410.10377}.
+\newblock arXiv:2410.10377.
+
+\bibitem[Boyan and Littman(1993)]{boyan1993qrouting}
+Justin~A. Boyan and Michael~L. Littman.
+\newblock Packet routing in dynamically changing networks: A reinforcement
+  learning approach.
+\newblock In \emph{Advances in Neural Information Processing Systems 6 (NIPS
+  1993)}, pages 671--678, 1993.
+\newblock URL
+  \url{https://papers.nips.cc/paper_files/paper/1993/hash/4ea06fbc83cdd0a06020c35d50e1e89a-Abstract.html}.
+
+\bibitem[Doherty et~al.(2025)Doherty, Matzner, Sadeghi, Bayvel, and
+  Beghelli]{doherty2025hype}
+Michael Doherty, Robin Matzner, Rasoul Sadeghi, Polina Bayvel, and Alejandra
+  Beghelli.
+\newblock Reinforcement learning for dynamic resource allocation in optical
+  networks: Hype or hope?
+\newblock \emph{Journal of Optical Communications and Networking}, 17\penalty0
+  (9):\penalty0 D1--D17, 2025.
+\newblock \doi{10.1364/JOCN.559990}.
+\newblock arXiv:2502.12804.
+
+\bibitem[Elwalid et~al.(2001)Elwalid, Jin, Low, and Widjaja]{elwalid2001mate}
+Anwar Elwalid, Cheng Jin, Steven Low, and Indra Widjaja.
+\newblock {MATE}: {MPLS} adaptive traffic engineering.
+\newblock In \emph{Proceedings of IEEE INFOCOM 2001}, volume~3, pages
+  1300--1309, 2001.
+\newblock \doi{10.1109/INFCOM.2001.916625}.
+
+\bibitem[Engstrom et~al.(2020)Engstrom, Ilyas, Santurkar, Tsipras, Janoos,
+  Rudolph, and Madry]{engstrom2020implementation}
+Logan Engstrom, Andrew Ilyas, Shibani Santurkar, Dimitris Tsipras, Firdaus
+  Janoos, Larry Rudolph, and Aleksander Madry.
+\newblock Implementation matters in deep {RL}: A case study on {PPO} and
+  {TRPO}.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2020.
+\newblock URL \url{https://openreview.net/forum?id=r1etN1rtPB}.
+
+\bibitem[Filsfils et~al.(2018)Filsfils, Previdi, Ginsberg, Decraene, Litkowski,
+  and Shakir]{rfc8402}
+C.~Filsfils, S.~Previdi, L.~Ginsberg, B.~Decraene, S.~Litkowski, and R.~Shakir.
+\newblock Segment routing architecture.
+\newblock RFC 8402, July 2018.
+\newblock URL \url{https://www.rfc-editor.org/rfc/rfc8402}.
+
+\bibitem[Fortz and Thorup(2000)]{fortz2000ospf}
+Bernard Fortz and Mikkel Thorup.
+\newblock Internet traffic engineering by optimizing {OSPF} weights.
+\newblock In \emph{Proceedings of IEEE INFOCOM 2000}, volume~2, pages 519--528,
+  2000.
+\newblock \doi{10.1109/INFCOM.2000.832225}.
+
+\bibitem[Foster and Rakhlin(2020)]{foster2020beyond}
+Dylan~J. Foster and Alexander Rakhlin.
+\newblock Beyond {UCB}: Optimal and efficient contextual bandits with
+  regression oracles.
+\newblock In \emph{Proceedings of the 37th International Conference on Machine
+  Learning (ICML)}, volume 119 of \emph{PMLR}, 2020.
+\newblock URL \url{https://arxiv.org/abs/2002.04926}.
+
+\bibitem[Garc{\'i}a and Fern{\'a}ndez(2015)]{garcia2015safe}
+Javier Garc{\'i}a and Fernando Fern{\'a}ndez.
+\newblock A comprehensive survey on safe reinforcement learning.
+\newblock \emph{Journal of Machine Learning Research}, 16\penalty0
+  (42):\penalty0 1437--1480, 2015.
+\newblock URL \url{https://jmlr.org/papers/v16/garcia15a.html}.
+
+\bibitem[Geng et~al.(2020)Geng, Lan, Aggarwal, Yang, and Xu]{geng2020marlte}
+Nan Geng, Tian Lan, Vaneet Aggarwal, Yuan Yang, and Mingwei Xu.
+\newblock A multi-agent reinforcement learning perspective on distributed
+  traffic engineering.
+\newblock In \emph{Proceedings of the 28th IEEE International Conference on
+  Network Protocols (ICNP)}, pages 1--11, 2020.
+\newblock \doi{10.1109/ICNP49622.2020.9259413}.
+
+\bibitem[Gui et~al.(2024)Gui, Wang, Li, Chen, Gao, Min, and Wang]{gui2024redte}
+Fei Gui, Songtao Wang, Dan Li, Li~Chen, Kaihui Gao, Congcong Min, and Yi~Wang.
+\newblock {RedTE}: Mitigating subsecond traffic bursts with real-time and
+  distributed traffic engineering.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2024}, pages 71--85, 2024.
+\newblock \doi{10.1145/3651890.3672231}.
+
+\bibitem[Henderson et~al.(2018)Henderson, Islam, Bachman, Pineau, Precup, and
+  Meger]{henderson2018matters}
+Peter Henderson, Riashat Islam, Philip Bachman, Joelle Pineau, Doina Precup,
+  and David Meger.
+\newblock Deep reinforcement learning that matters.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial
+  Intelligence}, volume~32, 2018.
+\newblock \doi{10.1609/aaai.v32i1.11694}.
+
+\bibitem[Hong et~al.(2013)Hong, Kandula, Mahajan, Zhang, Gill, Nanduri, and
+  Wattenhofer]{hong2013swan}
+Chi-Yao Hong, Srikanth Kandula, Ratul Mahajan, Ming Zhang, Vijay Gill, Mohan
+  Nanduri, and Roger Wattenhofer.
+\newblock Achieving high utilization with software-driven {WAN}.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2013}, pages 15--26, 2013.
+\newblock \doi{10.1145/2486001.2486012}.
+
+\bibitem[Hope and Yoneki(2021)]{hope2021gddr}
+Oliver Hope and Eiko Yoneki.
+\newblock {GDDR}: {GNN}-based data-driven routing.
+\newblock In \emph{Proceedings of the 41st IEEE International Conference on
+  Distributed Computing Systems (ICDCS)}, pages 517--527, 2021.
+\newblock \doi{10.1109/ICDCS51616.2021.00056}.
+
+\bibitem[Huang and Onta{\~n}{\'o}n(2022)]{huang2022masking}
+Shengyi Huang and Santiago Onta{\~n}{\'o}n.
+\newblock A closer look at invalid action masking in policy gradient
+  algorithms.
+\newblock In \emph{Proceedings of the International FLAIRS Conference},
+  volume~35, 2022.
+\newblock \doi{10.32473/flairs.v35i.130584}.
+
+\bibitem[Jain et~al.(2013)Jain, Kumar, Mandal, Ong, Poutievski, Singh, Venkata,
+  Wanderer, Zhou, Zhu, Zolla, H{\"o}lzle, Stuart, and Vahdat]{jain2013b4}
+Sushant Jain, Alok Kumar, Subhasree Mandal, Joon Ong, Leon Poutievski, Arjun
+  Singh, Subbaiah Venkata, Jim Wanderer, Junlan Zhou, Min Zhu, Jon Zolla, Urs
+  H{\"o}lzle, Stephen Stuart, and Amin Vahdat.
+\newblock {B4}: Experience with a globally-deployed software defined {WAN}.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2013}, pages 3--14, 2013.
+\newblock \doi{10.1145/2486001.2486019}.
+
+\bibitem[Jiang et~al.(2015)Jiang, Kulesza, Singh, and Lewis]{jiang2015horizon}
+Nan Jiang, Alex Kulesza, Satinder Singh, and Richard Lewis.
+\newblock The dependence of effective planning horizon on model accuracy.
+\newblock In \emph{Proceedings of the 2015 International Conference on
+  Autonomous Agents and Multiagent Systems (AAMAS)}, pages 1181--1189, 2015.
+\newblock URL
+  \url{https://web.eecs.umich.edu/~baveja/Papers/gamma-AAMAS-final.pdf}.
+\newblock Best Paper Award.
+
+\bibitem[Kandula et~al.(2005)Kandula, Katabi, Davie, and
+  Charny]{kandula2005texcp}
+Srikanth Kandula, Dina Katabi, Bruce Davie, and Anna Charny.
+\newblock Walking the tightrope: Responsive yet stable traffic engineering.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2005}, pages 253--264, 2005.
+\newblock \doi{10.1145/1080091.1080122}.
+
+\bibitem[Kumar et~al.(2018)Kumar, Yuan, Yu, Foster, Kleinberg, Lapukhov, Lim,
+  and Soul{\'e}]{kumar2018smore}
+Praveen Kumar, Yang Yuan, Chris Yu, Nate Foster, Robert Kleinberg, Petr
+  Lapukhov, Chiun~Lin Lim, and Robert Soul{\'e}.
+\newblock Semi-oblivious traffic engineering: The road not taken.
+\newblock In \emph{Proceedings of the 15th USENIX Symposium on Networked
+  Systems Design and Implementation (NSDI)}, 2018.
+\newblock URL
+  \url{https://www.usenix.org/conference/nsdi18/presentation/kumar}.
+
+\bibitem[Laidlaw et~al.(2023)Laidlaw, Russell, and
+  Dragan]{laidlaw2023effective}
+Cassidy Laidlaw, Stuart Russell, and Anca Dragan.
+\newblock Bridging {RL} theory and practice with the effective horizon.
+\newblock In \emph{Advances in Neural Information Processing Systems 36
+  (NeurIPS 2023)}, 2023.
+\newblock URL \url{https://arxiv.org/abs/2304.09853}.
+\newblock Oral. arXiv:2304.09853.
+
+\bibitem[Laidlaw et~al.(2024)Laidlaw, Zhu, Russell, and
+  Dragan]{laidlaw2024stochastic}
+Cassidy Laidlaw, Banghua Zhu, Stuart Russell, and Anca Dragan.
+\newblock The effective horizon explains deep {RL} performance in stochastic
+  environments.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2024.
+\newblock URL \url{https://arxiv.org/abs/2312.08369}.
+\newblock Spotlight. arXiv:2312.08369.
+
+\bibitem[Langford and Zhang(2007)]{langford2007epoch}
+John Langford and Tong Zhang.
+\newblock The epoch-greedy algorithm for multi-armed bandits with side
+  information.
+\newblock In \emph{Advances in Neural Information Processing Systems 20 (NIPS
+  2007)}, 2007.
+\newblock URL
+  \url{https://proceedings.neurips.cc/paper/2007/hash/4b04a686b0ad13dce35fa99fa4161c65-Abstract.html}.
+
+\bibitem[Liu et~al.(2024)Liu, Zhao, Cui, and Wang]{liu2024figret}
+Ximeng Liu, Shizhen Zhao, Yong Cui, and Xinbing Wang.
+\newblock {FIGRET}: Fine-grained robustness-enhanced traffic engineering.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2024}, pages 117--135, 2024.
+\newblock \doi{10.1145/3651890.3672258}.
+
+\bibitem[Mania et~al.(2018)Mania, Guy, and Recht]{mania2018random}
+Horia Mania, Aurelia Guy, and Benjamin Recht.
+\newblock Simple random search of static linear policies is competitive for
+  reinforcement learning.
+\newblock In \emph{Advances in Neural Information Processing Systems 31
+  (NeurIPS 2018)}, 2018.
+\newblock URL
+  \url{https://papers.nips.cc/paper/2018/hash/7634ea65a4e6d9041cfd3f7de18e334a-Abstract.html}.
+
+\bibitem[Mnih et~al.(2015)Mnih, Kavukcuoglu, Silver, Rusu, Veness, Bellemare,
+  Graves, Riedmiller, Fidjeland, Ostrovski, Petersen, Beattie, Sadik,
+  Antonoglou, King, Kumaran, Wierstra, Legg, and Hassabis]{mnih2015dqn}
+Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
+  Marc~G. Bellemare, Alex Graves, Martin Riedmiller, Andreas~K. Fidjeland,
+  Georg Ostrovski, Stig Petersen, Charles Beattie, Amir Sadik, Ioannis
+  Antonoglou, Helen King, Dharshan Kumaran, Daan Wierstra, Shane Legg, and
+  Demis Hassabis.
+\newblock Human-level control through deep reinforcement learning.
+\newblock \emph{Nature}, 518\penalty0 (7540):\penalty0 529--533, 2015.
+\newblock \doi{10.1038/nature14236}.
+
+\bibitem[Ng et~al.(1999)Ng, Harada, and Russell]{ng1999shaping}
+Andrew~Y. Ng, Daishi Harada, and Stuart~J. Russell.
+\newblock Policy invariance under reward transformations: Theory and
+  application to reward shaping.
+\newblock In \emph{Proceedings of the Sixteenth International Conference on
+  Machine Learning (ICML)}, pages 278--287. Morgan Kaufmann, 1999.
+
+\bibitem[Patterson et~al.(2024)Patterson, Neumann, White, and
+  White]{patterson2024empirical}
+Andrew Patterson, Samuel Neumann, Martha White, and Adam White.
+\newblock Empirical design in reinforcement learning.
+\newblock \emph{Journal of Machine Learning Research}, 25\penalty0
+  (318):\penalty0 1--63, 2024.
+\newblock URL \url{https://www.jmlr.org/papers/v25/23-0183.html}.
+
+\bibitem[Pei et~al.(2024)Pei, Sun, Hu, Li, Chen, and Tian]{pei2024efficientte}
+Xinglong Pei, Penghao Sun, Yuxiang Hu, Dan Li, Bo~Chen, and Le~Tian.
+\newblock Enabling efficient routing for traffic engineering in {SDN} with deep
+  reinforcement learning.
+\newblock \emph{Computer Networks}, 241:\penalty0 110220, 2024.
+\newblock \doi{10.1016/j.comnet.2024.110220}.
+
+\bibitem[Perry et~al.(2023)Perry, Vieira~Frujeri, Hoch, Kandula, Menache,
+  Schapira, and Tamar]{perry2023dote}
+Yarin Perry, Felipe Vieira~Frujeri, Chaim Hoch, Srikanth Kandula, Ishai
+  Menache, Michael Schapira, and Aviv Tamar.
+\newblock {DOTE}: Rethinking (predictive) {WAN} traffic engineering.
+\newblock In \emph{Proceedings of the 20th USENIX Symposium on Networked
+  Systems Design and Implementation (NSDI)}, 2023.
+\newblock URL
+  \url{https://www.usenix.org/conference/nsdi23/presentation/perry}.
+\newblock Best Paper Award. arXiv:2303.00735.
+
+\bibitem[Petrik and Scherrer(2008)]{petrik2008biasing}
+Marek Petrik and Bruno Scherrer.
+\newblock Biasing approximate dynamic programming with a lower discount factor.
+\newblock In \emph{Advances in Neural Information Processing Systems 21 (NIPS
+  2008)}, pages 1265--1272, 2008.
+\newblock URL
+  \url{https://proceedings.neurips.cc/paper_files/paper/2008/file/08c5433a60135c32e34f46a71175850c-Paper.pdf}.
+
+\bibitem[Raffin et~al.(2021)Raffin, Hill, Gleave, Kanervisto, Ernestus, and
+  Dormann]{raffin2021sb3}
+Antonin Raffin, Ashley Hill, Adam Gleave, Anssi Kanervisto, Maximilian
+  Ernestus, and Noah Dormann.
+\newblock {Stable-Baselines3}: Reliable reinforcement learning implementations.
+\newblock \emph{Journal of Machine Learning Research}, 22\penalty0
+  (268):\penalty0 1--8, 2021.
+\newblock URL \url{https://jmlr.org/papers/v22/20-1364.html}.
+
+\bibitem[Schulman et~al.(2016)Schulman, Moritz, Levine, Jordan, and
+  Abbeel]{schulman2016gae}
+John Schulman, Philipp Moritz, Sergey Levine, Michael~I. Jordan, and Pieter
+  Abbeel.
+\newblock High-dimensional continuous control using generalized advantage
+  estimation.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2016.
+\newblock URL \url{https://arxiv.org/abs/1506.02438}.
+
+\bibitem[Schulman et~al.(2017)Schulman, Wolski, Dhariwal, Radford, and
+  Klimov]{schulman2017ppo}
+John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov.
+\newblock Proximal policy optimization algorithms, 2017.
+\newblock URL \url{https://arxiv.org/abs/1707.06347}.
+
+\bibitem[Stampa et~al.(2017)Stampa, Arias, Sanchez-Charles, Muntes-Mulero, and
+  Cabellos]{stampa2017drl}
+Giorgio Stampa, Marta Arias, David Sanchez-Charles, Victor Muntes-Mulero, and
+  Albert Cabellos.
+\newblock A deep-reinforcement learning approach for software-defined
+  networking routing optimization, 2017.
+\newblock URL \url{https://arxiv.org/abs/1709.07080}.
+
+\bibitem[Valadarsky et~al.(2017)Valadarsky, Schapira, Shahaf, and
+  Tamar]{valadarsky2017learning}
+Asaf Valadarsky, Michael Schapira, Dafna Shahaf, and Aviv Tamar.
+\newblock Learning to route.
+\newblock In \emph{Proceedings of the 16th ACM Workshop on Hot Topics in
+  Networks (HotNets-XVI)}, pages 185--191, 2017.
+\newblock \doi{10.1145/3152434.3152441}.
+\newblock Extended version: arXiv:1708.03074, ``A Machine Learning Approach to
+  Routing''.
+
+\bibitem[Wang et~al.(2006)Wang, Xie, Qiu, Yang, Zhang, and
+  Greenberg]{wang2006cope}
+Hao Wang, Haiyong Xie, Lili Qiu, Yang~Richard Yang, Yin Zhang, and Albert
+  Greenberg.
+\newblock {COPE}: Traffic engineering in dynamic networks.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2006}, pages 99--110, 2006.
+\newblock \doi{10.1145/1159913.1159926}.
+
+\bibitem[Wang et~al.(2008)Wang, Ho, Pavlou, and Howarth]{wang2008overview}
+Ning Wang, Kin Ho, George Pavlou, and Michael Howarth.
+\newblock An overview of routing optimization for {Internet} traffic
+  engineering.
+\newblock \emph{IEEE Communications Surveys \& Tutorials}, 10\penalty0
+  (1):\penalty0 36--56, 2008.
+\newblock \doi{10.1109/COMST.2008.4483669}.
+
+\bibitem[Xu et~al.(2023)Xu, Yan, Singh, Chiu, Rush, and Yu]{xu2023teal}
+Zhiying Xu, Francis~Y. Yan, Rachee Singh, Justin~T. Chiu, Alexander~M. Rush,
+  and Minlan Yu.
+\newblock Teal: Learning-accelerated optimization of {WAN} traffic engineering.
+\newblock In \emph{Proceedings of ACM SIGCOMM 2023}, pages 378--393, 2023.
+\newblock \doi{10.1145/3603269.3604857}.
+
+\bibitem[Xu et~al.(2018)Xu, Tang, Meng, Zhang, Wang, Liu, and
+  Yang]{xu2018drlte}
+Zhiyuan Xu, Jian Tang, Jingsong Meng, Weiyi Zhang, Yanzhi Wang, Chi~Harold Liu,
+  and Dejun Yang.
+\newblock Experience-driven networking: A deep reinforcement learning based
+  approach.
+\newblock In \emph{Proceedings of IEEE INFOCOM 2018}, 2018.
+\newblock \doi{10.1109/INFOCOM.2018.8485853}.
+
+\bibitem[Yan et~al.(2020)Yan, Ayers, Zhu, Fouladi, Hong, Zhang, Levis, and
+  Winstein]{yan2020puffer}
+Francis~Y. Yan, Hudson Ayers, Chenzhi Zhu, Sadjad Fouladi, James Hong, Keyi
+  Zhang, Philip Levis, and Keith Winstein.
+\newblock Learning in situ: a randomized experiment in video streaming.
+\newblock In \emph{Proceedings of the 17th USENIX Symposium on Networked
+  Systems Design and Implementation (NSDI)}, pages 495--511, 2020.
+\newblock URL \url{https://www.usenix.org/conference/nsdi20/presentation/yan}.
+
+\bibitem[Zhang et~al.(2020)Zhang, Ye, Guo, Yen, and Chao]{zhang2020cfrrl}
+Junjie Zhang, Minghao Ye, Zehua Guo, Chen-Yu Yen, and H.~Jonathan Chao.
+\newblock {CFR-RL}: Traffic engineering with reinforcement learning in {SDN}.
+\newblock \emph{IEEE Journal on Selected Areas in Communications}, 38\penalty0
+  (10):\penalty0 2249--2259, 2020.
+\newblock \doi{10.1109/JSAC.2020.3000371}.
+
+\bibitem[Zhang et~al.(2021)Zhang, Ji, and Du]{zhang2021rlbandits}
+Zihan Zhang, Xiangyang Ji, and Simon~S. Du.
+\newblock Is reinforcement learning more difficult than bandits? {A}
+  near-optimal algorithm escaping the curse of horizon.
+\newblock In \emph{Proceedings of the 34th Conference on Learning Theory
+  (COLT)}, volume 134 of \emph{PMLR}, pages 4528--4531, 2021.
+\newblock URL \url{https://proceedings.mlr.press/v134/zhang21b.html}.
+
+\end{thebibliography}

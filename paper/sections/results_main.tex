@@ -1,0 +1,65 @@
+\subsection{RQ1: Does sequential PPO outperform contextual learning?}
+\label{sec:rq1}
+
+Table~\ref{tab:main} reports all policies on the 140 test episodes. The bandit
+reaches a mean return of \TestBandit{} [\TestBanditLo, \TestBanditHi] over
+\TestBanditRoots{} training roots and PPO \TestPPO{} [\TestPPOLo, \TestPPOHi]
+over \TestPPORoots{}. On paired episodes the bandit's advantage is \Gap{}
+(two-stage bootstrap [\GapLo, \GapHi]; $t$-interval over roots
+[\GapTLo, \GapTHi]); it is positive on \GapRootsPositive{} of \GapRoots{} roots
+and in \GapWinRate\,\% of paired episodes ($d_z=\GapDz$). The ordering does not
+depend on checkpoint selection: with the final 400k checkpoints the gap is
+\GapFinal{} [\GapFinalLo, \GapFinalHi] (\GapFinalRootsPositive{} of \GapRoots{}
+roots). % CHECK per-scenario claim against tables/main_per_scenario at final
+Per scenario (Table~\ref{tab:perscen}), the bandit is ahead in every
+scenario except the double-failure scenario, where the two are close; the
+largest gap is on the 24-hour \texttt{full\_day} scenario. Both learners
+dominate the static, random and CSPF baselines; % CHECK greedy root counts
+ the bandit also beats greedy
+on every root, whereas PPO beats greedy on only some.
+
+The most informative comparison is with a controller that does not learn at
+all. MILP-track, which solves a min-max-utilization path-selection problem on
+current telemetry every interval and moves one demand towards the solution,
+reaches \TestMilp{} [\TestMilpLo, \TestMilpHi]. The bandit and MILP-track are
+statistically indistinguishable (bandit $-$ MILP-track $=\BanditMinusMilp{}$
+[\BanditMinusMilpLo, \BanditMinusMilpHi]); PPO falls short of MILP-track
+($\PPOMinusMilp$ [\PPOMinusMilpLo, \PPOMinusMilpHi]). Operationally, the
+bandit delivers \TestBanditDelivered\,\% of offered traffic with
+\TestBanditReroutes{} reroutes per hour, against \TestPPODelivered\,\% and
+\TestPPOReroutes{} for PPO and \TestMilpDelivered\,\% and \TestMilpReroutes{}
+for MILP-track: the learned myopic policy achieves the optimizer's quality with
+less than half its churn. % CHECK churn ratio
+
+\begin{table*}[t]
+\centering\small
+\caption{Test results (7 scenarios $\times$ 20 seeds, 140 paired episodes).
+Learners: mean over training roots of the selected checkpoint, two-stage
+bootstrap 95\,\% CI; fixed policies: scenario-stratified bootstrap CI.
+Per-interval = return divided by the number of decisions, averaged over
+episodes. SLA = SLA-violating demand-intervals per episode. $\dagger$
+clairvoyant reference (sees future traffic), not a controller.}
+\label{tab:main}
+\begin{tabular}{@{}lrrrrrrr@{}}
+\toprule
+Policy & Return [95\,\% CI] & Per-interval & Delivered & SLA & Mean max-util & Reroutes/h & Moved Mb/s \\
+\midrule
+\tabinput{tables/main_results}
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{table}[t]
+\centering\small
+\caption{Bandit $-$ PPO paired return difference per scenario (selected
+checkpoints, all roots pooled; bootstrap 95\,\% CI over paired episodes) and
+share of paired episodes the bandit wins.}
+\label{tab:perscen}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Scenario & Difference [95\,\% CI] & Bandit wins \\
+\midrule
+\tabinput{tables/main_per_scenario}
+\bottomrule
+\end{tabular}
+\end{table}
