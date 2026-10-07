@@ -273,6 +273,11 @@ def section_main(data: dict) -> None:
         num(f"Test{key}DecisionMs", s["decision_ms"], "{:.2f}")
     main = pd.DataFrame(rows)
     write_table(main, "main_results", latex_rows(latex))
+    bt = learner_test(ep, "bandit") if "bandit" in learners else None
+    if bt is not None and len(bt):
+        pi = bt.operational_return / bt.episode_length
+        num("PerIntervalMin", pi.min())
+        num("PerIntervalMax", pi.max())
     rr = main.set_index("policy").reroutes
     if {"bandit", "milp_track"} <= set(rr.index):
         num("ChurnRatioBanditMilp", rr["bandit"] / rr["milp_track"], "{:.2f}")

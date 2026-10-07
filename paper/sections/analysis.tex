@@ -45,17 +45,21 @@ otherwise holds its configuration. The behaviour is not an artefact of checkpoin
 \PPOFinalFlappingRoots{} of \PPOFinalRoots{} final (400k) PPO checkpoints also
 reverse more than half of their moves.
 
-\paragraph{Credit assignment for small immediate costs.}
-A reversal costs about $0.5$ reward units once, while PPO's advantage
+\paragraph{A hypothesis: small immediate costs in noisy advantages.}
+A move that returns a demand to its previous path costs at least $0.38$
+reward units once (fixed and reversal terms of $C^{\mathrm{TE}}$,
+Eq.~\ref{eq:reward}), plus its traffic and divergence terms. PPO's advantage
 estimates aggregate, through GAE with $\gamma\lambda\approx0.945$, the
-fluctuations of a reward that ranges from about $+2$ per interval in a healthy
-network to about $-30$ during protected outages (Eq.~\ref{eq:reward}), driven
-by the training scenario's random bursts and failures. A per-step cost of that size is
-small relative to the variance of the advantage target, and the policy
-gradient fails to attribute it to the step that incurs it. The bandit's
+fluctuations of a reward whose per-interval mean alone ranges from
+\PerIntervalMin{} to \PerIntervalMax{} across test episodes, driven by bursts,
+failures and diurnal load. We hypothesise that a one-off cost of this size is
+small relative to the variance of the advantage target, so that the policy
+gradient does not attribute it to the step that incurs it. The bandit's
 regression target \emph{is} that step's reward, so the cost enters its
-estimate with no noise from future intervals. Section~\ref{sec:rq2} tests
-this explanation by removing PPO's horizon.
+estimate without noise from future intervals. We did not measure advantage
+noise directly; \S\ref{sec:rq2} tests the explanation indirectly by
+removing PPO's horizon, and \S\ref{sec:discussion} discusses what speaks
+against it.
 
 \paragraph{What the learners' actions are worth.}
 On states visited by each learner on test episodes we compute, by cloning the
