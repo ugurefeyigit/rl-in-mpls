@@ -50,6 +50,7 @@ an experiment registry, and a paper built from scripts.
 | Policy | Test return [95 % CI] | Roots | Delivered | SLA viol. | Reroutes/h |
 |---|---:|---:|---:|---:|---:|
 | Oracle-1 † (exact next-interval reward) | 46.9 [45.2, 48.7] | – | 95.98 % | 132 | 3.36 |
+| MILP-track, two parameters tuned on validation seeds | 30.9 [28.8, 33.0] | – | 95.62 % | 161 | 3.77 |
 | Masked contextual bandit (γ=0) | 25.2 [21.5, 28.1] | 5 | 95.31 % | 164 | 2.30 |
 | MILP-track (per-interval min-max-util, no learning) | 24.0 [21.9, 26.3] | – | 95.51 % | 162 | 5.83 |
 | Greedy | 4.0 [1.7, 6.3] | – | 94.85 % | 187 | 4.60 |
