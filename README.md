@@ -1,387 +1,135 @@
-# RL-in-MPLS — Reinforcement-Learning Traffic Engineering on a Simulated MPLS Backbone
+# When does MPLS traffic engineering need sequential RL?
 
-> **Author:** Uğur Efe Yiğit · **License:** Proprietary — all rights reserved.
-> This repository is publicly readable but **not** open source. No permission is
-> granted to use, copy, modify or redistribute it without written permission.
-> See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+> **Author:** Uğur Efe Yiğit · **License:** proprietary, all rights reserved
+> ([LICENSE](LICENSE), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+> This repository is publicly readable but not open source.
 
-An interactive engineering experiment answering two questions honestly.
+**Research question.** In a masked, incremental MPLS traffic-engineering
+problem — one LSP move per 5-minute interval, persistent routes, move costs,
+hold-down timers, protected traffic classes — does a sequential RL agent
+(MaskablePPO, γ = 0.995) beat a learner that only predicts the *immediate*
+reward of each action (a masked neural contextual bandit, γ = 0)? If so,
+why? If not, when would it?
 
-**V1 asked:** can an RL controller make better MPLS traffic-engineering
-decisions than conventional static or heuristic routing when demand changes over
-time?
+**Principal finding (so far; numbers are generated, see table below).** The
+myopic bandit beats PPO on every training root and matches a non-learning
+per-interval min-max-utilization MILP controller; PPO is below both and its
+outcome is unusually sensitive to numerical perturbation. The closed
+predecessor study's bandit result reproduces on different hardware; its PPO
+result and its "PPO wins the deceptive scenario" claim do not. Clairvoyant
+lookahead diagnostics show that the problem does contain non-myopic structure
+(moves whose one-off cost exceeds one interval's gain), so the bandit's win is
+not because the problem is trivially myopic — see
+[docs/SEQUENTIALITY_AUDIT.md](docs/SEQUENTIALITY_AUDIT.md) and the paper.
 
-**V2 asked the sharper question:** does *planning* explain the gain? A
-MaskablePPO agent, which optimises a discounted return, was compared against a
-**masked contextual bandit** that is explicitly myopic - same observation, same
-action mask, same budget, but no notion of the future at all.
+**What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,
+64 directed links, 17 demands, 4 candidate LSPs each, observation 604,
+Discrete(69) with action masks), the frozen "Environment V2" decision problem,
+PPO / contextual-bandit / masked-Q(γ) learners, static / greedy / CSPF / MILP
+baselines, clairvoyant lookahead oracles, a controlled delayed-effect variant,
+an experiment registry, and a paper built from scripts.
 
-A flow-level simulation of an 18-router MPLS backbone is driven by these learners
-or by conventional controllers (static shortest path, utilization-aware greedy,
-CSPF-style periodic reoptimization). All controllers face byte-identical seeded
-traffic, so every comparison is paired. A live NOC-style dashboard shows the
-topology, LSPs, decisions, reward breakdowns and metrics in real time.
-
-**This is a simulation study, not a production controller.** Limitations are
-listed below, in [docs/TECHNICAL_DEFENSE.md](docs/TECHNICAL_DEFENSE.md) and in
-[docs/REPORT.md](docs/REPORT.md).
-
----
-
-## The V2 result - closed and sealed
-
-The governed V2 study is **complete**. Its final holdout ran **exactly once** on
-seeds no one had touched, over **315 episodes** (35 per learner checkpoint or
-baseline).
-
-| Method | Holdout return |
-|---|---:|
-| Masked contextual bandit | **18.221** |
-| MaskablePPO | 9.036 |
-| Utilization-aware greedy | -2.327 |
-| CSPF periodic reopt | -28.339 |
-| Static shortest path | -101.851 |
-
-The bandit's advantage was **9.185** return points. It won **all three** training
-roots and **six of seven** scenarios; PPO kept a **1.107**-point lead in
-`deceptive_local_optimum`, preserved as a negative result against an
-across-the-board claim. All safety and integrity checks passed. Both learners
-averaged about **2.148 reroutes/hour**; the bandit had fewer reversals and flaps
-but moved more bandwidth than PPO.
-
-> **The frozen evidence does not positively support a need for temporal planning
-> in this formulation** - the explicitly myopic learner remained stronger.
->
-> **This is not evidence that planning is generally irrelevant to MPLS or traffic
-> engineering.** It is a result about these frozen learners, scenarios, reward and
-> observation design only.
-
-No training, tuning, sweep, reselection, redesign, retry or policy debugging used
-holdout results. Browse the whole record, including the invalidated run and the
-full chain of custody, at **`/study`**.
-
-| Doc | Contents |
-|---|---|
-| [docs/TECHNICAL_DEFENSE.md](docs/TECHNICAL_DEFENSE.md) | Problem framing, methodology, roots and selection, the invalidated run, limitations |
-| [docs/V2_EVIDENCE_AUDIT.md](docs/V2_EVIDENCE_AUDIT.md) | Independent reconciliation of every published figure against the frozen files |
-| [docs/V3_RESEARCH_BACKLOG.md](docs/V3_RESEARCH_BACKLOG.md) | Ideas only - **unapproved and unevaluated**, supported by no V2 evidence |
-| [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) | What a release must verify, and known limitations |
+**Reproduce:** `python scripts/reproduce.py --suite sanity` (≈10 min, CPU).
 
 ---
 
-## Quick start (Windows / macOS / Linux, Python 3.11+)
+## Results summary
 
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
-```
+<!-- RESULTS:BEGIN -->
+| Policy | Test return [95 % CI] | Roots | Delivered | SLA viol. | Reroutes/h |
+|---|---:|---:|---:|---:|---:|
+| Oracle-1 † (exact next-interval reward) (partial: 17 episodes) | 369.7 [363.3, 376.4] | – | 99.16 % | 119 | 1.08 |
+| Masked contextual bandit (γ=0) | 25.2 [21.5, 28.1] | 5 | 95.31 % | 164 | 2.30 |
+| MILP-track (per-interval min-max-util, no learning) | 24.0 [21.9, 26.3] | – | 95.51 % | 162 | 5.83 |
+| Greedy | 4.0 [1.7, 6.3] | – | 94.85 % | 187 | 4.60 |
+| MaskablePPO (γ=0.995) | -3.3 [-18.4, 11.7] | 4 | 94.78 % | 191 | 7.19 |
+| CSPF | -25.6 [-28.0, -23.2] | – | 93.64 % | 243 | 0.61 |
+| No-op | -95.5 [-98.0, -92.9] | – | 90.58 % | 352 | 0.00 |
+| Static shortest path | -96.5 [-98.9, -94.0] | – | 90.40 % | 346 | 0.37 |
+| Random valid | -107.5 [-111.3, -103.6] | – | 89.44 % | 401 | 11.66 |
 
-### One-command demo
+Bandit − PPO, paired: **28.6** [14.6, 43.9], positive on 4/4 roots.
+<!-- RESULTS:END -->
 
-```bash
-python scripts/demo.py
-```
+All numbers: 7 scripted scenarios × 20 test seeds (3001–3020), paired;
+learners selected on separate validation seeds; 95 % CIs (two-stage bootstrap
+over training roots and episodes for learners; stratified bootstrap over
+episodes for fixed policies). † clairvoyant reference, not a controller.
 
-Starts the backend **with the training endpoint disabled**, loads the
-pretrained agent (`models/ppo_te/`), creates the fixed demo session (evening
-peak → flash crowd → backbone failure → recovery; RL vs greedy side-by-side;
-seed 42, advisor execution, paused at t=0) and opens **Presentation Mode**,
-whose left control panel is the single place a run is configured and driven.
-The live default is the governed **V2** environment with the pre-holdout
-continuity-selected checkpoints; V1 remains reachable by asking for it. The demo
-seed is fixed for reproducibility — the multi-seed evidence lives in `results/`
-(see Evaluation).
+## Documents
 
-Open the engineering console instead:
-
-```bash
-python scripts/demo.py --advanced
-```
-
-Re-enable training (never do this during a presentation):
-
-```bash
-python scripts/demo.py --allow-training
-```
-
-### Manual start
-
-```bash
-python -m uvicorn server.main:app --port 8000
-```
-
-| URL | What it is |
+| Document | Content |
 |---|---|
-| `http://127.0.0.1:8000/present` | Unified application in **Presentation** mode |
+| [paper/main.pdf](paper/main.pdf) | the research paper (LaTeX source in `paper/`) |
+| [report/technical_report.pdf](report/technical_report.pdf) | longer technical report (thesis-chapter style) |
+| [slides/talk.pdf](slides/talk.pdf) | 12–15 minute research talk |
+| [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) | the study in two pages |
+| [docs/MATHEMATICAL_FORMULATION.md](docs/MATHEMATICAL_FORMULATION.md) | the decision problem, exactly as implemented |
+| [docs/ALGORITHMS.md](docs/ALGORITHMS.md) | every policy, with pseudocode mapped to source |
+| [docs/HYPOTHESES.md](docs/HYPOTHESES.md) | hypotheses and falsification criteria, committed before the new results |
+| [docs/SEQUENTIALITY_AUDIT.md](docs/SEQUENTIALITY_AUDIT.md) | how much does an action affect the future? |
+| [docs/MASK_VALIDATION.md](docs/MASK_VALIDATION.md) | independent audit of the action mask |
+| [docs/REPRODUCTION_REPORT.md](docs/REPRODUCTION_REPORT.md) | what of the closed V2 study reproduces |
+| [docs/EXPERIMENT_REGISTRY.md](docs/EXPERIMENT_REGISTRY.md), [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md) | every experiment, including failures |
+| [docs/RESULTS_MANIFEST.md](docs/RESULTS_MANIFEST.md) | provenance of every figure, table and number |
+| [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md) | environment, seeds, commands, runtimes |
+| [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | what this work does not show |
+| [docs/HOSTILE_REVIEWS.md](docs/HOSTILE_REVIEWS.md) | networking, RL and paper-reviewer critiques and responses |
+| [docs/REPOSITORY_AUDIT.md](docs/REPOSITORY_AUDIT.md) | forensic audit of the inherited repository |
+| [literature/LITERATURE_MATRIX.md](literature/LITERATURE_MATRIX.md) | verified related work and novelty audit |
+| [docs/PRODUCT_README.md](docs/PRODUCT_README.md) | the interactive dashboard / product (original README) |
 
-| `http://127.0.0.1:8000/` or `/advanced` | Unified application in **Network Information** mode |
-| `http://127.0.0.1:8000/study` | Unified application in **RL Information → Governed Study**, final evidence selected |
-| `http://127.0.0.1:8000/docs` | OpenAPI, always current |
+## Installation
 
-To serve manually with training disabled, as the demo launcher does:
-
-```bash
-ALLOW_TRAINING=false python -m uvicorn server.main:app --port 8000
-```
-
-On PowerShell:
-
-```bash
-$env:ALLOW_TRAINING="false"; python -m uvicorn server.main:app --port 8000
-```
-
-### Docker
-
-```bash
-docker compose up --build    # http://127.0.0.1:8000
-```
-
-The compose service sets `ALLOW_TRAINING=false`; override it in
-`docker-compose.yml` if you intend to train inside the container.
-
-## Reproducible demonstration of the V2 result
-
-No training, evaluation or checkpoint loading is involved - everything is read
-from the committed evidence.
+Python ≥ 3.11 (tested 3.13), Linux/macOS/Windows, CPU only.
 
 ```bash
-python -m uvicorn server.main:app --port 8000
+python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -r requirements/lock-cpu-py313.txt   # exact tested versions
+python -m pip install -e . --no-deps
+python -m pytest -q -m "not slow"                          # ≈ 850 tests
 ```
 
-Then open `http://127.0.0.1:8000/study`. Every figure on that page is read from
-`results/v2_*` at request time; the page stores none of them, and a test rejects
-any scientific literal in its markup.
+## Reproducing
 
-To also replay the preserved per-step traces, point the server at them first.
-They are large and live outside Git, in the experiment worktree named in
-`results/v2_final_holdout/manifest.json` under `full_artifact_path`. On
-PowerShell:
-
-```bash
-$env:V2_FULL_ARTIFACTS="<full_artifact_path from the manifest>"; python -m uvicorn server.main:app --port 8000
-```
-
-Without it, the replay section still catalogues all 315 episodes and tells you
-how to configure the path. Replay is recorded playback - it never runs a
-controller or evaluates a checkpoint, and the page refuses any payload not marked
-as recorded.
-
-The same evidence is available as JSON under `/api/v2/*`; see
-[docs/API.md](docs/API.md).
-
-## Training
-
-> Training is **V1/V3 tooling only**. The governed V2 study is closed: do not
-> train, tune, resume, reselect or re-evaluate a V2 learner. Any new learner
-> belongs to a separately preregistered V3 study - see
-> [docs/V3_RESEARCH_BACKLOG.md](docs/V3_RESEARCH_BACKLOG.md).
-
-```bash
-python scripts/train.py                    # full run (configs/training.yaml, ~40 min CPU)
-python scripts/train.py --timesteps 30000  # quick sanity run
-tensorboard --logdir runs                  # curves incl. per-component rewards
-```
-
-Checkpoints, best model and eval traces land in `models/<tag>/`.
-
-## Evaluation
-
-```bash
-python scripts/evaluate.py                 # 7 scenarios × 5 seeds × 5 algorithms
-python scripts/make_figures.py             # PNGs into results/figures/
-```
-
-Produces `results/eval_summary.csv` (per episode), `eval_stats.csv`
-(mean/std/95% CI), `eval_summary.json` (incl. paired RL-minus-baseline
-deltas) and per-step traces for the figure scripts.
-
-## Tests
-
-```bash
-python -m pytest tests/ -q
-```
-
-The suite covers engine invariants, the gymnasium checker, API end-to-end, the
-session state machine, correctness fixes, the V2 environment/reward/transition
-definitions, V1-to-V2 compatibility, the freeze/pin gates, the presentation
-contract (page smoke, element IDs, no external assets, display-scale agreement
-between Python and JS, websocket reconnect, no-training-on-launch, benchmark
-honesty), and the read-only V2 evidence layer:
-
-```bash
-python -m pytest tests/test_evidence_loader.py tests/test_evidence_claims.py tests/test_evidence_replay.py tests/test_evidence_api.py tests/test_study_ui.py -q
-```
-
-Those five files reconcile every published V2 figure against the frozen files,
-prove the loader fails closed on a missing, malformed, foreign or
-integrity-failing artifact, and assert that nothing on the evidence path ever
-opens a governed path for writing.
-
-Manual UI checks that the suite cannot cover are in
-[docs/UI_ACCEPTANCE_TESTS.md](docs/UI_ACCEPTANCE_TESTS.md).
-
----
-
-## Unified application · Exp 2.1
-
-One build-free application preserves all four earlier routes and adds `/compare`.
-It has four primary modes: **Presentation**, **Network Information**,
-**RL Information**, and **Comparative Run Results**. Guided Story remains an
-eleven-beat workflow inside Presentation, not a primary mode. Exp 2.1's fourth
-mode compares at most two completed live-demonstration runs in process memory;
-Full Reset clears both slots and no comparison record is written to disk.
-
-The persistent source stamp distinguishes **LIVE**, **RECORDED**,
-**DEVELOPMENT**, and **FINAL EVIDENCE**. Recorded traces never appear live,
-development and final evidence render in mutually exclusive regions, and the
-final holdout is never offered as an interactive controller comparison.
-
-The topology reuses the proven pre-redesign left-to-right engineering
-schematic. City and role lead each fixed node plate, internal router IDs remain
-secondary, and the footer states that placement is not geographic and the
-scaled network is fictional. The simulator topology and routing semantics are
-unchanged.
-
-| Doc | Contents |
+| Command | Runtime (4 cores) |
 |---|---|
-| [docs/PRODUCT_UI.md](docs/PRODUCT_UI.md) | Modes, routes, sources, topology, unavailable-data rules |
-| [docs/PRESENTATION_MODE.md](docs/PRESENTATION_MODE.md) | Audience view, Guided Story, controls, comparison and evidence treatment |
-| [docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md) | Keyboard, focus, list alternative, reduced motion and responsive behavior |
-| [docs/PRESENTATION_SCRIPT.md](docs/PRESENTATION_SCRIPT.md) | The 20–25 minute script: what to say, what to click, where RL loses |
-| [docs/OPERATOR_ADVISOR.md](docs/OPERATOR_ADVISOR.md) | propose / approve / reject, predicted vs actual, why proposals never mutate the engine |
-| [docs/RESULTS_AND_COMPARISON.md](docs/RESULTS_AND_COMPARISON.md) | The paired comparison, the three record classes, and what each refuses to do |
-| [docs/ADR-003-results-retention-and-delegated-fast-forward.md](docs/ADR-003-results-retention-and-delegated-fast-forward.md) | Why demonstrations and evidence never merge, how long a retained run lives, and why a fast-forward must be delegated |
-| [docs/CITY_DISPLAY_MAPPING.md](docs/CITY_DISPLAY_MAPPING.md) | The router → city table and the rule that internal IDs never change |
+| `python scripts/reproduce.py --suite sanity` — tests, exact baseline reproduction of the closed study, tiny training of both learners | ≈ 10 min |
+| `python scripts/reproduce.py --suite core` — one more training root, all references, one diagnostic seed, tables, figures | ≈ 3–4 h |
+| `python scripts/reproduce.py --suite full` — every registered experiment, diagnostics, paper | ≈ 20–24 h |
+| `python scripts/reproduce.py --suite analysis` — rebuild tables, numbers, figures, PDFs from existing raw results | ≈ 2 min |
 
-**Display names are a presentation layer only.** `PE1`, `L11`, `D2` and the
-scenario keys are the contract shared by the pretrained model, the configs, the
-tests and the committed results; they are never renamed. The mapping lives in
-one place, `mplssim/display.py`, and reaches both frontends via
-`GET /api/display`.
+Single pieces: `python scripts/study/job.py <run_id>` (train + select + test one
+registered run; `--list` shows ids), `scripts/study/run_oracles.py`,
+`scripts/study/run_seqdiag.py`, `scripts/study/run_mask_audit.py`. See
+[docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 
-**Terminology: "demand-interval SLA violations".** The SLA counters are not a
-count of unhappy services. They count *one per traffic demand per five-minute
-interval* that missed its latency or loss target, so one demand suffering for a
-whole evening contributes many. Both UIs label the metric this way.
-
----
-
-## What you see in the engineering console
-
-| View | Content |
-|---|---|
-| **Topology** | Cytoscape network with city labels; link color = utilization, width = capacity, dashed red = failed; click a demand row to highlight its route; hover for per-direction load/delay/loss/LSP counts and the internal IDs |
-| **Decision tape** | Every controller action as a plain-language stream with reward; internal encoding (`D2 p0→p3`) in a dimmed technical column |
-| **Scoreboard** | Live per-controller totals — reward, mean/interval, busiest link, peak, SLA problems now, demand-interval SLA total, delivered ratio, route changes, flaps — plus the absolute reward-point delta and a high-churn warning |
-| **Decision** | Selected action, action probabilities, safety-filter verdict with rejection reason, reward component breakdown, post-hoc no-op counterfactual, and an *engineering interpretation* generated from measured telemetry (labeled as such — it is not the policy's internal reasoning) |
-| **Metrics** | Time series per controller: max/mean utilization, delay, p95, loss, demand-interval SLA violations, route changes, fairness; cumulative reward |
-| **Benchmark** | Published 5-seed results for the selected scenario, read live from `results/eval_stats.csv`, plus the cross-scenario winner table |
-| **Matrix** | Live source→destination traffic heatmap |
-| **Demands / Links** | Full tables incl. candidate paths, SLA state, per-controller load deltas |
-| **Events** | Structured backend event log from `GET /api/events` |
-| **Training / Runs** | Launch & monitor training jobs (confirmation required, disabled in demo mode); stored run summaries |
-
-Controls: scenario, single-vs-compare mode, controller A/B, model tag, seed,
-safety filter, operator advisor, speed (1×/5×/20×/fast), pause/step/reset,
-Recommend/Approve/Reject, link failure/recovery injection, demand bursts,
-global demand multiplier, CSV/JSON export.
-
-A state chip in the header tracks `idle / running / paused / completed / error`
-and every control that is invalid in the current state is disabled rather than
-allowed to fail. Interventions report back from the server's `changed` flag, so
-"already failed" is never presented as a fresh failure.
-
-## Repository layout
+## Repository structure
 
 ```
-configs/      topology.yaml · traffic_classes.yaml · scenarios.yaml ·
-              reward.yaml · training.yaml · baselines.yaml
-mplssim/      simulation core, RL env, baselines, experiment runner,
-              display.py (the single city/scenario/label registry),
-              evidence/ (read-only access to the closed V2 study)
-server/       FastAPI app, live session manager, event log, SQLite persistence
-frontend/     build-free UIs (Cytoscape.js + ECharts, vendored — no CDN, no npm)
-              index.html + js/app.js        engineering console
-              present.html + js/present.js  Presentation Mode
-              study.html   + js/study.js    V2 sealed evidence record
-              js/display.js · js/fmt.js     shared labels and number formatting
-scripts/      train.py · evaluate.py · make_figures.py · demo.py
-tests/        pytest suite (unit + gymnasium checker + API e2e + presentation)
-docs/         ARCHITECTURE.md · API.md · REPORT.md · DEMO_SCRIPT.md · ADR-001
-              PRESENTATION_MODE.md · PRESENTATION_SCRIPT.md ·
-              OPERATOR_ADVISOR.md · CITY_DISPLAY_MAPPING.md ·
-              UI_ACCEPTANCE_TESTS.md · DEBUG_AUDIT.md
-models/       trained checkpoints (ppo_te = pretrained demo agent)
-results/      evaluation CSV/JSON + figures/
+configs/                 topology, traffic classes, scenarios (shared); V2 env/obs/reward/learning (frozen)
+mplssim/sim, rl, paths,  simulator and frozen Environment V2 (engine_v2, env_v2, reward_v2, candidates_v2)
+  traffic, core
+mplssim/experiments/     closed-study learners, governed trainer/evaluator, audit wrapper, freeze pin
+mplssim/study/           this study: evaluator, oracles, Q-learner, delay variant, MILP baseline,
+                         registry, trainer, statistics, diagnostics, collector
+mplssim/baselines/       static / greedy / CSPF controllers
+scripts/study/           job runner, scheduler, diagnostics, analysis; scripts/reproduce.py
+experiments/registry/    experiment definitions (E1–E6)        experiments/raw/  versioned per-episode outputs
+experiments/processed/   tidy tables                           results/          tables, figures, closed-study evidence
+paper/, report/, slides/ LaTeX sources (numbers in paper/generated/numbers.tex are generated)
+docs/, literature/       documentation listed above
+server/, frontend/, mplssim/product, mplssim/evidence   interactive dashboard (see docs/PRODUCT_README.md)
+tests/                   unit, integration and equivalence tests
 ```
 
-## The network
+## Known limitations (short)
 
-18 routers (4 ingress PEs, 4 egress PEs, 8 P cores, 2 aggregation), 32
-undirected links (64 directed) with 100–2000 Mbps capacities, 17 demands in 6
-traffic classes (voice, video, VPN, best-effort, bulk, critical) following
-diurnal profiles with seeded AR(1) noise, bursts, flash crowds and scripted
-link failures. Engineered stress points: a hidden shared bottleneck (P5→P8),
-a longer-but-better detour region, a redundancy ring, and a 2 Gbps backbone
-link (P2–P5) whose failure forces mass rerouting. Details:
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+Flow-level model with exogenous, inelastic traffic and an instantaneous
+control plane; one hand-built topology and scripted scenarios; five training
+roots; budget 400k transitions; one reward specification. Full list:
+[docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
-## Configuration guide
+## Citing
 
-Everything tunable lives in `configs/` as commented YAML; no source edits needed:
-
-| File | What you change there |
-|---|---|
-| `topology.yaml` | Routers (id/role/position), links (capacity, delay, admin weight). Adding/removing links automatically reshapes candidate paths, observations and the UI |
-| `traffic_classes.yaml` | Class SLAs/priorities, diurnal profiles (hour, multiplier control points), the demand matrix (src/dst/class/base Mbps) |
-| `scenarios.yaml` | Scenario windows, demand multipliers, scripted events (`link_down`, `link_up`, `burst`, `flash_crowd`, `multiplier`), randomization ranges for training |
-| `reward.yaml` | All reward weights and normalization params — the formula is documented in the file header |
-| `training.yaml` | PPO hyperparameters, timesteps, seeds, control-interval/k-paths/cooldown (`env:` block feeds both training and the live server) |
-| `baselines.yaml` | Greedy trigger/margin/cooldown, CSPF period/headroom/hysteresis |
-
-Changing `env:` values (e.g. `k_paths`) changes the observation/action shapes —
-retrain before loading a model trained under different shapes.
-
-## Honest limitations (read before presenting)
-
-The bullets below describe **V1**, whose published numbers come from
-`results/eval_stats.csv`. The V2 study's own limitations - three training roots,
-five holdout seeds, one topology, one reward design, scenario-dominated variance -
-are in [docs/TECHNICAL_DEFENSE.md](docs/TECHNICAL_DEFENSE.md) section 8.
-
-- **Flow-level abstraction** — no packets, no TCP dynamics; delay/loss are
-  documented analytic functions of utilization (`mplssim/sim/models.py`).
-- **Instant control plane** — reroutes take effect at the next interval; no
-  RSVP-TE/IGP convergence, no label signaling.
-- Offered traffic is **routing-independent** (no congestion backoff), which
-  favors clean comparisons over TCP realism.
-- The RL agent is trained on *this* topology; nothing here demonstrates
-  topology generalization.
-- One control action per 5-minute interval; sub-interval dynamics are
-  averaged.
-- The demo scenario/seed was **chosen to be illustrative**; aggregate claims
-  rely on the multi-seed evaluation only.
-- **RL does not win everywhere, and the losses are not small.** On the
-  published V1 5-seed evaluation it wins the Normal National Traffic Day
-  (153.8 vs greedy 149.9) and the Hidden Shared Bottleneck (72.9 vs 70.0), and
-  loses the reactive incidents clearly — Major Live Event Traffic Surge
-  (−94.6 vs greedy −79.2) and Ankara–Kayseri Backbone Failure (−76.9 vs −46.1).
-- **Route churn was the V1 agent's real weakness.** On a normal day it makes 288
-  route changes to greedy's 70, of which 264 are flaps — traffic moved back to
-  a path it just left. The reward function does not charge enough for this, and
-  no operations team would accept it. Both UIs surface a churn warning rather
-  than hiding it.
-- See docs/REPORT.md for failure cases, including where RL loses.
-
-## Screenshots
-
-None are committed — the UIs are live views and a stale PNG would misrepresent
-them. To capture the current state, run `python scripts/demo.py`, play through
-the guided story, and use **Print / Save as PDF** in the Presentation Mode
-header: it renders a summary card with the run's real scores, totals, story
-timeline and the fictional-topology disclaimer.
-
-## Acceptance criteria
-
-The 28-point checklist from the project brief is tracked in
-[docs/REPORT.md](docs/REPORT.md#acceptance-checklist).
+See [CITATION.cff](CITATION.cff).

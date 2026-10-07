@@ -615,6 +615,36 @@ def section_manifest() -> None:
     (ROOT / "docs" / "RESULTS_MANIFEST.md").write_text("\n".join(lines) + "\n")
 
 
+def section_readme() -> None:
+    f = TABLES / "main_results.csv"
+    if not f.exists():
+        return
+    m = pd.read_csv(f)
+    lab = {"bandit": "Masked contextual bandit (γ=0)", "ppo": "MaskablePPO (γ=0.995)",
+           "milp_track": "MILP-track (per-interval min-max-util, no learning)", "greedy": "Greedy",
+           "cspf": "CSPF", "static": "Static shortest path", "noop": "No-op",
+           "random_valid": "Random valid", "oracle_h1": "Oracle-1 † (exact next-interval reward)"}
+    rows = ["| Policy | Test return [95 % CI] | Roots | Delivered | SLA viol. | Reroutes/h |",
+            "|---|---:|---:|---:|---:|---:|"]
+    for r in m.sort_values("mean", ascending=False).itertuples():
+        partial = "" if r.episodes % 140 == 0 else f" (partial: {r.episodes} episodes)"
+        rows.append(f"| {lab.get(r.policy, r.policy)}{partial} | {r.mean:.1f} [{r.lo:.1f}, {r.hi:.1f}] | "
+                    f"{int(r.roots) if r.roots else '–'} | {100 * r.delivered:.2f} % | {r.sla:.0f} | "
+                    f"{r.reroutes:.2f} |")
+    g = TABLES / "main_gap.csv"
+    if g.exists():
+        x = pd.read_csv(g).iloc[0]
+        rows += ["", f"Bandit − PPO, paired: **{x.boot_est:.1f}** [{x.boot_lo:.1f}, {x.boot_hi:.1f}], "
+                     f"positive on {int(x.roots_positive)}/{int(x.roots)} roots."]
+    readme = ROOT / "README.md"
+    text = readme.read_text()
+    a, b = "<!-- RESULTS:BEGIN -->", "<!-- RESULTS:END -->"
+    if a in text and b in text:
+        pre, rest = text.split(a, 1)
+        _, post = rest.split(b, 1)
+        readme.write_text(pre + a + "\n" + "\n".join(rows) + "\n" + b + post)
+
+
 def write_numbers() -> None:
     out = ROOT / "paper" / "generated" / "numbers.tex"
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -639,6 +669,7 @@ def main() -> None:
     section_environment()
     section_doc_tables()
     section_manifest()
+    section_readme()
     write_numbers()
 
 
