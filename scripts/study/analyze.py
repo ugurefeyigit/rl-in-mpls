@@ -507,31 +507,68 @@ def section_delay(data: dict) -> None:
     ep = data.get("episodes_test")
     if ep is None:
         return
-    sel = ep[(ep.kind == "learner") & (ep.role == "selected") & (ep.family == "E4_delay")]
-    if sel.empty:
+    sel = ep[(ep.kind == "learner") & (ep.role == "selected")]
+    d1 = sel[sel.family == "E4_delay"]
+    if d1.empty:
         print("skip delay: no E4 runs")
         return
+    roots = sorted(d1.root.unique())
+    l0 = {"bandit": sel[sel.policy == "bandit"], "ppo": sel[sel.policy == "ppo"],
+          "qg09": sel[sel.policy == "E2:qg09"]}
     rows = []
-    for pol, g in sel.groupby("policy"):
-        r = g.groupby("root").operational_return.mean()
-        rows.append({"policy": pol, "roots": len(r), "mean": r.mean(),
-                     "reroutes": g.reroutes_per_hour.mean(), "noop": g.noop_frequency.mean()})
+    for tag, pol in (("bandit", "E4:L1_bandit"), ("ppo", "E4:L1_ppo"), ("qg09", "E4:L1_qg09")):
+        g = d1[d1.policy == pol]
+        if g.empty:
+            continue
+        rr = g.groupby("root").operational_return.mean()
+        base = l0[tag][l0[tag].root.isin(rr.index)].groupby("root").operational_return.mean()
+        row = {"policy": tag, "roots": len(rr), "mean_L1": rr.mean(),
+               "mean_L0_same_roots": base.mean() if len(base) else np.nan,
+               "reroutes": g.reroutes_per_hour.mean(), "reversals": g.te_reversals.mean()}
+        if tag != "bandit":
+            b = d1[d1.policy == "E4:L1_bandit"]
+            j2 = g.merge(b, on=["root", "scenario", "seed"], suffixes=("_a", "_b"))
+            j2["diff"] = j2.operational_return_a - j2.operational_return_b
+            if len(j2):
+                cl = compare_learners(j2[["root", "scenario", "seed", "diff"]])
+                row.update(vs_bandit=cl["boot_est"], vs_bandit_lo=cl["boot_lo"],
+                           vs_bandit_hi=cl["boot_hi"], roots_better=cl["roots_positive"])
+        rows.append(row)
     refdir = RAW / "references_delay1"
-    for f in sorted(refdir.glob("*__seed*.json")) if refdir.exists() else []:
-        pass
     if refdir.exists():
         sys.path.insert(0, str(ROOT / "scripts/study"))
         from run_oracles import load_dir
-        d = load_dir(refdir)
-        for pol, g in d.groupby("algorithm"):
-            rows.append({"policy": f"ref:{pol}", "roots": 0, "mean": g.operational_return.mean(),
-                         "reroutes": g.reroutes_per_hour.mean(), "noop": g.noop_frequency.mean()})
+        dd = load_dir(refdir)
+        base0 = ep[(ep.kind != "learner")]
+        for pol, g in dd.groupby("algorithm"):
+            rows.append({"policy": f"ref:{pol}", "roots": 0, "mean_L1": g.operational_return.mean(),
+                         "mean_L0_same_roots": base0[base0.policy == pol].operational_return.mean(),
+                         "reroutes": g.reroutes_per_hour.mean(), "reversals": g.te_reversals.mean()})
     out = pd.DataFrame(rows)
     write_table(out, "delay_results")
+    lab = {"bandit": "Masked bandit", "ppo": "MaskablePPO ($\\gamma=0.995$)",
+           "qg09": "Q-learner ($\\gamma=0.9$)", "ref:milp_track": "MILP-track",
+           "ref:greedy": "Greedy", "ref:cspf": "CSPF", "ref:static": "Static SP", "ref:noop": "No-op"}
+    lat = []
     for r in out.itertuples():
-        key = r.policy.replace("E4:L1_", "").replace("ref:", "Ref").replace("_", "")
-        num(f"Delay{key}", r.mean)
-
+        if r.policy not in lab:
+            continue
+        vs = (ci_str(r.vs_bandit, r.vs_bandit_lo, r.vs_bandit_hi)
+              if "vs_bandit" in out and not pd.isna(getattr(r, "vs_bandit", np.nan)) else "--")
+        lat.append([lab[r.policy], str(int(r.roots)) if r.roots else "--", f"{r.mean_L0_same_roots:.1f}",
+                    f"{r.mean_L1:.1f}", vs, f"{r.reroutes:.2f}"])
+    (PTABLES / "delay_results.tex").write_text(latex_rows(lat))
+    for r in out.itertuples():
+        key = {"bandit": "Bandit", "ppo": "PPO", "qg09": "QNine"}.get(
+            r.policy, r.policy.replace("ref:", "Ref").replace("_", "").capitalize())
+        num(f"Delay{key}", r.mean_L1)
+        num(f"Delay{key}LZero", r.mean_L0_same_roots)
+        if "vs_bandit" in out and not pd.isna(getattr(r, "vs_bandit", np.nan)):
+            num(f"Delay{key}Vs", r.vs_bandit)
+            num(f"Delay{key}VsLo", r.vs_bandit_lo)
+            num(f"Delay{key}VsHi", r.vs_bandit_hi)
+            num(f"Delay{key}RootsBetter", int(r.roots_better), "{}")
+            num(f"Delay{key}Roots", int(r.roots), "{}")
 
 def section_oracle_ladder(data: dict) -> None:
     ep = data.get("episodes_test")

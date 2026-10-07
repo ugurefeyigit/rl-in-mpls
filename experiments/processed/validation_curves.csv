@@ -191,3 +191,11 @@ E2_horizon__qg09__r42,E2:qg09,E2_horizon,qg09,42,validation,250000,7.98741978411
 E2_horizon__qg09__r42,E2:qg09,E2_horizon,qg09,42,validation,300000,0.0610302527515399,35
 E2_horizon__qg09__r42,E2:qg09,E2_horizon,qg09,42,validation,350000,9.643173628073436,35
 E2_horizon__qg09__r42,E2:qg09,E2_horizon,qg09,42,validation,400000,10.015552619233308,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,50000,-133.37780148337873,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,100000,-124.51816886390638,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,150000,-108.68014736259094,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,200000,-115.1948329146335,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,250000,-104.77433614787006,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,300000,-35.46136313539174,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,350000,-132.62282080358634,35
+E4_delay__L1_bandit__r42,E4:L1_bandit,E4_delay,L1_bandit,42,validation,400000,-68.31764725412016,35
