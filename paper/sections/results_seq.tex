@@ -65,6 +65,8 @@ that the action with the best first-interval reward is also the best over $H$
 intervals (``take it, then change nothing''). Right: share of the best
 $H$-interval gain that the myopic action captures. Solid: rollouts carry the
 episode's true future traffic and failures (clairvoyant). Dashed: traffic and
-link state held at their current values.}
+link state held at their current values. Blue: base environment; orange:
+delayed activation ($L=1$, \S\ref{sec:rq5}), where the myopic choice is
+always no-op and captures none of the multi-interval gain.}
 \label{fig:seqdiag}
 \end{figure}

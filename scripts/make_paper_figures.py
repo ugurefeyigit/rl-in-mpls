@@ -32,12 +32,14 @@ RAW = ROOT / "experiments" / "raw"
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#ffffff"
 COLOR = {"bandit": "#2a78d6", "ppo": "#eb6834", "greedy": "#1baf7a", "cspf": "#eda100",
          "static": "#4a3aa7", "noop": "#8a8984", "random_valid": "#b5b4ae",
-         "oracle": "#0b0b0b", "q": "#8c564b", "milp_track": "#e87ba4", "ppog0": "#eb6834"}
+         "oracle": "#0b0b0b", "q": "#8c564b", "milp_track": "#e87ba4", "ppog0": "#eb6834",
+         "milp_tuned": "#b8326f"}
 MARK = {"bandit": "o", "ppo": "s", "greedy": "^", "cspf": "D", "static": "v",
-        "noop": "x", "random_valid": "+", "oracle": "*", "q": "P", "milp_track": "h", "ppog0": "s"}
+        "noop": "x", "random_valid": "+", "oracle": "*", "q": "P", "milp_track": "h", "ppog0": "s",
+        "milp_tuned": "H"}
 LABEL = {"bandit": "Masked bandit", "ppo": "MaskablePPO", "greedy": "Greedy", "cspf": "CSPF",
          "static": "Static SP", "noop": "No-op", "random_valid": "Random valid",
-         "milp_track": "MILP-track", "ppog0": "MaskablePPO, γ = 0",
+         "milp_track": "MILP-track", "milp_tuned": "MILP-track (tuned)", "ppog0": "MaskablePPO, γ = 0",
          "oracle_h1": "Oracle H=1", "oracle_h3": "Oracle H=3", "oracle_h6": "Oracle H=6"}
 SCEN_SHORT = {"full_day": "full day", "evening_peak": "evening peak", "flash_crowd": "flash crowd",
               "link_failure": "link failure", "deceptive_local_optimum": "deceptive",
@@ -187,8 +189,8 @@ def fig_main() -> None:
     ps, main = pd.read_csv(f), pd.read_csv(m)
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.5), gridspec_kw={"width_ratios": [1.15, 1]})
     ax = axes[0]
-    order = [p for p in ("noop", "static", "random_valid", "cspf", "greedy", "milp_track", "ppo",
-                         "bandit", "oracle_h1") if p in set(main.policy)]
+    order = [p for p in ("noop", "static", "random_valid", "cspf", "greedy", "milp_track",
+                         "milp_tuned", "ppo", "bandit", "oracle_h1") if p in set(main.policy)]
     main = main.set_index("policy").loc[order].reset_index().sort_values("mean").reset_index(drop=True)
     y = np.arange(len(main))
     for i, r in main.iterrows():
