@@ -114,3 +114,8 @@ E1_main__bandit__r161803,bandit,E1_main,bandit,161803,validation,400000,22.95774
 E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,50000,-55.975436676735576,35
 E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,100000,-9.075068532390622,35
 E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,150000,-16.671835760129593,35
+E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,200000,-13.687839870986037,35
+E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,250000,-6.209723343123158,35
+E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,300000,-0.39510146901402954,35
+E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,350000,-15.405660867736296,35
+E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,400000,-12.0666002063104,35

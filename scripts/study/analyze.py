@@ -148,7 +148,15 @@ def section_reproduction(data: dict) -> None:
                      "continuity_return_hist": float(hs.mean_operational_return.iloc[0])})
     rep = pd.DataFrame(rows)
     rep["holdout_diff"] = rep.holdout_return_repro - rep.holdout_return_hist
-    write_table(rep, "reproduction_per_root")
+    for pol, k in (("bandit", "Bandit"), ("ppo", "PPO")):
+        num(f"ReproMaxShift{k}", rep[rep.policy == pol].holdout_diff.abs().max(), "{:.0f}")
+    br = PROCESSED / "baseline_reproduction.csv"
+    if br.exists():
+        b = pd.read_csv(br)
+        num("BaselineReproCells", len(b), "{}")
+        worst = b[[c for c in b.columns if c.startswith("abs_diff")]].to_numpy().max()
+        mant, exp = f"{worst:.0e}".split("e")
+        num("BaselineReproMaxDiff", f"{mant}\\cdot10^{{{int(exp)}}}")
     # learner gap under the historical protocol
     pairs = paired_frame(sel.assign(policy=sel.policy), "bandit", "ppo")
     if pairs.root.nunique() >= 2:
@@ -180,7 +188,28 @@ def section_reproduction(data: dict) -> None:
     hist_diff = hsg.groupby("scenario")["diff"].mean()
     ps = per_scenario(pairs)
     ps["hist_diff"] = ps.scenario.map(hist_diff)
-    write_table(ps, "reproduction_per_scenario")
+    write_table(ps, "reproduction_per_scenario", latex_rows([[
+        SCEN_LABEL[r.scenario], f"{r.hist_diff:+.1f}", ci_str(r.diff_est, r.diff_lo, r.diff_hi)]
+        for r in ps.itertuples()]))
+    d = ps.set_index("scenario").loc["deceptive_local_optimum"]
+    num("ReproDeceptive", d.diff_est)
+    num("ReproDeceptiveLo", d.diff_lo)
+    num("ReproDeceptiveHi", d.diff_hi)
+    num("HistDeceptive", d.hist_diff, "{:+.1f}")
+    cur = data["validation_curves"]
+    cc = cur[(cur.family == "E0_repro") & (cur.seedset == "historical_continuity")]
+    best = cc.groupby(["policy", "root"]).mean_return.max()
+    num("ReproPPONeverPositive", int((best.loc["ppo"] < 0).sum()), "{}")
+    for r in rep.itertuples():
+        tag = {42: "A", 314159: "B", 271828: "C"}[int(r.root)]
+        k = "Bandit" if r.policy == "bandit" else "PPO"
+        num(f"Repro{k}Root{tag}", r.holdout_return_repro)
+        num(f"Hist{k}Root{tag}", r.holdout_return_hist)
+    write_table(rep, "reproduction_per_root", latex_rows([[
+        ("Bandit" if r.policy == "bandit" else "PPO"), str(int(r.root)),
+        f"{r.selected_ckpt_hist // 1000}k / {r.selected_ckpt_repro // 1000}k",
+        f"{r.holdout_return_hist:.1f}", f"{r.holdout_return_repro:.1f}"]
+        for r in rep.sort_values(["policy", "root"]).itertuples()]))
 
 
 def section_main(data: dict) -> None:
