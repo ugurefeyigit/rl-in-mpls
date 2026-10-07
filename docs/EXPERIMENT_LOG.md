@@ -33,5 +33,8 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 17 | 00:50 | MILP-track on all 140 test episodes | statistically indistinguishable from the bandit; above PPO [science] |
 | 18 | 01:00–01:15 | Model fidelity (root 42) and deceptive-scenario case study | PPO's actions are worse than no-op over 6 intervals; PPO flips one demand every 3 intervals (hold-down expiry) [science] |
 | 19 | 01:15 | Return decomposition over all test episodes | on 3 of 4 PPO roots > 50 % of moves are reversals; PPO's network utility is comparable to the bandit's but move/reversal costs are 5–13× larger; shaping contributes ≤ 0.02 per episode [science] |
+| 20 | 01:40–02:00 | Frozen-exogenous sequentiality diagnostic complete (495 states paired with the clairvoyant pass) | myopic = 24-step best in 88 % of states with traffic frozen vs 33 % with true future; non-myopic value is anticipation of exogenous change [science]. Motivated post-hoc E7 (`docs/HYPOTHESES.md` H9) |
+| 21 | 01:47 | E1 complete (5 roots per learner) | bandit − PPO positive on 5/5 roots |
+| 22 | 02:27 | E2 PPO γ = 0, 3 roots | **23.6 vs bandit 24.2 on the same roots (−0.6 [−5.2, 2.7]); PPO γ = 0.995: −6.4.** Flapping disappears (≤ 2.4 reversals/episode). Supports H2 and H10 [science] |
 
-Entries after #19 are appended as experiments complete.
+Entries after #22 are appended as experiments complete.
