@@ -149,8 +149,15 @@ def train_run(*, run_dir: Path, algorithm: str, root: int, config: dict[str, Any
     diag: dict[str, Any] = {}
     try:
         if algorithm == "maskable_ppo":
+            train_vec = vec
+            if config.get("normalize_reward", False):
+                # Reward scaling only (training signal); observations untouched,
+                # so evaluation needs no normalization statistics.
+                from stable_baselines3.common.vec_env import VecNormalize
+                train_vec = VecNormalize(vec, norm_obs=False, norm_reward=True,
+                                         gamma=float(config["gamma"]))
             model = MaskablePPO(
-                "MlpPolicy", vec, learning_rate=float(config["learning_rate"]),
+                "MlpPolicy", train_vec, learning_rate=float(config["learning_rate"]),
                 n_steps=int(config["n_steps"]), batch_size=int(config["batch_size"]),
                 n_epochs=int(config["n_epochs"]), gamma=float(config["gamma"]),
                 gae_lambda=float(config["gae_lambda"]), clip_range=float(config["clip_range"]),

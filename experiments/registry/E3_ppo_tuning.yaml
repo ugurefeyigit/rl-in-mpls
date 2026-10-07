@@ -17,3 +17,9 @@ runs:
   - {tag: ent0,   algorithm: maskable_ppo, overrides: {ent_coef: 0.0}}
   - {tag: ent003, algorithm: maskable_ppo, overrides: {ent_coef: 0.03}}
   - {tag: clip01, algorithm: maskable_ppo, overrides: {clip_range: 0.1}}
+  # Added 04:25 UTC after the return decomposition (EXPERIMENT_LOG #19) and
+  # E2 (#22): two variance-reduction knobs that target the proposed mechanism
+  # (advantage noise hiding small immediate costs) while keeping gamma=0.995.
+  - {tag: rewnorm, algorithm: maskable_ppo, overrides: {normalize_reward: true}}
+  - {tag: gae08,   algorithm: maskable_ppo, overrides: {gae_lambda: 0.8}}
+

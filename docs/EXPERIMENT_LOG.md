@@ -41,5 +41,6 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 25 | 03:13 | E2 Q-learner γ = 0.9, 3 roots | 19.4 vs bandit 24.2 (−4.8 [−7.0, −2.1]), 0/3 roots better; supports H3 [science] |
 | 26 | 04:07 | E4 delayed activation (L = 1), bandit and PPO, roots 42/314159 | bandit 22.0 → −30.3; PPO 1.6 → 1.2; PPO − bandit = +31.5 [20.6, 42.6] under delay, 2/2 roots. Supports H6 [science] |
 | 27 | 04:10 | Oracle-6 complete (5 test seeds) | Oracle-6 − Oracle-1 = +1.4 [0.5, 2.5]; Oracle-1 − bandit ≈ 22 [science] |
+| 28 | 04:25 | E3 extended (post-hoc, before any E3 result): `rewnorm` (reward normalization) and `gae08` (GAE λ = 0.8), variance-reduction knobs that target the proposed mechanism while keeping γ = 0.995 | queued |
 
-Entries after #27 are appended as experiments complete.
+Entries after #28 are appended as experiments complete.
