@@ -1,0 +1,89 @@
+{
+ "created_utc": "2026-10-06T23:35:57.807996+00:00",
+ "git_commit": "23bd9f5508273c9025dca73b7ecc4fe7566303d8",
+ "git_dirty": true,
+ "software": {
+  "python": "3.13.16",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pandas": "3.0.5",
+  "torch": "2.14.1+cpu",
+  "gymnasium": "1.4.0",
+  "stable_baselines3": "2.9.0",
+  "sb3_contrib": "2.9.0"
+ },
+ "hardware": {
+  "platform": "Linux-6.18.44-fc-v77-x86_64-with-glibc2.39",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "logical_cpus": 4,
+  "gpu": "none (CPU-only run)"
+ },
+ "kind": "training",
+ "run_id": "E1_main__ppo__r161803",
+ "algorithm": "maskable_ppo",
+ "root_seed": 161803,
+ "config": {
+  "learning_rate": 0.0003,
+  "n_steps": 512,
+  "batch_size": 512,
+  "n_epochs": 8,
+  "gamma": 0.995,
+  "gae_lambda": 0.95,
+  "clip_range": 0.2,
+  "ent_coef": 0.01,
+  "vf_coef": 0.5,
+  "max_grad_norm": 0.5,
+  "policy_kwargs": {
+   "net_arch": [
+    256,
+    256
+   ]
+  }
+ },
+ "env": {
+  "variant": "base"
+ },
+ "transitions": 400000,
+ "checkpoint_interval": 50000,
+ "n_envs": 16,
+ "scenario": "random_day",
+ "status": "completed",
+ "observation_dim": 604,
+ "action_dim": 69,
+ "wall_time_seconds": 2963.257640351,
+ "transitions_per_second": 134.98657509666276,
+ "integrity": {
+  "aggregate_transitions": 400000,
+  "invalid_action_attempts": 0,
+  "mask_disagreements": 0,
+  "reward_mismatches": 0,
+  "nonfinite_values": 0,
+  "solver_failures": 0,
+  "protected_safety_failures": 0
+ },
+ "diagnostics": {
+  "train/learning_rate": 0.0003,
+  "train/entropy_loss": -2.775628160685301,
+  "train/policy_gradient_loss": -0.011339007613059948,
+  "train/value_loss": 86.72819858789444,
+  "train/approx_kl": 0.008388255722820759,
+  "train/clip_fraction": 0.102325439453125,
+  "train/loss": 36.28966522216797,
+  "train/explained_variance": 0.8600843548774719,
+  "train/n_updates": 384.0,
+  "train/clip_range": 0.2,
+  "parameters": 459334
+ },
+ "checkpoints": [
+  "checkpoint_000050000.zip",
+  "checkpoint_000100000.zip",
+  "checkpoint_000150000.zip",
+  "checkpoint_000200000.zip",
+  "checkpoint_000250000.zip",
+  "checkpoint_000300000.zip",
+  "checkpoint_000350000.zip",
+  "checkpoint_000400000.zip"
+ ],
+ "episodes": 1376,
+ "unique_episode_seeds": 1392
+}
