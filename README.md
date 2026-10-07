@@ -11,16 +11,18 @@ hold-down timers, protected traffic classes — does a sequential RL agent
 reward of each action (a masked neural contextual bandit, γ = 0)? If so,
 why? If not, when would it?
 
-**Principal finding (so far; numbers are generated, see table below).** The
-myopic bandit beats PPO on every training root and matches a non-learning
-per-interval min-max-utilization MILP controller; PPO is below both and its
-outcome is unusually sensitive to numerical perturbation. The closed
-predecessor study's bandit result reproduces on different hardware; its PPO
-result and its "PPO wins the deceptive scenario" claim do not. Clairvoyant
-lookahead diagnostics show that the problem does contain non-myopic structure
-(moves whose one-off cost exceeds one interval's gain), so the bandit's win is
-not because the problem is trivially myopic — see
-[docs/SEQUENTIALITY_AUDIT.md](docs/SEQUENTIALITY_AUDIT.md) and the paper.
+**Principal findings.** (1) The myopic bandit beats PPO on all five training
+roots and matches a non-learning per-interval MILP optimizer. (2) The cause is
+the planning horizon, not the algorithm: PPO with γ = 0 matches the bandit,
+while PPO with γ = 0.995 oscillates at hold-down expiry and loses its network
+gains to reconfiguration costs. (3) A clairvoyant lookahead diagnostic shows
+why there is little to plan for: with traffic held fixed, the first-interval
+best move is the 24-interval best move in ~9 of 10 states; the non-myopic value
+that exists is anticipation of traffic change the controller cannot observe.
+(4) When a move's effect is delayed by one interval, the ranking reverses
+(PPO ≫ bandit). (5) The predecessor study's bandit result reproduces on
+different hardware; its PPO result does not. Details:
+[docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 
 **What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,
 64 directed links, 17 demands, 4 candidate LSPs each, observation 604,
