@@ -63,8 +63,8 @@ change; with traffic held fixed, the myopic choice is the 24-interval choice
 in \SeqFrozenAgreeHTwentyFour\,\% of states (\SeqLiveAgreeHTwentyFour\,\% under the true future) (\S\ref{sec:sequentiality}).
 \item \textbf{A regime where sequential RL is necessary.} Delaying the effect
 of a move by one interval---a controlled form of actuation latency---removes
-the bandit's signal by construction and tests whether the sequential
-learners recover the lost value at the same budget (\S\ref{sec:rq5}).
+the bandit's signal by construction; the bandit collapses while PPO is
+unaffected, reversing the ranking (\S\ref{sec:rq5}).
 \end{itemize}
 
 We make no algorithmic or theoretical claim. All code, configurations,
