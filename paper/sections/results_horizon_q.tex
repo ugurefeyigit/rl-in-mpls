@@ -9,10 +9,10 @@ network utility rather than higher churn (\HQPointNineRev{} reversals per
 episode); with $\gamma=0.99$ it falls to \HQPointNineNine{} (mean difference
 \HQPointNineNineVs, better on \HQPointNineNineRootsBetter{} of
 \HQPointNineNineRoots{} roots). In both families the return decreases as the
-discount grows beyond $0.5$. This matches the sequentiality diagnostic: the part of the future
-that a learner could exploit from its observation is small, so a bootstrapped
-target adds estimation error without adding much signal---the effect of a
-shorter planning horizon under limited data~\citep{jiang2015horizon,amit2020discount}.
+discount grows beyond $0.5$. At this budget a bootstrapped target adds estimation error, and whatever
+sequential structure the problem has (\S\ref{sec:sequentiality}) does not
+compensate for it---the effect of a shorter planning horizon under limited
+data~\citep{jiang2015horizon,amit2020discount}.
 
 \emph{Shaping.} The training reward contains a potential-based shaping term
 that is policy-invariant only for $\gamma=0.995$, so it could distort the

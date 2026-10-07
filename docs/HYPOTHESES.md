@@ -66,4 +66,4 @@ Outcomes are reported for every hypothesis, including those that failed:
 * **H13**: supported — without shaping, PPO γ = 0 stays close to the shaping-free bandit (−1.3 / −7.2), Q γ = 0.9 is below it (−13.6 / −15.4) and PPO γ = 0.995 far below (−46.1 / −16.3).
 * **H7**: supported on root 42 (PPO at 1.2M 10.7 < bandit at 400k 18.3; still improving).
 * **H11**: supported — under delay the frozen diagnostic's myopic choice captures 0 % of the 24-interval gain (97 % without delay).
-* **H12**: see the generated table (pending at the time of writing).
+* **H12**: falsified — with a greedy continuation, live agreement falls to 18 % (no-change 33 %) and frozen to 69 % (88 %); first moves shape later value.

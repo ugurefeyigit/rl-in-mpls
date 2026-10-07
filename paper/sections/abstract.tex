@@ -12,14 +12,17 @@ roots (paired return difference \Gap; $t$-interval over roots [\GapTLo,
 fresh roots. Varying the discount within each learner family points to the
 horizon rather than the algorithm: return falls as $\gamma$ grows for PPO and,
 beyond $\gamma=0.5$, for a bootstrapped Q-learner; long-horizon PPO oscillates at hold-down
-expiry. A clairvoyant planner that re-plans every interval gains little from
-looking beyond the next one. Neither learner is the best controller: a
+expiry. A clairvoyant planner that re-plans every interval but assumes no further
+change gains little from looking beyond the next interval, yet rollouts in
+which a greedy controller reacts afterwards show that first moves do shape
+later value; the learners did not exploit this. Neither learner is the best controller: a
 per-interval min-max-utilization MILP whose two parameters are chosen on
 validation seeds beats both. When a move's effect is delayed by one interval,
 the bandit fails by construction and falls below PPO, while the MILP stays
 ahead of every learner; a simulator-only rollout diagnostic, run without any
 training, flags this regime. A prior internal study's bandit result reproduces on
 a different software stack; its PPO result does not. Persistent state alone
-does not make a planning horizon useful; the value of lookahead should be
-measured before a sequential learner is chosen.
+did not make a planning horizon useful for the learners we trained, and
+simple rollout measurements, cheap to run before training, help decide
+whether a sequential learner is warranted.
 \end{abstract}

@@ -55,9 +55,30 @@ shows what a planner with the same no-change continuation gains, and a planner
 with a better continuation could gain more. That Oracle-6 is not better than
 Oracle-3 is consistent with this continuation bias.
 
-\begin{figure}[t]
+\paragraph{A reactive continuation.} To test for value that arises from later
+moves we repeated both rollouts with the greedy controller, freshly
+constructed, acting after the first move (H12, prediction recorded before
+running: agreement should \emph{rise}). It falls. Under the true future the
+first-interval choice is the 24-interval choice in only
+\SeqContLiveAgreeHTwentyFour\,\% of states (no-change continuation:
+\SeqLiveAgreeHTwentyFour\,\%) and captures \SeqContLiveCapturedHTwentyFour\,\%
+of the gain; with traffic frozen, \SeqContFrozenAgreeHTwentyFour\,\% and
+\SeqContFrozenCapturedHTwentyFour\,\% (no-change:
+\SeqFrozenAgreeHTwentyFour\,\% and \SeqFrozenCapturedHTwentyFour\,\%). So
+once later moves are allowed, the first move does shape what the later ones
+are worth, also without any change in traffic: the problem has sequential
+structure that the no-change rollouts hide. Two readings remain open. The
+greedy controller is weak (test return \TestGreedy), so part of this value
+may come from first moves that pre-empt greedy's own poor follow-up moves,
+for instance by locking a demand, rather than from structure a good
+controller could exploit. Either way, the open-loop rollouts do not support
+the statement that there is little to plan for; what the evidence does show
+is that the sequential learners we trained did not turn this structure into
+return (\S\ref{sec:rq2}, \S\ref{sec:rq3}).
+
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{fig_seqdiag}
+\includegraphics[width=0.85\textwidth]{fig_seqdiag}
 \caption{Open-loop sequentiality diagnostic (greedy-visited states; from
 \SeqLiveStatesHOne{} states at $H=1$ to \SeqLiveStates{} at $H=24$, since
 states near an episode's end lack $H$ remaining intervals). Left: probability
@@ -65,8 +86,9 @@ that the action with the best first-interval reward is also the best over $H$
 intervals (``take it, then change nothing''). Right: share of the best
 $H$-interval gain that the myopic action captures. Solid: rollouts carry the
 episode's true future traffic and failures (clairvoyant). Dashed: traffic and
-link state held at their current values. Blue: base environment; orange:
-delayed activation ($L=1$, \S\ref{sec:rq5}), where the myopic choice is
-always no-op and captures none of the multi-interval gain.}
+link state held at their current values. Blue: base environment, no-change
+continuation; brown: base environment, greedy controller acting after the
+first move; orange: delayed activation ($L=1$, \S\ref{sec:rq5}), where the
+myopic choice is always no-op and captures none of the multi-interval gain.}
 \label{fig:seqdiag}
-\end{figure}
+\end{figure*}

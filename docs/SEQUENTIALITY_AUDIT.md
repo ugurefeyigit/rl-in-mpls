@@ -115,7 +115,18 @@ realised by a controller that re-plans every interval.*
    the current traffic but not the clock, the AR(1) state or scheduled events.
    That is a design choice of the environment, not a property of TE. E7 (time
    of day added) tests the clock.
-5. This is a statement about this environment, its observation, its traffic
+5. **With a reactive continuation the first move matters more (H12,
+   falsified).** Letting a freshly constructed greedy controller act after the
+   first move, the myopic choice is the 24-interval best in 18 % of states
+   under the true future (no-change: 33 %) and in 69 % with traffic frozen
+   (no-change: 88 %); it captures 15 % / 56 % of the gain. First moves shape
+   the value of later moves even without traffic change, so the problem has
+   sequential structure that the no-change rollouts hide. Caveat: greedy is a
+   weak controller (test return 4.0), so part of this value may be first
+   moves that pre-empt greedy's poor follow-ups. Conclusion: the earlier
+   reading "little to plan for" is withdrawn; the defensible statement is
+   that the sequential learners trained did not exploit this structure.
+6. This is a statement about this environment, its observation, its traffic
    model and its heavily loaded regime, not about TE in general.
 
 ## 5. Caveats

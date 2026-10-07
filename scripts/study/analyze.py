@@ -942,7 +942,10 @@ def section_seqdiag() -> None:
     s_all = pd.DataFrame(rows)
     write_table(s_all, "seqdiag_summary")
     _seqdiag_delay(s_all[s_all.delay == 1])
-    _seqdiag_contgreedy(s_all[(s_all.delay == 0) & (s_all.continuation == "greedy")])
+    base = s_all[(s_all.delay == 0) & (s_all.continuation == "noop") & (~s_all.frozen)
+                 & (s_all.scope == "all") & (s_all.H == 24)]
+    _seqdiag_contgreedy(s_all[(s_all.delay == 0) & (s_all.continuation == "greedy")],
+                        float(base.agree.iloc[0]) if len(base) else float("nan"))
     s = s_all[(s_all.delay == 0) & (s_all.continuation == "noop")]
     # Markdown block for docs/SEQUENTIALITY_AUDIT.md
     md = ["| Rollout | H | States | Agreement | Gain captured | Best move is a sacrifice | Best is no-op |",
@@ -991,7 +994,7 @@ def section_seqdiag() -> None:
                 num(f"Seq{tag}StatesH{h}", int(r.states.iloc[0]), "{}")
 
 
-def _seqdiag_contgreedy(d: pd.DataFrame) -> None:
+def _seqdiag_contgreedy(d: pd.DataFrame, noop_live_agree: float) -> None:
     """Diagnostic with a reactive (greedy) continuation (H12)."""
     n_files = len(glob.glob(str(RAW / "seqdiag_greedy_contgreedy" / "*.csv")))
     if d.empty:
@@ -1007,8 +1010,11 @@ def _seqdiag_contgreedy(d: pd.DataFrame) -> None:
                 num(f"SeqCont{tag}States", int(r.states.iloc[0]), "{}")
     lv = d[(~d.frozen) & (d.scope == "all") & (d.H == 24)]
     if len(lv) and n_files >= 21:
-        status(f"Live 24-interval agreement with greedy continuation: {100 * lv.agree.iloc[0]:.0f}\\,\\% "
-               f"(no-change continuation: \\SeqLiveAgreeHTwentyFour\\,\\%)", "status_h12")
+        fz = d[(d.frozen) & (d.scope == "all") & (d.H == 24)]
+        status(("Falsified" if lv.agree.iloc[0] <= noop_live_agree else "Supported")
+               + f": with a greedy continuation, 24-interval agreement is {100 * lv.agree.iloc[0]:.0f}\\,\\% "
+               f"(no-change: \\SeqLiveAgreeHTwentyFour\\,\\%), and {100 * fz.agree.iloc[0]:.0f}\\,\\% "
+               f"with traffic frozen (no-change: \\SeqFrozenAgreeHTwentyFour\\,\\%)", "status_h12")
     else:
         status(f"pending ({n_files} of 21 episodes)", "status_h12")
 

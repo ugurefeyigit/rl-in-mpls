@@ -11,12 +11,11 @@ the learning algorithm: PPO with $\gamma=0$ is not detectably different from the
 $\gamma=0.995$ settles into costly oscillations on most roots, and a
 bootstrapped value learner does not improve on the bandit. A clairvoyant planner
 that re-plans every interval but scores each move as if nothing changed
-afterwards gains little from looking beyond the next interval, and with traffic
-held fixed the first interval's reward already ranks moves almost as such a
-24-interval criterion does. These are statements about planners with a
-no-change continuation, not upper bounds on the value of lookahead. Once a move's effect is delayed, a learner of the decision-time reward
-fails, and the same simulator rollouts that showed little to plan for in the
-base environment show it clearly there. A sequential learner should therefore be justified by measured temporal
+afterwards gains little from looking beyond the next interval; rollouts in
+which a controller reacts after the first move show that first moves do shape
+later value, structure that none of our sequential learners turned into
+return. Once a move's effect is delayed, a learner of the decision-time reward
+fails, and the same rollouts flag that regime without training. A sequential learner should therefore be justified by measured temporal
 coupling---delayed effects, or exogenous dynamics that the controller can
 predict---rather than assumed from the fact that the problem is formally an
 MDP.

@@ -7,17 +7,17 @@ hold-downs, reversal costs and coupled protected-class legality. Yet a learner
 that ignores the future reaches the return of an untuned per-interval
 optimizer (a tuned one is better still), and a
 learner trained with an effective horizon of about 200 intervals
-($1/(1-\gamma)$, 17 hours) does worse than both. The closed-loop oracle ladder
-shows why there is little to gain from looking ahead: even with perfect
-foresight, a controller that re-plans every interval gains only a few points
-from lookahead beyond the next interval. When a move's effect is felt in the
-interval in which it is made, the immediate reward ranks moves almost as a
-longer criterion would; what is not myopic---anticipating bursts, failures
-and diurnal change---is not provided by an observation without a clock or
-forecasts, and adding the clock (\S\ref{sec:rq3}) helps the myopic learner at
-least as much as a sequential one. A sequential learner pays the price of a long-horizon objective
-(noisy advantages, unstable optimization) without access to the signal that
-would make it worthwhile.
+($1/(1-\gamma)$, 17 hours) does worse than both. Our measurements do not
+say that there is nothing to plan for. A clairvoyant planner that assumes no
+further change gains little from looking ahead, but rollouts in which a
+greedy controller reacts show that first moves shape the value of later ones
+(\S\ref{sec:sequentiality}). What they say is that this structure was not
+turned into return by any sequential learner we trained: longer horizons made
+both learner families worse, PPO tuning did not transfer across roots, three
+times the budget did not close the gap, and adding the clock helped the myopic
+learner at least as much as a sequential one. A sequential learner pays the
+price of a long-horizon objective (noisy advantages, unstable optimization),
+and here it did not collect the benefit.
 
 \paragraph{Long horizons can hide small immediate costs.} The concrete failure
 on three of five PPO roots is instructive for RL practice. Reconfiguration costs are small, immediate and
@@ -47,9 +47,11 @@ closed-loop oracle ladder of \S\ref{sec:sequentiality} measures what one
 simple clairvoyant lookahead planner gains, and the frozen rollout measures
 how much cost amortization changes the ranking of moves, both from a
 simulator without learning. Both score a move as if nothing changed
-afterwards, so they cannot see (iii): their gains are what such a planner
-achieves, not an upper bound on the value of lookahead; a rollout with a
-reactive continuation is the natural next check. We recommend reporting both before choosing an algorithm.
+afterwards, so they cannot see (iii); the reactive-continuation rollout shows
+that (iii) is present, though with a weak continuation policy it mixes
+structure with correcting the continuation's own errors. We recommend
+reporting all three before choosing an algorithm: none needs training, and
+together they separated the base and the delayed regime here.
 
 \paragraph{When should simpler methods be preferred?} When effects are
 immediate and a model of the objective is available, a per-interval optimizer

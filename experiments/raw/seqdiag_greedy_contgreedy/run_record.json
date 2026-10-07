@@ -1,0 +1,40 @@
+{
+ "kind": "seqdiag",
+ "note": "combined record: written after 4 parallel processes (EXPERIMENT_LOG #51), each covering a scenario group; per-process run_record.json overwrote each other",
+ "args": {
+  "reference": "greedy",
+  "continuation": "greedy",
+  "frozen": false,
+  "seeds": [
+   4001,
+   4002,
+   4003
+  ],
+  "every": 4,
+  "h_max": 24
+ },
+ "files": [
+  "deceptive_local_optimum_seed4001.csv",
+  "deceptive_local_optimum_seed4002.csv",
+  "deceptive_local_optimum_seed4003.csv",
+  "evening_peak_seed4001.csv",
+  "evening_peak_seed4002.csv",
+  "evening_peak_seed4003.csv",
+  "flash_crowd_seed4001.csv",
+  "flash_crowd_seed4002.csv",
+  "flash_crowd_seed4003.csv",
+  "full_day_seed4001.csv",
+  "full_day_seed4002.csv",
+  "full_day_seed4003.csv",
+  "link_failure_seed4001.csv",
+  "link_failure_seed4002.csv",
+  "link_failure_seed4003.csv",
+  "ood_double_failure_seed4001.csv",
+  "ood_double_failure_seed4002.csv",
+  "ood_double_failure_seed4003.csv",
+  "overload_stress_seed4001.csv",
+  "overload_stress_seed4002.csv",
+  "overload_stress_seed4003.csv"
+ ],
+ "written_utc": "2026-10-07T11:51:44Z"
+}

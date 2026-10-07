@@ -134,7 +134,7 @@ tuned-MILP results in. Responses checked against the repository.
 | # | Criticism | Sev. | Response / action |
 |---|---|---|---|
 | R8 | §5 still argued that shaping (≤ 0.02 per episode) cannot explain the bandit's advantage, though E6 shows removing it moves the bandit by ≈ 7. | major | Sentence replaced: the evaluated contribution is tiny, but that does not bound its effect on learning; points to E6. |
-| R6 | "Bounds the value of lookahead" is wrong: Oracle-H uses a no-change continuation, so its gains are what one planner achieves, not an upper bound; Oracle-6 < Oracle-3 suggests continuation bias. | major | Abstract, RQ4, discussion, conclusion and `SEQUENTIALITY_AUDIT.md` reworded; H12 (greedy continuation) is the check. |
+| R6 | "Bounds the value of lookahead" is wrong: Oracle-H uses a no-change continuation, so its gains are what one planner achieves, not an upper bound; Oracle-6 < Oracle-3 suggests continuation bias. | major | Abstract, RQ4, discussion, conclusion and `SEQUENTIALITY_AUDIT.md` reworded; H12 (greedy continuation) is the check. **Outcome: H12 falsified (log #53); "little to plan for" withdrawn.** |
 | R3 | `rewnorm`/`gae08` "probe" the mechanism but are never interpreted. | moderate | RQ3 now interprets them, with the one-root caveat. |
 | R1 | Reproduction gap still labelled "95 % CI" with 3 roots. | moderate | Per-root values and the (uninformative) t-interval reported instead. |
 | P2 | "PPO with γ = 0 matches the bandit" is equivalence wording. | minor | "Not detectably different at three roots" (abstract, conclusion, README, overview). |

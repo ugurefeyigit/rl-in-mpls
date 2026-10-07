@@ -33,7 +33,7 @@ exogenous process).
 | F2 | The bandit beats PPO on all 5 training roots (paired +24.9; t-interval over roots [3.4, 46.4]). Its return is not detectably different from a non-learning per-interval min-max-utilization MILP controller (+1.2, t-interval [−4.0, 6.3]; not an equivalence claim). MILP-track has higher network utility and higher move costs, and it wins the double-failure scenario. **With its two parameters selected on validation seeds, MILP-track reaches 30.9 and is ahead of the bandit on 5/5 roots (+5.7, t-interval [0.5, 10.9])**: per-interval optimization beats both learners. | `results/tables/main_*.csv` |
 | F3 | Most of PPO's deficit is reconfiguration cost (15.4 of the 24.9-point gap; 9.5 is lower network utility): on 3 of 5 roots most of its moves are reversals at hold-down expiry, and its utility varies widely across roots (7.8–32.2 vs 20.9–31.6 for the bandit). Over 6 intervals PPO's chosen actions are worth less than doing nothing on 3/3 analysed roots. | `decomposition_by_root.csv`, `model_fidelity.csv`, case study |
 | F4 | Varying the discount within each family points to the horizon, not the algorithm: PPO with γ = 0 is not detectably different from the bandit (−0.6; 2/3 roots above) and stops oscillating, and a bootstrapped Q-learner (γ = 0.9) is worse than the bandit (−4.8; 0/3 roots above). PPO with γ = 0.9 lands in between (15.4), close to Q with γ = 0.9 (19.4), and Q with γ = 0.99 falls to 3.3 (0/3 roots above the bandit): return falls with the horizon in both families. A PPO-specific interaction with long horizons is probed by E3 (reward normalization, GAE λ). | `horizon_sweep.csv` |
-| F5 | Closed loop: a clairvoyant controller that re-plans every interval gains only +2.9 (H = 3) and +1.4 (H = 6) over H = 1, while knowing the next interval exactly is worth ≈ 22 over the bandit. Open loop, a move's 24-step value under a no-change continuation ranks moves like the first interval does in 33 % of states under the true future, but in 88 % with traffic held fixed: the open-loop non-myopic value is anticipation of exogenous change, which a re-planning controller can largely obtain by reacting. | `docs/SEQUENTIALITY_AUDIT.md`, `oracle_ladder.csv` |
+| F5 | A clairvoyant planner that re-plans every interval but assumes no further change gains only +2.9 (H = 3) and +1.4 (H = 6) over H = 1, and with traffic frozen the myopic choice is its 24-step choice in 88 % of states. **But** when a greedy controller reacts after the first move, agreement falls to 18 % (frozen: 69 %): first moves shape later value (H12 falsified). The structure exists; the sequential learners trained did not exploit it. | `docs/SEQUENTIALITY_AUDIT.md`, `oracle_ladder.csv`, log #53 |
 | F6 | Delaying a move's effect by one interval makes the bandit fail by construction (22.0 → −30.3); PPO is ahead of it on 2/2 roots (mean +31.5), but MILP-track (11.3) stays ahead of every learner, and neither a short (Q γ = 0.5: −2.0) nor a longer bootstrapped horizon (Q γ = 0.9: −5.6) recovers the no-delay return at this budget. The experiment shows when a decision-time-reward learner fails, not that long-horizon RL is needed. | `delay_results.csv` |
 | F7 | The action mask is consistent and safe: 0 violations of 14 checks over 1,068,120 state–action pairs. | `docs/MASK_VALIDATION.md` |
 | F8 | Adding the time of day to the observation (E7) changes the bandit by +1.9 (2/2 roots) and Q γ = 0.9 by +0.4 (1/2 roots), both within learner noise (F11): no detectable benefit for planning (H9 not supported). | `rq3_controls.csv` |
@@ -43,8 +43,7 @@ exogenous process).
 | F12 | With 3× the budget (1.2M, root 42) PPO improves strongly (−13.7 → 10.7) but stays below the bandit at 400k under every learner seed trained (17.8–28.2); its curve was still rising. | log #49 |
 | F13 | The diagnostic flags the delayed regime: with L = 1 and traffic frozen, the myopic choice captures 0 % of the 24-interval gain (97 % at L = 0) — a simulator-only signal that the bandit will fail (H11, recorded before running). | log #50 |
 
-Pending at the time of writing (see the paper for final status): sequentiality
-diagnostic with a reactive continuation (H12).
+All registered experiments are complete.
 
 ## What is (and is not) contributed
 
@@ -68,12 +67,12 @@ diagnostic with a reactive continuation (H12).
 
 ## Interpretation in one paragraph
 
-When an action's effect is felt in the interval in which it is taken and the
-exogenous future is not predictable from the observation, the immediate
-reward already ranks actions almost as well as a longer criterion would, and
-a controller that re-plans every interval loses little by not looking ahead.
-A per-interval optimizer (or, without a model, a myopic learner) is then the
-right tool, and a long horizon mainly adds estimation noise. Learners of the decision-time
+When an action's effect is felt in the interval in which it is taken, the
+immediate reward is a strong learning signal, and a per-interval optimizer
+(or, without a model, a myopic learner) is the strongest controller we found.
+The problem does have sequential structure (first moves shape the value of
+later ones), but none of the sequential learners trained turned it into
+return; longer horizons mainly added estimation noise. Learners of the decision-time
 reward fail when effects are delayed relative to decisions; whether a short
 or a long horizon is then needed is open. Having persistent state is not, by
 itself, a reason to use a sequential learner. All of this holds in a heavily

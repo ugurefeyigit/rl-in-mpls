@@ -117,13 +117,17 @@ def fig_seqdiag() -> None:
         print("skip seqdiag: no data")
         return
     H = [1, 2, 3, 6, 12, 24]
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.3))
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.9))
     series = [(live, "clairvoyant (true future traffic)", "-", "o", COLOR["bandit"]),
               (frozen, "frozen exogenous (current traffic held)", "--", "s", COLOR["bandit"]),
               (load_seqdiag("seqdiag_greedy_delay1"), "delay L = 1, clairvoyant", "-", "o",
                COLOR["ppo"]),
               (load_seqdiag("seqdiag_greedy_delay1_frozen"), "delay L = 1, frozen", "--", "s",
-               COLOR["ppo"])]
+               COLOR["ppo"]),
+              (load_seqdiag("seqdiag_greedy_contgreedy"), "greedy continuation, clairvoyant", "-",
+               "^", COLOR["q"]),
+              (load_seqdiag("seqdiag_greedy_contgreedy_frozen"), "greedy continuation, frozen", "--",
+               "^", COLOR["q"])]
     for df, name, ls, mk, col in series:
         if df.empty:
             continue
@@ -139,7 +143,9 @@ def fig_seqdiag() -> None:
         ax.set_ylim(0, 1.02)
     axes[0].set_ylabel("P(myopic action = H-step best)")
     axes[1].set_ylabel("share of H-step gain captured\nby the myopic action")
-    axes[0].legend(loc="lower left")
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.02))
+    fig.subplots_adjust(bottom=0.33)
     fig.subplots_adjust(wspace=0.38)
     save(fig, "fig_seqdiag")
 

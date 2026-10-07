@@ -63,14 +63,14 @@ are separated by varying the discount within each learner family
 (\S\ref{sec:rq2}). A PPO configuration tuned on one root, which beats the
 bandit there, falls below it on all \RQThreeTunedVsBanditRoots{} fresh roots
 (\S\ref{sec:rq3}).
-\item \textbf{A measurement of the value of lookahead.} Re-planning every
-interval with perfect foresight, a controller gains only a few points from
-looking beyond the next interval. Open-loop rollouts show where the per-decision
-non-myopic value lies: with traffic held fixed, the myopic choice is the
-24-interval choice in \SeqFrozenAgreeHTwentyFour\,\% of states
-(\SeqLiveAgreeHTwentyFour\,\% under the true future), so the non-myopic
-value visible to a no-change continuation is almost entirely anticipation of
-exogenous change (\S\ref{sec:sequentiality}).
+\item \textbf{Rollout measurements of sequential structure.} Re-planning
+every interval with perfect foresight but assuming no further change, a
+controller gains only a few points from looking beyond the next interval, and
+with traffic held fixed the myopic choice is the 24-interval choice under that
+assumption in \SeqFrozenAgreeHTwentyFour\,\% of states. Letting a greedy
+controller react after the first move lowers this to
+\SeqContFrozenAgreeHTwentyFour\,\%: first moves shape later value, which the
+no-change measurements hide (\S\ref{sec:sequentiality}).
 \item \textbf{A regime where the myopic learner fails.} Delaying the effect of
 a move by one interval---a controlled form of actuation latency---removes the
 bandit's signal by construction; the bandit collapses and falls below PPO,

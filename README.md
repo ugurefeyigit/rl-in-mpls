@@ -20,9 +20,10 @@ horizon rather than the algorithm. PPO with γ = 0 is not detectably different f
 γ = 0.995 oscillates at hold-down expiry on 3 of 5 roots, and reconfiguration
 costs make up about 60 % of its deficit. A bootstrapped Q-learner is worse than the bandit with
 γ = 0.9 and much worse with γ = 0.99. A PPO configuration tuned on one root
-falls below the bandit on all four fresh roots. (3) Lookahead is worth little here even with perfect
-foresight: a clairvoyant controller that re-plans every interval gains only
-1–3 return points from looking 3 or 6 intervals ahead instead of 1.
+falls below the bandit on all four fresh roots. (3) A clairvoyant planner that assumes no further change
+gains little from lookahead, but rollouts in which a controller reacts after
+the first move show that first moves do shape later value; the sequential
+learners trained did not exploit this.
 (4) When a move's effect is delayed by one interval, the bandit's
 decision-time target loses the move's benefit, and the bandit collapses below
 PPO. MILP-track stays ahead of every learner, so this shows when the myopic
