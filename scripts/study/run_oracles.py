@@ -38,6 +38,13 @@ def make_policy(name: str, seed: int):
     if name == "milp_track":
         from mplssim.study.milp import MilpTargetPolicy
         return MilpTargetPolicy()
+    if name.startswith("milp_g"):
+        # milp_g<gain x 1000>_<largest|smallest>, e.g. milp_g050_smallest
+        from mplssim.study.milp import MilpTargetPolicy
+        gain, select = name[len("milp_g"):].split("_")
+        pol = MilpTargetPolicy(min_gain=int(gain) / 1000.0, select=select)
+        pol.name = name
+        return pol
     if name.startswith("oracle_h"):
         return RolloutOracle(horizon=int(name[len("oracle_h"):]))
     return BaselinePolicy(name, seed=seed)

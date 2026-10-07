@@ -368,6 +368,12 @@ def section_decomposition(data: dict) -> None:
             num(f"Cost{k}", pol.loc[p, "costs"])
             num(f"Rev{k}", pol.loc[p, "reversals"])
             num(f"Moves{k}", pol.loc[p, "moves"])
+    if {"bandit", "ppo"} <= set(pol.index):
+        du = pol.loc["bandit", "utility"] - pol.loc["ppo", "utility"]
+        dc = pol.loc["bandit", "costs"] - pol.loc["ppo", "costs"]
+        num("GapFromUtility", du)
+        num("GapFromCosts", dc)
+        num("GapCostSharePct", 100 * dc / (pol.loc["bandit", "ret"] - pol.loc["ppo", "ret"]), "{:.0f}")
     b = g[g.policy == "bandit"]
     num("ShapingMaxAbs", s.shaping.abs().groupby(s.policy).mean().max(), "{:.2f}")
     pp = g[g.policy == "ppo"]
@@ -380,6 +386,8 @@ def section_decomposition(data: dict) -> None:
         num("BanditCostMin", b.costs.min())
         num("BanditCostMax", b.costs.max())
         num("PPOFlappingRoots", int((pp.reversal_share > 0.5).sum()), "{}")
+        num("PPOUtilMin", pp.utility.min())
+        num("BanditUtilMin", b.utility.min())
 
 
 def section_fidelity() -> None:

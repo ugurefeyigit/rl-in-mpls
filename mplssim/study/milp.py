@@ -18,7 +18,8 @@ Each control interval:
 2. If the target improves the current configuration's gross MLU by at least
    ``min_gain``, submit the single legal move towards the target with the
    largest moved volume (V2 permits one TE change per interval); otherwise
-   no-op.
+   no-op. ``select="smallest"`` instead moves the smallest-volume mismatched
+   demand, which is cheaper under V2's volume-proportional move cost.
 
 It uses only current telemetry: a myopic, optimization-based controller in
 the spirit of one-shot TE (DOTE/Teal re-solve every interval), adapted to
@@ -40,9 +41,12 @@ class MilpTargetPolicy:
     name = "milp_track"
 
     def __init__(self, eps: float = 1e-3, min_gain: float = 0.02,
-                 time_limit: float = 5.0) -> None:
+                 time_limit: float = 5.0, select: str = "largest") -> None:
+        if select not in ("largest", "smallest"):
+            raise ValueError(select)
         self.eps = float(eps)
         self.min_gain = float(min_gain)
+        self.select = select
         self.time_limit = float(time_limit)
         self.solves = 0
         self.failures = 0
@@ -93,9 +97,11 @@ class MilpTargetPolicy:
         u_now = float(np.max(eng.gross_link_load / eng.capacity))
         if not np.isfinite(u_star) or u_now - u_star < self.min_gain:
             return 0
-        best, best_vol = 0, -1.0
+        sign = 1.0 if self.select == "largest" else -1.0
+        best, best_key = 0, -np.inf
         for d in np.flatnonzero((target != eng.current_path) & ~eng.disconnected):
             a = 1 + int(d) * eng.k + int(target[d])
-            if mask[a] and eng.demand_offered[d] > best_vol:
-                best, best_vol = a, float(eng.demand_offered[d])
+            key = sign * float(eng.demand_offered[d])
+            if mask[a] and key > best_key:
+                best, best_key = a, key
         return best
