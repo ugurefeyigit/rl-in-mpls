@@ -37,3 +37,26 @@ Interpretation rules fixed in advance:
 | H10 | 2026-10-07 01:15 UTC, after the return decomposition | PPO's deficit is dominated by reversal costs from flapping at hold-down expiry. | Removing PPO's horizon (γ = 0) removes most of the flapping. | E2 `ppog0` | PPO γ=0 flaps as much as PPO γ=0.995 |
 | H11 | 2026-10-07 04:44 UTC, after E4 (delay reverses the ranking) and before running the diagnostic on the delayed variant | The sequentiality diagnostic detects the regime where the myopic learner fails: with L = 1 the agreement between the myopic-best and the 24-step-best action falls far below its L = 0 value, *also with traffic frozen* (L = 0 frozen: 88 %), because the immediate reward of a move contains only its cost. | Frozen H24 agreement at L = 1 is much lower than at L = 0 (no numeric threshold fixed; reported with per-scenario values). | seqdiag on `{"variant": "delayed", "delay_steps": 1}`, greedy reference, seeds 4001–4003, clairvoyant and frozen | frozen agreement at L = 1 stays near the L = 0 value: then the diagnostic does not predict when sequential RL is needed |
 | H12 | 2026-10-07 05:10 UTC, after round-2 review R5/R6, before running | With a *reactive* continuation (greedy controller after the first move), the first-interval best move agrees with the 24-interval best move more often than with the no-change continuation, under the true future; i.e. much of the open-loop non-myopic value is obtainable by reacting later. | live H24 agreement with greedy continuation clearly above the no-change value (33 %) | seqdiag, `--continuation greedy`, greedy reference, seeds 4001–4003, clairvoyant and frozen | live agreement with greedy continuation ≤ the no-change value: the first move matters for long-run value even when the controller reacts afterwards |
+
+## Outcomes
+
+The authoritative, generated outcome table is in the paper
+(`paper/appendix/hypotheses.tex`; statuses of pending experiments come from
+`paper/generated/status_*.tex`, written by `scripts/study/analyze.py`).
+Outcomes are reported for every hypothesis, including those that failed:
+
+* **H0**: direction reproduced (3/3 roots), magnitude not (30.1 vs 9.2).
+* **H1**: supported (24.9; t-interval over 5 roots [3.4, 46.4]; 5/5 roots).
+* **H2**: supported (PPO γ = 0: 23.6; γ = 0.995: −6.4).
+* **H3**: supported so far (Q γ = 0.5 ≈ bandit, γ = 0.9 below on 0/3 roots); γ = 0.99 pending.
+* **H5**: prediction met, but component (a), one-off cost vs persistent gain,
+  is **not** supported: with traffic frozen, cost amortization changes the
+  best move in only 12 % of states. The non-myopic value is (b),
+  anticipation of exogenous change.
+* **H6**: the bandit fails under delay (22.0 → −30.3); PPO and Q γ = 0.9 are
+  above it on 2/2 roots, but neither reaches MILP-track (11.3).
+* **H8**: supported (bandit top-1 55 %, PPO 7 %; PPO's actions worth less than
+  no-op over 6 intervals on 3/3 roots).
+* **H10**: supported (reversals 52.8 → 1.0).
+* **H4, H7, H9, H11, H12**: see the generated table (pending at the time of
+  writing).
