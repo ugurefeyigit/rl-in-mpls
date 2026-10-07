@@ -46,9 +46,9 @@ move is signalling and risk.
 Teal and DOTE that TE is close to one-shot, and extend it to a setting with
 persistent state, incremental changes and stability timers, where one might
 have expected sequential structure to matter. They also show that churn
-metrics (reroutes, reversals) must be reported with the objective: two of our
-PPO policies have competitive network utility but would be unacceptable to
-an operator because of their oscillation.
+metrics (reroutes, reversals) must be reported with the objective: PPO's best
+root reaches the highest network utility of any learner (\PPOUtilMax) but % CHECK vs all learners at final
+would be unacceptable to an operator because of its oscillation.
 
 \paragraph{Generalization.} We make no claim beyond this simulator. Larger
 topologies, elastic traffic, real traffic matrices and control-plane latency
