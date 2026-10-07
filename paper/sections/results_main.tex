@@ -35,9 +35,12 @@ short of MILP-track ($\PPOMinusMilp$, $t$-interval [\PPOMinusMilpTLo,
 \PPOMinusMilpTHi], \PPOMinusMilpRootsPositive{} of \GapRoots{} roots
 positive). Operationally, the
 bandit delivers \TestBanditDelivered\,\% of offered traffic with
-\TestBanditReroutes{} reroutes per hour, against \TestPPODelivered\,\% and
-\TestPPOReroutes{} for PPO and \TestMilpDelivered\,\% and \TestMilpReroutes{}
-for MILP-track. MILP-track attains higher network utility and pays more in
+\TestBanditSla{} SLA-violating demand-intervals per episode and
+\TestBanditReroutes{} reroutes per hour, against \TestPPODelivered\,\%,
+\TestPPOSla{} and \TestPPOReroutes{} for PPO and \TestMilpDelivered\,\%,
+\TestMilpSla{} and \TestMilpReroutes{} for MILP-track; the return gap to PPO
+thus corresponds to about half a percentage point of delivered traffic, fewer
+SLA violations and a third of PPO's churn. MILP-track attains higher network utility and pays more in
 move costs, which its objective does not contain (Table~\ref{tab:decomp}); the
 bandit reaches a similar return with \ChurnRatioBanditMilp{} times its reroute
 rate. MILP-track's two parameters were not tuned for this reward; a
