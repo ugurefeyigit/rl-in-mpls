@@ -116,16 +116,20 @@ def fig_seqdiag() -> None:
         return
     H = [1, 2, 3, 6, 12, 24]
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.3))
-    for df, name, ls, mk in ((live, "clairvoyant (true future traffic)", "-", "o"),
-                             (frozen, "frozen exogenous (current traffic held)", "--", "s")):
+    series = [(live, "clairvoyant (true future traffic)", "-", "o", COLOR["bandit"]),
+              (frozen, "frozen exogenous (current traffic held)", "--", "s", COLOR["bandit"]),
+              (load_seqdiag("seqdiag_greedy_delay1"), "delay L = 1, clairvoyant", "-", "o",
+               COLOR["ppo"]),
+              (load_seqdiag("seqdiag_greedy_delay1_frozen"), "delay L = 1, frozen", "--", "s",
+               COLOR["ppo"])]
+    for df, name, ls, mk, col in series:
         if df.empty:
             continue
         agree = [df[f"agree_h{h}"].mean() for h in H]
         regret = [df[f"myopic_regret_h{h}"].mean() / max(df[f"best_delta_h{h}"].mean(), 1e-12)
                   for h in H]
-        axes[0].plot(H, agree, ls=ls, marker=mk, color=COLOR["bandit"], label=name)
-        axes[1].plot(H, [1 - r for r in regret], ls=ls, marker=mk, color=COLOR["bandit"],
-                     label=name)
+        axes[0].plot(H, agree, ls=ls, marker=mk, color=col, label=name)
+        axes[1].plot(H, [1 - r for r in regret], ls=ls, marker=mk, color=col, label=name)
     for ax in axes:
         ax.set_xscale("log", base=2)
         ax.set_xticks(H, [str(h) for h in H])

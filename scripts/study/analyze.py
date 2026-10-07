@@ -611,7 +611,9 @@ def section_oracle_ladder(data: dict) -> None:
 
 def section_seqdiag() -> None:
     rows = []
-    for name, frozen in (("seqdiag_greedy", False), ("seqdiag_greedy_frozen", True)):
+    for name, frozen, delay in (("seqdiag_greedy", False, 0), ("seqdiag_greedy_frozen", True, 0),
+                                ("seqdiag_greedy_delay1", False, 1),
+                                ("seqdiag_greedy_delay1_frozen", True, 1)):
         files = glob.glob(str(RAW / name / "*.csv"))
         if not files:
             continue
@@ -622,7 +624,8 @@ def section_seqdiag() -> None:
                     continue
                 gg = g.dropna(subset=[f"best_delta_h{h}"])
                 gain = gg[f"best_delta_h{h}"].mean()
-                rows.append({"frozen": frozen, "scope": scope, "H": h, "states": len(gg),
+                rows.append({"delay": delay, "frozen": frozen, "scope": scope, "H": h,
+                             "states": len(gg),
                              "agree": gg[f"agree_h{h}"].mean(),
                              "regret": gg[f"myopic_regret_h{h}"].mean(),
                              "best_gain": gain,
@@ -633,8 +636,10 @@ def section_seqdiag() -> None:
     if not rows:
         print("skip seqdiag")
         return
-    s = pd.DataFrame(rows)
-    write_table(s, "seqdiag_summary")
+    s_all = pd.DataFrame(rows)
+    write_table(s_all, "seqdiag_summary")
+    _seqdiag_delay(s_all[s_all.delay == 1])
+    s = s_all[s_all.delay == 0]
     # Markdown block for docs/SEQUENTIALITY_AUDIT.md
     md = ["| Rollout | H | States | Agreement | Gain captured | Best move is a sacrifice | Best is no-op |",
           "|---|---:|---:|---:|---:|---:|---:|"]
@@ -678,6 +683,31 @@ def section_seqdiag() -> None:
                 num(f"Seq{tag}CapturedH{h}", 100 * r.captured.iloc[0], "{:.0f}")
                 num(f"Seq{tag}SacrificeH{h}", 100 * r.best_is_sacrifice.iloc[0], "{:.0f}")
                 num(f"Seq{tag}States", int(r.states.iloc[0]), "{}")
+
+
+def _seqdiag_delay(d: pd.DataFrame) -> None:
+    """Diagnostic on the delayed-activation variant (H11): macros and per-scenario table."""
+    if d.empty:
+        return
+    for frozen, tag in ((False, "Live"), (True, "Frozen")):
+        a = d[(d.frozen == frozen) & (d.scope == "all")]
+        for h in (1, 6, 24):
+            r = a[a.H == h]
+            if len(r):
+                num(f"SeqDelay{tag}AgreeH{h}", 100 * r.agree.iloc[0], "{:.0f}")
+                num(f"SeqDelay{tag}CapturedH{h}", 100 * r.captured.iloc[0], "{:.0f}")
+                num(f"SeqDelay{tag}NoopH{h}", 100 * r.best_is_noop.iloc[0], "{:.0f}")
+                num(f"SeqDelay{tag}States", int(r.states.iloc[0]), "{}")
+    h24 = d[(d.H == 24) & (d.scope != "all")]
+    lat = []
+    for sc in EVAL_SCENARIOS:
+        cells = [SCEN_LABEL[sc]]
+        for fr in (False, True):
+            r = h24[(h24.scope == sc) & (h24.frozen == fr)]
+            cells += ([f"{100 * r.agree.iloc[0]:.0f}", f"{100 * r.captured.iloc[0]:.0f}"]
+                      if len(r) else ["--"] * 2)
+        lat.append(cells)
+    (PTABLES / "seqdiag_delay_per_scenario.tex").write_text(latex_rows(lat))
 
 
 def section_compute(data: dict) -> None:
