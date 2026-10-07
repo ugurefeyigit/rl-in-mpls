@@ -10,13 +10,16 @@ over \TestPPORoots{}. On paired episodes the bandit's advantage is \Gap{}
 and in \GapWinRate\,\% of paired episodes ($d_z=\GapDz$). The ordering does not
 depend on checkpoint selection: with the final 400k checkpoints the gap is
 \GapFinal{} [\GapFinalLo, \GapFinalHi] (\GapFinalRootsPositive{} of \GapRoots{}
-roots). % CHECK per-scenario claim against tables/main_per_scenario at final
+roots).
 Per scenario (Table~\ref{tab:perscen}), the bandit is ahead in every
-scenario except the double-failure scenario, where the two are close; the
+scenario except the double-failure scenario, where the difference is small
+and its interval includes zero (\GapDoublefailure{}); the
 largest gap is on the 24-hour \texttt{full\_day} scenario. Both learners
-dominate the static, random and CSPF baselines; % CHECK greedy root counts
- the bandit also beats greedy
-on every root, whereas PPO beats greedy on only some.
+dominate the static, random and CSPF baselines. Against greedy the bandit is
+ahead on \BanditMinusGreedyRootsPositive{} of \GapRoots{} roots
+(\BanditMinusGreedy{} [\BanditMinusGreedyLo, \BanditMinusGreedyHi]), PPO on
+\PPOMinusGreedyRootsPositive{} of \GapRoots{} (\PPOMinusGreedy{}
+[\PPOMinusGreedyLo, \PPOMinusGreedyHi]).
 
 The most informative comparison is with a controller that does not learn at
 all. MILP-track, which solves a min-max-utilization path-selection problem on
@@ -28,8 +31,8 @@ statistically indistinguishable (bandit $-$ MILP-track $=\BanditMinusMilp{}$
 bandit delivers \TestBanditDelivered\,\% of offered traffic with
 \TestBanditReroutes{} reroutes per hour, against \TestPPODelivered\,\% and
 \TestPPOReroutes{} for PPO and \TestMilpDelivered\,\% and \TestMilpReroutes{}
-for MILP-track: the learned myopic policy achieves the optimizer's quality with
-less than half its churn. % CHECK churn ratio
+for MILP-track: the learned myopic policy matches the optimizer's return with
+\ChurnRatioBanditMilp{} times its reroute rate.
 
 \begin{table*}[t]
 \centering\small

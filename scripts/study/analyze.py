@@ -260,6 +260,9 @@ def section_main(data: dict) -> None:
         num(f"Test{key}DecisionMs", s["decision_ms"], "{:.2f}")
     main = pd.DataFrame(rows)
     write_table(main, "main_results", latex_rows(latex))
+    rr = main.set_index("policy").reroutes
+    if {"bandit", "milp_track"} <= set(rr.index):
+        num("ChurnRatioBanditMilp", rr["bandit"] / rr["milp_track"], "{:.2f}")
     if {"bandit", "ppo"} <= set(learners):
         sel = ep[(ep.kind == "learner") & (ep.role == "selected")]
         pairs = paired_frame(sel, "bandit", "ppo")
@@ -310,6 +313,7 @@ def section_main(data: dict) -> None:
             num(key, cl["boot_est"])
             num(key + "Lo", cl["boot_lo"])
             num(key + "Hi", cl["boot_hi"])
+            num(key + "RootsPositive", int(cl["roots_positive"]), "{}")
     if comps:
         lv = pd.DataFrame(comps)
         write_table(lv, "learners_vs_references", latex_rows([[

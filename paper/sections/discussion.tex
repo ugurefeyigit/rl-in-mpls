@@ -37,9 +37,9 @@ cheaply from a simulator, with no learning, and we recommend reporting it.
 immediate, a myopic learner---or, if a model of the objective is available, a
 per-interval optimizer---is both stronger and cheaper: the bandit's inference
 costs \InfBanditMs{}\,ms per decision, PPO's \InfPPOMs{}\,ms and MILP-track's
-\InfMilpMs{}\,ms. The bandit additionally reroutes less than half as often as
-MILP-track at equal return (\TestBanditReroutes{} vs.\ \TestMilpReroutes{} per hour), % CHECK ratio at final
- which matters operationally because every LSP
+\InfMilpMs{}\,ms. The bandit additionally reroutes \ChurnRatioBanditMilp{} times as often as
+MILP-track at statistically indistinguishable return (\TestBanditReroutes{}
+vs.\ \TestMilpReroutes{} per hour), which matters operationally because every LSP
 move is signalling and risk.
 
 \paragraph{Networking implications.} The results support the view of
@@ -47,8 +47,8 @@ Teal and DOTE that TE is close to one-shot, and extend it to a setting with
 persistent state, incremental changes and stability timers, where one might
 have expected sequential structure to matter. They also show that churn
 metrics (reroutes, reversals) must be reported with the objective: PPO's best
-root reaches the highest network utility of any learner (\PPOUtilMax) but % CHECK vs all learners at final
-would be unacceptable to an operator because of its oscillation.
+root reaches a higher network utility than any bandit root (\PPOUtilMax{}
+vs.\ at most \BanditUtilMax) but would be unacceptable to an operator because of its oscillation.
 
 \paragraph{Generalization.} We make no claim beyond this simulator. Larger
 topologies, elastic traffic, real traffic matrices and control-plane latency
