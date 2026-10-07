@@ -7,6 +7,7 @@
 \texttt{configs/training.yaml} (PPO) and \texttt{configs/experiments/learning\_v2.yaml}
 (bandit/Q); the resolved configuration of every run is stored in its manifest.}
 \label{tab:hyper}
+\begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{@{}lll@{}}
 \toprule
  & MaskablePPO & Masked bandit / Q-learner \\
@@ -23,6 +24,7 @@ Masking & logits $\to-10^8$ & scores $\to-\infty$; random actions from legal set
 Warm-up & -- & 4{,}096 transitions \\
 \bottomrule
 \end{tabular}
+\end{adjustbox}
 \end{table}
 
 \paragraph{PPO sensitivity grid (E3).} One factor at a time around the

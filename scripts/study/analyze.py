@@ -1031,9 +1031,16 @@ def _tex_escape(text: str) -> str:
                  ("≈", "$\\approx$"), ("→", "$\\to$"), ("×", "$\\times$"), ("–", "--"),
                  ("—", "---"), ("·", "$\\cdot$"), ("γ", "$\\gamma$"), ("−", "$-$"),
                  ("≥", "$\\ge$"), ("≫", "$\\gg$"), ("Δ", "$\\Delta$"), ("…", "\\ldots{}"),
-                 ("ρ", "$\\rho$"), ("λ", "$\\lambda$"), ("±", "$\\pm$")):
+                 ("ρ", "$\\rho$"), ("λ", "$\\lambda$"), ("±", "$\\pm$"), ("∈", "$\\in$"),
+                 ("≠", "$\\neq$"), ("§", "\\S{}"), ("≪", "$\\ll$"), ("σ", "$\\sigma$"),
+                 ("Φ", "$\\Phi$"), ("≡", "$\\equiv$")):
         text = text.replace(a, b)
-    return text.replace("\\texttt{", "\\texttt{").replace("\\_}", "_}")
+    text = text.replace("\\_}", "_}")
+
+    def _breakable(m: "re.Match[str]") -> str:  # allow line breaks inside long code spans
+        body = m.group(1).replace("\\_", "\\_\\allowbreak{}").replace("/", "/\\allowbreak{}")
+        return "\\texttt{" + body.replace(".", ".\\allowbreak{}") + "}"
+    return re.sub(r"\\texttt\{([^}]*)\}", _breakable, text)
 
 
 def section_doc_tables() -> None:
