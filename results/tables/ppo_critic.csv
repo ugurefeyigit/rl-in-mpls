@@ -21,3 +21,8 @@ E3b_ppo_best__ent003__r271828,0.995,base,0.8510578870773315
 E3b_ppo_best__ent003__r314159,0.995,base,0.828774631023407
 E4_delay__L1_ppo__r314159,0.995,delayed,0.8434578776359558
 E4_delay__L1_ppo__r42,0.995,delayed,0.8625185489654541
+E5_budget__ppo_1p2m__r42,0.995,base,0.8986006379127502
+E6b_noshaping_horizon__ppo_noshaping__r314159,0.995,noshaping,0.8468331098556519
+E6b_noshaping_horizon__ppo_noshaping__r42,0.995,noshaping,0.8720910549163818
+E6b_noshaping_horizon__ppog0_noshaping__r314159,0.0,noshaping,0.7205556631088257
+E6b_noshaping_horizon__ppog0_noshaping__r42,0.0,noshaping,0.7347725033760071

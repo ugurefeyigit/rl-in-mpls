@@ -63,4 +63,5 @@ Outcomes are reported for every hypothesis, including those that failed:
 * **H8**: supported (bandit top-1 55 %, PPO 7 %; PPO's actions worth less than
   no-op over 6 intervals on 3/3 roots).
 * **H10**: supported (reversals 52.8 → 1.0).
-* **H7, H11, H12, H13**: see the generated table (pending at the time of writing).
+* **H13**: supported — without shaping, PPO γ = 0 stays close to the shaping-free bandit (−1.3 / −7.2), Q γ = 0.9 is below it (−13.6 / −15.4) and PPO γ = 0.995 far below (−46.1 / −16.3).
+* **H7, H11, H12**: see the generated table (pending at the time of writing).

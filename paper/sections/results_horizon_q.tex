@@ -13,3 +13,14 @@ discount grows beyond $0.5$. This matches the sequentiality diagnostic: the part
 that a learner could exploit from its observation is small, so a bootstrapped
 target adds estimation error without adding much signal---the effect of a
 shorter planning horizon under limited data~\citep{jiang2015horizon,amit2020discount}.
+
+\emph{Shaping.} The training reward contains a potential-based shaping term
+that is policy-invariant only for $\gamma=0.995$, so it could distort the
+comparison across discounts. Removing it on two roots (42, 314159; evaluated
+on the primary reward) leaves the ordering intact.
+\ifcsname NoShapePPOVsBandit\endcsname Relative to the shaping-free bandit,
+shaping-free PPO with $\gamma=0$ differs by \NoShapePPOZeroVsBanditPerRoot{},
+the Q-learner with $\gamma=0.9$ by \NoShapeQVsBanditPerRoot{} and PPO with
+$\gamma=0.995$ by \NoShapePPOVsBanditPerRoot{} (roots 42 / 314159). The
+differences that survive learner noise (\S\ref{sec:rq3}) are the large ones,
+and they point the same way with and without shaping.\fi

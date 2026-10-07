@@ -151,7 +151,7 @@ tuned-MILP results in. Responses checked against the repository.
 | N5 | "Environment frozen" is not a reason for not ablating features (variants were run). | minor | Reason given as compute. |
 | N6 | E7's negative result not used in the discussion. | moderate | Integrated. |
 | R-a | "Tuned MILP beats every learner" is false for the shaping-free bandit on one root (31.2 vs 30.9); tuning was asymmetric. | major | Verified. Restated as "both learners of the main comparison"; per-root shaping-free bandit − tuned MILP reported; asymmetry stated. |
-| R-b | Shaping confounds the horizon sweep (policy-invariant only for γ = 0.995; ≈ 7-point effect at γ = 0). | major | **Experiment E6b** (Q γ = 0.9, PPO γ = 0, PPO γ = 0.995 without shaping; H13, registered before running). RQ2 will state the confound and the E6b outcome. |
+| R-b | Shaping confounds the horizon sweep (policy-invariant only for γ = 0.995; ≈ 7-point effect at γ = 0). | major | **Experiment E6b** (Q γ = 0.9, PPO γ = 0, PPO γ = 0.995 without shaping; H13, registered before running). RQ2 states the confound; **outcome: the ordering holds without shaping (H13 supported, log #48).** |
 | R-c | No within-root noise floor for the 2–8-point effects of E6/E7/Q γ = 0.5. | moderate | **Experiment E8** (bandit, root 42, two learner seeds on identical traffic; H14). |
 | R-d | "Monotonically" holds for means only. | minor | "Mean return falls … on two of three roots individually". |
 | R-e | EV argument used non-oscillating roots. | minor | Now uses the PPO runs whose final checkpoint oscillates (generated). |
