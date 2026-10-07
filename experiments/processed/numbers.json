@@ -219,7 +219,7 @@
  "SeqLiveSacrificeHTwelve": "46",
  "SeqLiveSacrificeHTwentyFour": "59",
  "SeqLiveStates": "390",
- "ShapingMaxAbs": "0.02",
+ "ShapingMaxAbs": "0.03",
  "TestBandit": "25.2",
  "TestBanditDecisionMs": "0.37",
  "TestBanditDelivered": "95.31",
