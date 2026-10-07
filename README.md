@@ -38,17 +38,17 @@ an experiment registry, and a paper built from scripts.
 <!-- RESULTS:BEGIN -->
 | Policy | Test return [95 % CI] | Roots | Delivered | SLA viol. | Reroutes/h |
 |---|---:|---:|---:|---:|---:|
-| Oracle-1 † (exact next-interval reward) (partial: 123 episodes) | 61.4 [59.6, 63.2] | – | 96.65 % | 113 | 3.13 |
+| Oracle-1 † (exact next-interval reward) (partial: 137 episodes) | 49.0 [47.3, 50.7] | – | 96.05 % | 130 | 3.33 |
 | Masked contextual bandit (γ=0) | 25.2 [21.5, 28.1] | 5 | 95.31 % | 164 | 2.30 |
 | MILP-track (per-interval min-max-util, no learning) | 24.0 [21.9, 26.3] | – | 95.51 % | 162 | 5.83 |
 | Greedy | 4.0 [1.7, 6.3] | – | 94.85 % | 187 | 4.60 |
-| MaskablePPO (γ=0.995) | -3.3 [-18.4, 11.7] | 4 | 94.78 % | 191 | 7.19 |
+| MaskablePPO (γ=0.995) | 0.3 [-13.7, 13.6] | 5 | 94.79 % | 190 | 6.38 |
 | CSPF | -25.6 [-28.0, -23.2] | – | 93.64 % | 243 | 0.61 |
 | No-op | -95.5 [-98.0, -92.9] | – | 90.58 % | 352 | 0.00 |
 | Static shortest path | -96.5 [-98.9, -94.0] | – | 90.40 % | 346 | 0.37 |
 | Random valid | -107.5 [-111.3, -103.6] | – | 89.44 % | 401 | 11.66 |
 
-Bandit − PPO, paired: **28.6** [14.6, 43.9], positive on 4/4 roots.
+Bandit − PPO, paired: **24.9** [12.2, 39.1], positive on 5/5 roots.
 <!-- RESULTS:END -->
 
 All numbers: 7 scripted scenarios × 20 test seeds (3001–3020), paired;

@@ -59,12 +59,12 @@ Two variants:
 | clairvoyant | 6 | 474 | 54 % | 64 % | 35 % | 27 % |
 | clairvoyant | 12 | 453 | 43 % | 59 % | 46 % | 19 % |
 | clairvoyant | 24 | 390 | 33 % | 52 % | 59 % | 13 % |
-| frozen exogenous | 1 | 309 | 100 % | 100 % | 0 % | 66 % |
-| frozen exogenous | 2 | 309 | 94 % | 99 % | 5 % | 61 % |
-| frozen exogenous | 3 | 309 | 93 % | 98 % | 6 % | 60 % |
-| frozen exogenous | 6 | 301 | 90 % | 98 % | 8 % | 57 % |
-| frozen exogenous | 12 | 293 | 89 % | 97 % | 9 % | 57 % |
-| frozen exogenous | 24 | 269 | 89 % | 97 % | 9 % | 59 % |
+| frozen exogenous | 1 | 399 | 100 % | 100 % | 0 % | 62 % |
+| frozen exogenous | 2 | 399 | 94 % | 99 % | 5 % | 56 % |
+| frozen exogenous | 3 | 399 | 93 % | 98 % | 7 % | 55 % |
+| frozen exogenous | 6 | 385 | 90 % | 98 % | 9 % | 53 % |
+| frozen exogenous | 12 | 371 | 88 % | 97 % | 9 % | 53 % |
+| frozen exogenous | 24 | 329 | 89 % | 98 % | 8 % | 56 % |
 
 Per scenario at H = 24 (agreement / gain captured):
 
@@ -72,9 +72,9 @@ Per scenario at H = 24 (agreement / gain captured):
 |---|---:|---:|
 | full_day | 36 % / 49 % | 91 % / 96 % |
 | evening_peak | 29 % / 42 % | 85 % / 97 % |
-| flash_crowd | 23 % / 65 % | 80 % / 99 % |
-| link_failure | 30 % / 57 % | pending |
-| deceptive_local_optimum | 40 % / 52 % | pending |
+| flash_crowd | 23 % / 65 % | 83 % / 99 % |
+| link_failure | 30 % / 57 % | 93 % / 99 % |
+| deceptive_local_optimum | 40 % / 52 % | 85 % / 90 % |
 | ood_double_failure | 23 % / 36 % | pending |
 | overload_stress | 24 % / 67 % | pending |
 <!-- SEQ:END -->

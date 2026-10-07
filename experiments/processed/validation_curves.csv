@@ -111,6 +111,14 @@ E1_main__bandit__r161803,bandit,E1_main,bandit,161803,validation,250000,14.88487
 E1_main__bandit__r161803,bandit,E1_main,bandit,161803,validation,300000,9.031301847510145,35
 E1_main__bandit__r161803,bandit,E1_main,bandit,161803,validation,350000,13.36572653662654,35
 E1_main__bandit__r161803,bandit,E1_main,bandit,161803,validation,400000,22.95774227203657,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,50000,-35.78919737465549,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,100000,-41.640989421906326,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,150000,-34.95799124857166,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,200000,-15.054894109457486,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,250000,2.052204841340657,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,300000,9.000201791530975,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,350000,-19.626199849273473,35
+E1_main__ppo__r141421,ppo,E1_main,ppo,141421,validation,400000,-17.61206283878668,35
 E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,50000,-55.975436676735576,35
 E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,100000,-9.075068532390622,35
 E1_main__ppo__r161803,ppo,E1_main,ppo,161803,validation,150000,-16.671835760129593,35
@@ -126,6 +134,7 @@ E2_horizon__qg05__r314159,E2:qg05,E2_horizon,qg05,314159,validation,200000,11.42
 E2_horizon__qg05__r314159,E2:qg05,E2_horizon,qg05,314159,validation,250000,11.308630653321899,35
 E2_horizon__qg05__r314159,E2:qg05,E2_horizon,qg05,314159,validation,300000,13.457136902890598,35
 E2_horizon__qg05__r314159,E2:qg05,E2_horizon,qg05,314159,validation,350000,7.8874806851667865,35
+E2_horizon__qg05__r314159,E2:qg05,E2_horizon,qg05,314159,validation,400000,16.0508586798754,35
 E2_horizon__qg05__r42,E2:qg05,E2_horizon,qg05,42,validation,50000,5.2344562283078275,35
 E2_horizon__qg05__r42,E2:qg05,E2_horizon,qg05,42,validation,100000,8.877706503206573,35
 E2_horizon__qg05__r42,E2:qg05,E2_horizon,qg05,42,validation,150000,5.243510316568144,35

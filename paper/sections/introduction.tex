@@ -1,1 +1,72 @@
-% TODO introduction
+\section{Introduction}
+\label{sec:intro}
+
+Traffic engineering (TE) decides which paths carry which traffic so that a
+backbone delivers its demand without congestion, SLA violations or
+needless reconfiguration. In MPLS networks the decision is concrete: each
+traffic trunk rides one label-switched path, and an operator or controller
+moves trunks between a few precomputed candidates as load
+changes~\citep{rfc2702,rfc3209}. Because traffic varies over the day and
+failures arrive unannounced, reinforcement learning (RL) is an appealing
+tool, and deep RL has been applied to routing and TE in many
+forms~\citep{valadarsky2017learning,xu2018drlte,zhang2020cfrrl,almasan2022drlgnn,bernardez2023magnneto}.
+
+RL earns its machinery---value functions, discounting, credit assignment
+over long horizons---only if today's decision changes tomorrow's options in
+ways that a myopic decision rule would get wrong. Whether that is true of TE
+is rarely measured. The strongest recent TE systems argue the opposite for
+the standard setting, in which routing is re-optimized from scratch every
+interval and therefore has no memory: Teal reduces its RL objective to a
+one-step return~\citep{xu2023teal}, and DOTE reports that direct optimization
+beats an RL-based scheme by a wide margin~\citep{perry2023dote}. Operational
+MPLS-TE is different in exactly the property those arguments rely on. LSP
+moves are incremental and signalled, controllers limit how many trunks change
+at once, stability timers prevent a trunk from moving again too soon, and
+protected traffic may move only where capacity is guaranteed. The current
+assignment is then part of the state, a move constrains the future, and the
+decision problem is a genuine Markov decision process.
+
+This paper asks, for such a formulation, \emph{whether sequential RL is
+needed, and why or why not}. We study a flow-level MPLS backbone (18 routers,
+64 directed links, 17 demands with SLAs, four candidate LSPs each) in which a
+controller may move one demand per five-minute interval, moves cost
+reconfiguration effort, a three-interval hold-down follows each move, and an
+action mask enforces failed links, hold-downs and protected-class capacity.
+We compare MaskablePPO~\citep{schulman2017ppo,huang2022masking} with a masked
+neural contextual bandit that regresses only the immediate reward of each
+action, under identical observations, masks, budgets and paired traffic.
+
+The comparison was first run as a governed study by the project that
+developed the environment, which found the bandit ahead. We treat that study
+as a claim to be tested. Our contributions are:
+
+\begin{itemize}
+\item \textbf{A reproduction and its lesson.} Retraining all of the closed
+study's runs on different hardware with byte-identical training traffic, the
+bandit's result reproduces and PPO's does not: floating-point differences
+alone move PPO's per-root holdout return by up to \ReproMaxShiftPPO{} points
+and the bandit's by at most \ReproMaxShiftBandit{} (\S\ref{sec:repro}).
+\item \textbf{A controlled comparison with a non-learning optimizer.} On
+\TestBanditRoots{} training roots and 140 disjoint test episodes the bandit
+beats PPO on every root and is statistically indistinguishable from a
+per-interval min-max-utilization MILP controller that does not learn at all
+(\S\ref{sec:rq1}).
+\item \textbf{A mechanism.} PPO's deficit is dominated by reconfiguration
+cost: on most roots it settles into flipping a demand at every hold-down
+expiry, a small immediate cost that its long-horizon advantage estimates fail
+to attribute (\S\ref{sec:analysis}). Horizon and algorithm are separated by
+varying the discount within each learner family (\S\ref{sec:rq2}).
+\item \textbf{A measured sequentiality diagnostic.} Clairvoyant rollouts show
+that the problem is far from myopic per decision under the true future, but
+that almost all of the non-myopic value is anticipation of exogenous traffic
+change; with traffic held fixed, the myopic choice is the 24-interval choice
+in \SeqFrozenAgreeHTwentyFour\,\% of states (\SeqLiveAgreeHTwentyFour\,\% under the true future) (\S\ref{sec:sequentiality}).
+\item \textbf{A regime where sequential RL is necessary.} Delaying the effect
+of a move by one interval---a controlled form of actuation latency---removes
+the bandit's signal by construction and tests whether the sequential
+learners recover the lost value at the same budget (\S\ref{sec:rq5}).
+\end{itemize}
+
+We make no algorithmic or theoretical claim. All code, configurations,
+per-episode results and the scripts that produce every number, table and
+figure in this paper are part of the artifact.
