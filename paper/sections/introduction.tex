@@ -74,7 +74,10 @@ exogenous change (\S\ref{sec:sequentiality}).
 \item \textbf{A regime where the myopic learner fails.} Delaying the effect of
 a move by one interval---a controlled form of actuation latency---removes the
 bandit's signal by construction; the bandit collapses and falls below PPO,
-while the optimization baseline remains ahead of both (\S\ref{sec:rq5}).
+while the optimization baseline remains ahead of both. The rollout diagnostic,
+run on the delayed variant with its prediction recorded before it ran, flags
+the change: the
+myopic choice captures none of the multi-interval gain (\S\ref{sec:rq5}).
 \end{itemize}
 
 We make no algorithmic or theoretical claim. All code, configurations,

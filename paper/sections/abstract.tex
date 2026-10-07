@@ -17,7 +17,8 @@ looking beyond the next one. Neither learner is the best controller: a
 per-interval min-max-utilization MILP whose two parameters are chosen on
 validation seeds beats both. When a move's effect is delayed by one interval,
 the bandit fails by construction and falls below PPO, while the MILP stays
-ahead of every learner. A prior internal study's bandit result reproduces on
+ahead of every learner; a simulator-only rollout diagnostic, run without any
+training, flags this regime. A prior internal study's bandit result reproduces on
 a different software stack; its PPO result does not. Persistent state alone
 does not make a planning horizon useful; the value of lookahead should be
 measured before a sequential learner is chosen.
