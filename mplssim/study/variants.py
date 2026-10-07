@@ -196,6 +196,14 @@ def make_variant_factory(spec: dict[str, Any]):
     variant = spec.get("variant", "base")
     if variant == "base":
         return make_env_v2
+    if variant == "time":
+        # Closed study's preregistered P2 ablation: obs-v2.0-time-606 (adds the
+        # time of day as sin/cos). Gives learners the information needed to
+        # anticipate diurnal traffic change.
+        def factory(scenario: str, root_seed: int = 0, worker_rank: int = 0):
+            return make_env_v2(scenario=scenario, root_seed=root_seed,
+                               worker_rank=worker_rank, include_time_of_day=True)
+        return factory
     if variant == "noshaping":
         # Training-only reward ablation: potential-shaping coefficient 0. Never used
         # for evaluation, which always scores policies with the primary reward.

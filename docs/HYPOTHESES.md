@@ -28,3 +28,10 @@ Interpretation rules fixed in advance:
 * If H6 holds but H2/H3 also hold, the conclusion is conditional: sequential
   RL is unnecessary *in the frozen environment because its effects are
   immediate*, not unnecessary for TE in general.
+
+## Post-hoc additions (added after some results were known; treat as exploratory)
+
+| ID | Added | Motivation | Hypothesis | Experiment | Falsified if |
+|---|---|---|---|---|---|
+| H9 | 2026-10-07 01:30 UTC, after the frozen-exogenous diagnostic on `full_day` | With traffic held fixed, the myopic action is the 24-step best in 91 % of states; with true future traffic only 36 %. The non-myopic value is anticipation of exogenous change, which the default observation (no clock) can barely predict. | Adding time of day helps a γ = 0.9 Q-learner more than it helps the bandit. | E7 (obs-v2.0-time-606; bandit and Q γ=0.9, roots 42, 314159) | the bandit gains as much or more from time features, or neither gains |
+| H10 | 2026-10-07 01:15 UTC, after the return decomposition | PPO's deficit is dominated by reversal costs from flapping at hold-down expiry. | Removing PPO's horizon (γ = 0) removes most of the flapping. | E2 `ppog0` | PPO γ=0 flaps as much as PPO γ=0.995 |

@@ -1,0 +1,14 @@
+id: E7_time
+description: >
+  Information ablation motivated by the sequentiality audit: almost all
+  non-myopic value in the frozen environment comes from future exogenous
+  traffic change, which the default observation cannot anticipate (no time of
+  day). Here learners observe the time of day (preregistered ablation
+  obs-v2.0-time-606). Prediction if anticipation is the missing ingredient: the
+  gamma=0.9 Q-learner gains more from the time features than the bandit does.
+env: {variant: time}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [42, 314159]
+runs:
+  - {tag: time_bandit, algorithm: masked_bandit}
+  - {tag: time_qg09, algorithm: masked_q, overrides: {gamma: 0.9}}
