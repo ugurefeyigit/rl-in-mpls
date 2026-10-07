@@ -1,0 +1,44 @@
+\subsection{RQ2: Is it the horizon or the algorithm?}
+\label{sec:rq2}
+
+PPO differs from the bandit in two ways at once: it optimizes a discounted
+return with $\gamma=0.995$, and it is an on-policy policy-gradient method
+rather than a value regressor on replayed data. We vary the discount within
+each family on the three preregistered roots, holding everything else fixed
+(Table~\ref{tab:horizon}, Fig.~\ref{fig:curves}).
+
+\emph{Within PPO}, removing the horizon closes the gap. PPO with $\gamma=0$
+reaches \HPPOZero{} against the bandit's \HQZero{} on the same roots (difference
+\HPPOZeroVs{} [\HPPOZeroVsLo, \HPPOZeroVsHi]), while PPO with $\gamma=0.995$
+reaches \HPPODefault. The oscillation disappears with the horizon: reversals
+fall from \HPPODefaultRev{} to \HPPOZeroRev{} per episode, and the validation
+curves become monotone (Fig.~\ref{fig:curves}). The policy-gradient algorithm
+itself is therefore not what limits PPO in this environment; the long horizon
+is.
+
+\input{sections/results_horizon_q}
+
+\begin{table}[t]
+\centering\small
+\caption{Horizon sweep on roots 42, 314159, 271828 (test return, selected
+checkpoints). The value learner with $\gamma=0$ is the bandit. ``vs.\ bandit'':
+paired difference to the bandit on the same roots, two-stage bootstrap 95\,\% CI.}
+\label{tab:horizon}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Learner & $\gamma$ & Roots & Return & vs.\ bandit & Rer./h & Rev. \\
+\midrule
+\tabinput{tables/horizon_sweep}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{fig_learning_curves}
+\caption{Mean validation return (seeds 2001--2005) during training. Thin lines:
+individual roots. PPO with $\gamma=0.995$ is unstable across roots; with
+$\gamma=0$ it learns as fast as the bandit.}
+\label{fig:curves}
+\end{figure}

@@ -452,17 +452,25 @@ def section_horizon(data: dict) -> None:
                      "mean": g.mean(), "root_sd": g.std(ddof=1) if len(g) > 1 else np.nan,
                      "vs_bandit": cl.get("boot_est", np.nan), "vs_bandit_lo": cl.get("boot_lo"),
                      "vs_bandit_hi": cl.get("boot_hi"),
-                     "reroutes": df.reroutes_per_hour.mean(), "noop": df.noop_frequency.mean()})
+                     "reroutes": df.reroutes_per_hour.mean(), "noop": df.noop_frequency.mean(),
+                     "reversals": df.te_reversals.mean(),
+                     "roots_better": int((g > base[base.root.isin(g.index)]
+                                          .groupby("root").operational_return.mean()
+                                          .reindex(g.index)).sum())})
     if len(rows) > 2:
         h = pd.DataFrame(rows)
         write_table(h, "horizon_sweep", latex_rows([[
-            r.family, f"{r.gamma:g}", str(r.roots), f"{r.mean:.1f}",
+            ("Q-learner" if r.family == "Q" else "PPO") + (" (bandit)" if r.family == "Q" and r.gamma == 0 else ""),
+            f"{r.gamma:g}", str(r.roots), f"{r.mean:.1f}",
             "--" if np.isnan(r.vs_bandit) or (r.family == "Q" and r.gamma == 0)
             else ci_str(r.vs_bandit, r.vs_bandit_lo, r.vs_bandit_hi),
-            f"{r.reroutes:.2f}"] for r in h.itertuples()]))
+            f"{r.reroutes:.2f}", f"{r.reversals:.1f}"] for r in h.itertuples()]))
         for r in h.itertuples():
             tag = f"{r.family}{str(r.gamma).replace('.', 'p')}"
             num(f"H{tag}", r.mean)
+            num(f"H{tag}Rev", r.reversals)
+            num(f"H{tag}Roots", int(r.roots), "{}")
+            num(f"H{tag}RootsBetter", int(r.roots_better), "{}")
             if not np.isnan(r.vs_bandit):
                 num(f"H{tag}Vs", r.vs_bandit)
                 num(f"H{tag}VsLo", r.vs_bandit_lo)

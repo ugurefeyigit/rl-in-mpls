@@ -19,4 +19,8 @@
 17 & MILP-track on all 140 test episodes & statistically indistinguishable from the bandit; above PPO [science] \\
 18 & Model fidelity (root 42) and deceptive-scenario case study & PPO's actions are worse than no-op over 6 intervals; PPO flips one demand every 3 intervals (hold-down expiry) [science] \\
 19 & Return decomposition over all test episodes & on 3 of 4 PPO roots > 50 \% of moves are reversals; PPO's network utility is comparable to the bandit's but move/reversal costs are 5--13$\times$ larger; shaping contributes $\le$ 0.02 per episode [science] \\
+20 & Frozen-exogenous sequentiality diagnostic complete (495 states paired with the clairvoyant pass) & myopic = 24-step best in 88 \% of states with traffic frozen vs 33 \% with true future; non-myopic value is anticipation of exogenous change [science]. Motivated post-hoc E7 (\texttt{docs/HYPOTHESES.md} H9) \\
+21 & E1 complete (5 roots per learner) & bandit − PPO positive on 5/5 roots \\
+22 & E2 PPO $\gamma$ = 0, 3 roots & \textbf{23.6 vs bandit 24.2 on the same roots (−0.6 [−5.2, 2.7]); PPO $\gamma$ = 0.995: −6.4.} Flapping disappears ($\le$ 2.4 reversals/episode). Supports H2 and H10 [science] \\
+23 & Compute re-planning ($\approx$34 run-equivalents left). Training slots 3 $\to$ 4; queue reordered by information value (Q $\gamma$0.9 $\to$ E4 $\to$ E7 $\to$ PPO $\gamma$0.9 $\to$ E3 $\to$ rest of E2 $\to$ E6 $\to$ E5). E3 trimmed from 8 to 6 configurations (\texttt{ns128}, \texttt{net64} dropped \textbf{before running}) [process] &  \\
 \bottomrule\end{longtable}}
