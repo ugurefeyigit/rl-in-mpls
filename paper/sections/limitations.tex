@@ -1,1 +1,44 @@
-% TODO limitations
+\section{Limitations}
+\label{sec:limitations}
+
+\paragraph{Simulator realism.} The model is flow-level: delay and loss are
+analytic functions of utilization, traffic is exogenous and inelastic, the
+control plane acts instantaneously, fast reroute is free, and telemetry is
+exact. Learned routing policies trained in fluid models are known not to
+transfer to packet-level dynamics~\citep{boltres2024packerl}; our conclusions
+are about this model. Inelastic traffic in particular removes a natural
+source of temporal coupling (congestion that suppresses future demand).
+
+\paragraph{Formulation.} One trunk may move per interval network-wide and each
+demand has four fixed candidate paths. These choices create the incremental,
+stateful character of the problem; a controller that re-optimizes all trunks
+at once faces the one-shot problem studied by Teal and DOTE instead. We did
+not vary the number of candidates or the per-interval move limit, because the
+environment definition is frozen.
+
+\paragraph{Scale and data.} One hand-designed 18-router topology, 17 demands,
+hand-written diurnal profiles and seven scripted test scenarios; no operator
+traffic matrices or failure traces. No claim of topology generalization is
+made.
+
+\paragraph{Learning.} Five training roots for the primary comparison and
+two to three for ablations; root-level intervals are wide and are reported.
+A budget of 400k transitions (about 1{,}390 simulated days), with one longer
+run per learner. PPO received a bounded one-factor sensitivity study, the
+bandit none; neither used graph-structured networks, observation
+normalization or learning-rate schedules. A discount below the true one can
+help with limited data~\citep{jiang2015horizon,amit2020discount}, so ``the
+myopic learner wins at this budget'' does not imply that no sequential
+structure exists---which is why we measure the structure separately.
+
+\paragraph{Objective.} All rankings use one hand-weighted operational reward;
+we report its components and operational metrics alongside, but a different
+operator objective could reorder close methods.
+
+\paragraph{References.} The clairvoyant oracles see future traffic and only
+evaluate ``one move, then no change''; they bound $H$-step-greedy reasoning, not
+the optimal policy. MILP-track optimizes gross maximum utilization only.
+
+\paragraph{Provenance.} The closed study's checkpoints and per-episode
+holdout data were not archived; its learner results are compared at the
+aggregate level it committed.

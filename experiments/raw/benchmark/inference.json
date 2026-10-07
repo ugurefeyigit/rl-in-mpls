@@ -1,0 +1,70 @@
+{
+ "created_utc": "2026-10-07T01:51:03.087599+00:00",
+ "git_commit": "d0e1ff6452c46d96d6ff9305e39bdac6fcc7cfb8",
+ "git_dirty": true,
+ "software": {
+  "python": "3.13.16",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pandas": "3.0.5",
+  "torch": "2.14.1+cpu",
+  "gymnasium": "1.4.0",
+  "stable_baselines3": "2.9.0",
+  "sb3_contrib": "2.9.0"
+ },
+ "hardware": {
+  "platform": "Linux-6.18.44-fc-v77-x86_64-with-glibc2.39",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "logical_cpus": 4,
+  "gpu": "none (CPU-only run)"
+ },
+ "kind": "inference_benchmark",
+ "scenario": "evening_peak",
+ "seed": 3001,
+ "states": 60,
+ "timer": "process_time",
+ "results": {
+  "masked_bandit": {
+   "mean_ms": 0.1121893424999983,
+   "p95_ms": 0.15579186250002316,
+   "n": 60,
+   "parameters": 238405
+  },
+  "maskable_ppo": {
+   "mean_ms": 0.3352280091666608,
+   "p95_ms": 0.36199383749999203,
+   "n": 60,
+   "parameters": 459334
+  },
+  "greedy": {
+   "mean_ms": 0.06386233083333377,
+   "p95_ms": 0.0757561249999883,
+   "n": 60,
+   "parameters": 0
+  },
+  "cspf": {
+   "mean_ms": 0.041207273333336104,
+   "p95_ms": 0.254457352499986,
+   "n": 60,
+   "parameters": 0
+  },
+  "static": {
+   "mean_ms": 0.0034204133333289497,
+   "p95_ms": 0.004118912499979643,
+   "n": 60,
+   "parameters": 0
+  },
+  "milp_track": {
+   "mean_ms": 31.692728933333363,
+   "p95_ms": 65.65587814999923,
+   "n": 60,
+   "parameters": 0
+  },
+  "oracle_h1": {
+   "mean_ms": 359.0798848333333,
+   "p95_ms": 590.2092106499987,
+   "n": 60,
+   "parameters": 0
+  }
+ }
+}

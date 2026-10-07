@@ -515,6 +515,41 @@ def section_delay(data: dict) -> None:
         num(f"Delay{key}", r.mean)
 
 
+def section_oracle_ladder(data: dict) -> None:
+    ep = data.get("episodes_test")
+    if ep is None:
+        return
+    seeds = list(range(3001, 3006))
+    refs = ep[(ep.kind != "learner") & ep.seed.isin(seeds)]
+    have = [p for p in ("oracle_h1", "oracle_h3", "oracle_h6") if (refs.policy == p).sum() == 35]
+    if len(have) < 2:
+        print("skip oracle ladder: oracle H>1 incomplete")
+        return
+    rows = []
+    sel = ep[(ep.kind == "learner") & (ep.role == "selected") & ep.seed.isin(seeds)]
+    for p in ("noop", "greedy", "milp_track", *have):
+        d = refs[refs.policy == p]
+        rows.append({"policy": p, "mean": d.operational_return.mean(), "n": len(d)})
+    for p in ("bandit", "ppo"):
+        d = sel[sel.policy == p]
+        rows.append({"policy": p, "mean": d.groupby("root").operational_return.mean().mean(),
+                     "n": len(d)})
+    lad = pd.DataFrame(rows)
+    base = refs[refs.policy == "oracle_h1"].set_index(["scenario", "seed"]).operational_return
+    for p in have[1:]:
+        d = refs[refs.policy == p].set_index(["scenario", "seed"]).operational_return
+        diff = (d - base).dropna().reset_index(name="diff")
+        ci = stratified_bootstrap_mean(diff["diff"].to_numpy(), diff.scenario.to_numpy())
+        h = p[-1]
+        num(f"Oracle{h}MinusOne", ci.estimate)
+        num(f"Oracle{h}MinusOneLo", ci.low)
+        num(f"Oracle{h}MinusOneHi", ci.high)
+        lad.loc[lad.policy == p, "minus_h1"] = ci.estimate
+    for r in lad.itertuples():
+        num("Ladder" + r.policy.replace("_", "").replace("oracleh", "OracleH").capitalize(), r.mean)
+    write_table(lad, "oracle_ladder")
+
+
 def section_seqdiag() -> None:
     rows = []
     for name, frozen in (("seqdiag_greedy", False), ("seqdiag_greedy_frozen", True)):
@@ -586,6 +621,29 @@ def section_compute(data: dict) -> None:
                      "tps_mean": g.transitions_per_second.mean(),
                      "parameters": g.parameters.dropna().mean() if g.parameters.notna().any() else np.nan})
     c = pd.DataFrame(rows)
+    bf = RAW / "benchmark" / "inference.json"
+    if bf.exists():
+        b = json.loads(bf.read_text())["results"]
+        lab = {"masked_bandit": "Masked bandit", "maskable_ppo": "MaskablePPO",
+               "milp_track": "MILP-track", "greedy": "Greedy", "cspf": "CSPF",
+               "static": "Static SP", "oracle_h1": "Oracle-1$^\\dagger$"}
+        wall = {"masked_bandit": c.set_index("policy").wall_min_mean.get("bandit"),
+                "maskable_ppo": c.set_index("policy").wall_min_mean.get("ppo")}
+        tps = {"masked_bandit": c.set_index("policy").tps_mean.get("bandit"),
+               "maskable_ppo": c.set_index("policy").tps_mean.get("ppo")}
+        rows_l = []
+        for k in ("masked_bandit", "maskable_ppo", "milp_track", "greedy", "cspf", "static", "oracle_h1"):
+            v = b[k]
+            rows_l.append([lab[k], f"{v['parameters']:,}".replace(",", "{,}") if v["parameters"] else "--",
+                           f"{wall[k]:.0f}" if k in wall and wall[k] == wall[k] else "--",
+                           f"{tps[k]:.0f}" if k in tps and tps[k] == tps[k] else "--",
+                           f"{v['mean_ms']:.3g}", f"{v['p95_ms']:.3g}"])
+            key = {"masked_bandit": "Bandit", "maskable_ppo": "PPO", "milp_track": "Milp",
+                   "greedy": "Greedy", "cspf": "Cspf", "static": "Static", "oracle_h1": "OracleOne"}[k]
+            num(f"Inf{key}Ms", v["mean_ms"], "{:.3g}")
+            if v["parameters"]:
+                num(f"Params{key}", int(v["parameters"]))
+        (PTABLES / "compute.tex").write_text(latex_rows(rows_l))
     write_table(c, "compute")
     for r in c.itertuples():
         k = {"bandit": "Bandit", "ppo": "PPO"}.get(r.policy, r.policy)
@@ -790,6 +848,7 @@ def main() -> None:
         except Exception as exc:  # keep going; report clearly
             print(f"!! {f.__name__} failed: {type(exc).__name__}: {exc}")
             raise
+    section_oracle_ladder(data)
     section_seqdiag()
     section_environment()
     section_doc_tables()
