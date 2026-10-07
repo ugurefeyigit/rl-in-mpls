@@ -133,6 +133,7 @@ def fig_seqdiag() -> None:
     axes[0].set_ylabel("P(myopic action = H-step best)")
     axes[1].set_ylabel("share of H-step gain captured\nby the myopic action")
     axes[0].legend(loc="lower left")
+    fig.subplots_adjust(wspace=0.38)
     save(fig, "fig_seqdiag")
 
 

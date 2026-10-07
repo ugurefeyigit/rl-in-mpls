@@ -59,12 +59,12 @@ Two variants:
 | clairvoyant | 6 | 474 | 54 % | 64 % | 35 % | 27 % |
 | clairvoyant | 12 | 453 | 43 % | 59 % | 46 % | 19 % |
 | clairvoyant | 24 | 390 | 33 % | 52 % | 59 % | 13 % |
-| frozen exogenous | 1 | 459 | 100 % | 100 % | 0 % | 61 % |
-| frozen exogenous | 2 | 459 | 94 % | 99 % | 5 % | 56 % |
-| frozen exogenous | 3 | 459 | 93 % | 98 % | 7 % | 54 % |
-| frozen exogenous | 6 | 441 | 90 % | 98 % | 9 % | 53 % |
-| frozen exogenous | 12 | 423 | 89 % | 97 % | 9 % | 53 % |
-| frozen exogenous | 24 | 369 | 90 % | 97 % | 8 % | 55 % |
+| frozen exogenous | 1 | 495 | 100 % | 100 % | 0 % | 59 % |
+| frozen exogenous | 2 | 495 | 94 % | 99 % | 5 % | 54 % |
+| frozen exogenous | 3 | 495 | 93 % | 98 % | 6 % | 52 % |
+| frozen exogenous | 6 | 474 | 89 % | 97 % | 8 % | 50 % |
+| frozen exogenous | 12 | 453 | 88 % | 97 % | 9 % | 50 % |
+| frozen exogenous | 24 | 390 | 88 % | 97 % | 8 % | 53 % |
 
 Per scenario at H = 24 (agreement / gain captured):
 
@@ -76,7 +76,7 @@ Per scenario at H = 24 (agreement / gain captured):
 | link_failure | 30 % / 57 % | 93 % / 99 % |
 | deceptive_local_optimum | 40 % / 52 % | 87 % / 92 % |
 | ood_double_failure | 23 % / 36 % | 93 % / 97 % |
-| overload_stress | 24 % / 67 % | pending |
+| overload_stress | 24 % / 67 % | 67 % / 96 % |
 <!-- SEQ:END -->
 
 ## 4. Interpretation
