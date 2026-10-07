@@ -1,0 +1,14 @@
+id: E3b_ppo_best
+description: >
+  The PPO configuration selected in E3 by the preregistered rule (EXPERIMENT_LOG
+  #29: best-checkpoint validation mean on root 42) is ent_coef = 0.03
+  (validation 15.3 vs default -19.1; bandit 12.2 on the same root). It is
+  retrained on fresh roots. Roots 314159 and 271828 follow the rule; roots
+  161803 and 141421 were added at 07:31 UTC, before any E3b result, so that the
+  tuned configuration is compared with the bandit and the default on all four
+  primary roots other than the selection root.
+env: {variant: base}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [314159, 271828, 161803, 141421]
+runs:
+  - {tag: ent003, algorithm: maskable_ppo, overrides: {ent_coef: 0.03}}

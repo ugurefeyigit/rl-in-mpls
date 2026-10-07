@@ -1,0 +1,14 @@
+{
+ "selected": "milp_g100_largest",
+ "validation_mean": {
+  "milp_g020_largest": 19.96974336194491,
+  "milp_g000_largest": 18.098783821762684,
+  "milp_g050_largest": 22.299037272975475,
+  "milp_g100_largest": 24.077282016929207,
+  "milp_g000_smallest": 10.824327181066616,
+  "milp_g020_smallest": 12.647906818414194,
+  "milp_g050_smallest": 15.263455781497179,
+  "milp_g100_smallest": 17.769520988494655
+ },
+ "rule": "highest mean validation return; ties to the untuned default, then list order"
+}

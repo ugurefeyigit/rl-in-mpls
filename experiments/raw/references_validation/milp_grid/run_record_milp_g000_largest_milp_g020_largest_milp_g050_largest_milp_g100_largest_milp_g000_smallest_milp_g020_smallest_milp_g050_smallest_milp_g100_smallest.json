@@ -1,0 +1,55 @@
+{
+ "created_utc": "2026-10-07T06:43:48.711394+00:00",
+ "git_commit": "695690a514fb744c1d48f4975b23c0fcfe0640e8",
+ "git_dirty": true,
+ "software": {
+  "python": "3.13.16",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pandas": "3.0.5",
+  "torch": "2.14.1+cpu",
+  "gymnasium": "1.4.0",
+  "stable_baselines3": "2.9.0",
+  "sb3_contrib": "2.9.0"
+ },
+ "hardware": {
+  "platform": "Linux-6.18.44-fc-v77-x86_64-with-glibc2.39",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "logical_cpus": 4,
+  "gpu": "none (CPU-only run)"
+ },
+ "kind": "reference_policies",
+ "args": {
+  "policies": [
+   "milp_g000_largest",
+   "milp_g020_largest",
+   "milp_g050_largest",
+   "milp_g100_largest",
+   "milp_g000_smallest",
+   "milp_g020_smallest",
+   "milp_g050_smallest",
+   "milp_g100_smallest"
+  ],
+  "seedset": "validation",
+  "seeds": null,
+  "scenarios": [
+   "full_day",
+   "evening_peak",
+   "flash_crowd",
+   "link_failure",
+   "deceptive_local_optimum",
+   "ood_double_failure",
+   "overload_stress"
+  ],
+  "env": "{\"variant\": \"base\"}",
+  "out": "experiments/raw/references_validation/milp_grid"
+ },
+ "seeds": [
+  2001,
+  2002,
+  2003,
+  2004,
+  2005
+ ],
+ "wall_seconds": 6409.076729582001
+}

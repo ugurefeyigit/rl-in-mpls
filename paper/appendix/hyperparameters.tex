@@ -39,3 +39,19 @@ dropped for compute before they ran. The discount is varied separately (E2,
 $\gamma\in\{0,0.9\}$). The configuration with the best validation return is
 retrained on two further roots (E3b) and compared with the default on the same
 roots.
+
+\begin{table}[h]
+\centering\small
+\caption{PPO sensitivity on root 42 (E3). Validation: mean return of the best
+checkpoint on validation seeds (the selection criterion). Test: the selected
+checkpoint on the 140 test episodes, reported for completeness only. ``ppo''
+is the default configuration, ``bandit'' the reference.}
+\label{tab:tuning}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Configuration & Validation & Test \\
+\midrule
+\IfFileExists{tables/ppo_tuning.tex}{\tabinput{tables/ppo_tuning}}{\multicolumn{3}{c}{pending}\\}
+\bottomrule
+\end{tabular}
+\end{table}

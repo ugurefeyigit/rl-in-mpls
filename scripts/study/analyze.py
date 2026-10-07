@@ -566,12 +566,18 @@ def section_tuning(data: dict) -> None:
         best["test_mean"] = best.policy.map(sel.groupby("policy").operational_return.mean())
     b42 = cur[(cur.seedset == "validation") & (cur.policy == "bandit") & (cur.root == 42)]
     num("TuneBanditValBest", b42.mean_return.max() if len(b42) else float("nan"))
+    if len(b42):
+        brow = {"policy": "bandit", "run_id": "E0_repro__bandit__r42", "mean_return": b42.mean_return.max()}
+        if ep is not None:
+            brow["test_mean"] = sel[sel.policy == "bandit"].operational_return.mean()
+        best = pd.concat([best, pd.DataFrame([brow])]).sort_values("mean_return", ascending=False)
     write_table(best, "ppo_tuning", latex_rows([[
         r.policy.replace("E3:", "").replace("_", "\\_"), f"{r.mean_return:.1f}",
         f"{r.test_mean:.1f}" if "test_mean" in best and not pd.isna(r.test_mean) else "--"]
         for r in best.itertuples()]))
-    num("TuneBest", best.policy.iloc[0].replace("E3:", ""))
-    num("TuneBestVal", best.mean_return.iloc[0])
+    e3top = best[best.policy.str.startswith("E3:")]
+    num("TuneBest", e3top.policy.iloc[0].replace("E3:", ""))
+    num("TuneBestVal", e3top.mean_return.iloc[0])
     num("TuneConfigs", int(best.policy.nunique()), "{}")
     default = best[best.policy == "ppo"].mean_return
     num("TuneDefaultVal", default.iloc[0] if len(default) else float("nan"))
@@ -580,12 +586,22 @@ def section_tuning(data: dict) -> None:
     done = len(e3) >= 8
     if done and len(default):
         top = e3.iloc[0]
-        better = top.mean_return > default.iloc[0]
-        status(("Not supported on root 42: " if better else "Supported on root 42: ")
-               + f"best configuration \\texttt{{{top.policy.replace('E3:', '').replace('_', '')}}} "
-               f"validation {top.mean_return:.1f} vs.\\ default {default.iloc[0]:.1f} "
-               f"(bandit {b42.mean_return.max():.1f}); "
-               + ("retrained on further roots (E3b)" if better else "E3b not run"), "status_e3")
+        bval = b42.mean_return.max()
+        btest = (ep[(ep.kind == "learner") & (ep.role == "selected") & (ep.root == 42)
+                    & (ep.policy == "bandit")].operational_return.mean() if ep is not None else np.nan)
+        beats = top.mean_return > bval and top.get("test_mean", np.nan) > btest
+        text = (f"Root 42 (selection root): best configuration \\texttt{{{top.policy.replace('E3:', '')}}} "
+                f"validation {top.mean_return:.1f} vs.\\ default {default.iloc[0]:.1f} and bandit "
+                f"{bval:.1f}; test {top.test_mean:.1f} vs.\\ bandit {btest:.1f}"
+                + (" (falsified on this root)" if beats else ""))
+        sel_all = ep[(ep.kind == "learner") & (ep.role == "selected")] if ep is not None else None
+        r = pair_roots(sel_all, "E3b:ent003", "bandit") if sel_all is not None else {}
+        if r and r["roots"] >= 4:
+            text += (f". Fresh roots (E3b, {r['roots']}): tuned PPO $-$ bandit $=$ {r['diff']:+.1f}, "
+                     f"positive on {r['roots_positive']}/{r['roots']}")
+        else:
+            text += ". Fresh roots (E3b): pending"
+        status(text, "status_e3")
     else:
         status(f"pending ({len(e3)} of 8 configurations finished)", "status_e3")
 
@@ -659,6 +675,8 @@ def section_rq3(data: dict) -> None:
     rows = []
     specs = [("E7", "TimeBandit", "E7:time_bandit", "bandit", "bandit + clock vs.\\ bandit"),
              ("E7", "TimeQ", "E7:time_qg09", "E2:qg09", "Q $\\gamma=0.9$ + clock vs.\\ Q $\\gamma=0.9$"),
+             ("E3b", "TunedVsBandit", "E3b:ent003", "bandit", "PPO tuned (ent.\\ 0.03) vs.\\ bandit"),
+             ("E3b", "TunedVsDefault", "E3b:ent003", "ppo", "PPO tuned vs.\\ PPO default"),
              ("E6", "NoShaping", "E6:bandit_noshaping", "bandit", "bandit, no shaping vs.\\ bandit"),
              ("E5", "BudgetBandit", "E5:bandit_1p2m", "bandit", "bandit 1.2M vs.\\ 400k"),
              ("E5", "BudgetPPO", "E5:ppo_1p2m", "ppo", "PPO 1.2M vs.\\ 400k"),
