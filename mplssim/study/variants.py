@@ -196,6 +196,17 @@ def make_variant_factory(spec: dict[str, Any]):
     variant = spec.get("variant", "base")
     if variant == "base":
         return make_env_v2
+    if variant == "noshaping":
+        # Training-only reward ablation: potential-shaping coefficient 0. Never used
+        # for evaluation, which always scores policies with the primary reward.
+        from dataclasses import replace
+        from mplssim.rl.reward_v2 import load_reward_config_v2
+        cfg = replace(load_reward_config_v2(), potential_coefficient=0.0)
+
+        def factory(scenario: str, root_seed: int = 0, worker_rank: int = 0):
+            return make_env_v2(scenario=scenario, root_seed=root_seed,
+                               worker_rank=worker_rank, reward_cfg=cfg)
+        return factory
     if variant == "delayed":
         L = int(spec["delay_steps"])
 

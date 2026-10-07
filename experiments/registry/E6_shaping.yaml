@@ -1,0 +1,12 @@
+id: E6_shaping
+description: >
+  Reward-shaping control for the gamma=0 learner. The potential-based shaping
+  term 0.2*(0.995*Phi(s') - Phi(s)) is policy-invariant only for gamma=0.995;
+  for the bandit it is a one-step lookahead on Phi. Here the bandit is trained
+  with the shaping coefficient set to 0 and evaluated with the primary reward.
+env: {variant: noshaping}
+eval_env: {variant: base}
+budget: {transitions: 400000, checkpoint_interval: 50000, n_envs: 16}
+roots: [42, 314159]
+runs:
+  - {tag: bandit_noshaping, algorithm: masked_bandit}

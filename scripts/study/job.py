@@ -43,7 +43,8 @@ def main() -> None:
                   config=spec.config, env_factory=factory, env_spec=spec.env,
                   transitions=spec.transitions, checkpoint_interval=spec.checkpoint_interval,
                   n_envs=spec.n_envs, scenario=spec.scenario, run_id=spec.run_id)
-    result = select_and_test(spec.run_dir, spec.algorithm, spec.run_id, factory)
+    result = select_and_test(spec.run_dir, spec.algorithm, spec.run_id,
+                             make_variant_factory(spec.eval_env))
     (spec.run_dir / "eval" / "selection.json").write_text(json.dumps(result, indent=1))
     print(json.dumps(result))
 

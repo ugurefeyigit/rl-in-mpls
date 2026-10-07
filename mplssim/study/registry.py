@@ -68,6 +68,7 @@ class RunSpec:
     checkpoint_interval: int
     n_envs: int
     scenario: str = "random_day"
+    eval_env: dict[str, Any] = field(default_factory=lambda: {"variant": "base"})
     extra: dict[str, Any] = field(default_factory=dict)
 
     @property
@@ -92,11 +93,14 @@ def load_family(path: Path | str) -> list[RunSpec]:
                 run_id=f"{fam}__{run['tag']}__r{root}", family=fam, tag=run["tag"],
                 algorithm=run["algorithm"], root=int(root), config=cfg,
                 env=dict(run.get("env", raw.get("env", {"variant": "base"}))),
+                eval_env=dict(run.get("eval_env", raw.get("eval_env",
+                                                          run.get("env", raw.get("env", {"variant": "base"}))))),
                 transitions=int(b.get("transitions", 400_000)),
                 checkpoint_interval=int(b.get("checkpoint_interval", 50_000)),
                 n_envs=int(b.get("n_envs", 16)),
                 extra={k: v for k, v in run.items()
-                       if k not in ("tag", "algorithm", "overrides", "roots", "budget", "env")},
+                       if k not in ("tag", "algorithm", "overrides", "roots", "budget", "env",
+                                    "eval_env")},
             ))
     ids = [r.run_id for r in out]
     if len(ids) != len(set(ids)):
