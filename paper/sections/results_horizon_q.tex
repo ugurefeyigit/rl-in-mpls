@@ -1,1 +1,12 @@
-% Q-learner paragraph: written when E2 Q runs complete.
+\emph{Within the value family}, adding a horizon does not help. The masked
+Q-learner is the bandit with one change---a bootstrapped, discounted target
+(Eq.~\ref{eq:qtarget}). With $\gamma=0.5$ it is indistinguishable from the
+bandit (\HQPointFiveVs{} [\HQPointFiveVsLo, \HQPointFiveVsHi], \HQPointFiveRoots{}
+roots); with $\gamma=0.9$ it is worse (\HQPointNine{} vs \HQZero; \HQPointNineVs{}
+[\HQPointNineVsLo, \HQPointNineVsHi]; better than the bandit on
+\HQPointNineRootsBetter{} of \HQPointNineRoots{} roots), mainly through lower
+network utility rather than higher churn (\HQPointNineRev{} reversals per
+episode). This matches the sequentiality diagnostic: the part of the future
+that a learner could exploit from its observation is small, so a bootstrapped
+target adds estimation error without adding much signal---the effect of a
+shorter planning horizon under limited data~\citep{jiang2015horizon,amit2020discount}.

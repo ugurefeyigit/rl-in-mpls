@@ -37,5 +37,7 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 21 | 01:47 | E1 complete (5 roots per learner) | bandit − PPO positive on 5/5 roots |
 | 22 | 02:27 | E2 PPO γ = 0, 3 roots | **23.6 vs bandit 24.2 on the same roots (−0.6 [−5.2, 2.7]); PPO γ = 0.995: −6.4.** Flapping disappears (≤ 2.4 reversals/episode). Supports H2 and H10 [science] |
 | 23 | 02:35 | Compute re-planning (≈34 run-equivalents left). Training slots 3 → 4; queue reordered by information value (Q γ0.9 → E4 → E7 → PPO γ0.9 → E3 → rest of E2 → E6 → E5). E3 trimmed from 8 to 6 configurations (`ns128`, `net64` dropped **before running**) [process] | |
+| 24 | 02:50 | Oracle-3 complete (5 test seeds) | Oracle-3 − Oracle-1 = +2.9 [1.5, 4.2], versus Oracle-1 − bandit ≈ 22 on the same episodes [science] |
+| 25 | 03:13 | E2 Q-learner γ = 0.9, 3 roots | 19.4 vs bandit 24.2 (−4.8 [−7.0, −2.1]), 0/3 roots better; supports H3 [science] |
 
-Entries after #23 are appended as experiments complete.
+Entries after #25 are appended as experiments complete.
