@@ -541,6 +541,29 @@ def section_seqdiag() -> None:
         return
     s = pd.DataFrame(rows)
     write_table(s, "seqdiag_summary")
+    # Markdown block for docs/SEQUENTIALITY_AUDIT.md
+    md = ["| Rollout | H | States | Agreement | Gain captured | Best move is a sacrifice | Best is no-op |",
+          "|---|---:|---:|---:|---:|---:|---:|"]
+    for r in s[s.scope == "all"].sort_values(["frozen", "H"]).itertuples():
+        md.append(f"| {'frozen exogenous' if r.frozen else 'clairvoyant'} | {r.H} | {r.states} | "
+                  f"{100 * r.agree:.0f} % | {100 * r.captured:.0f} % | {100 * r.best_is_sacrifice:.0f} % | "
+                  f"{100 * r.best_is_noop:.0f} % |")
+    md += ["", "Per scenario at H = 24 (agreement / gain captured):", "",
+           "| Scenario | Clairvoyant | Frozen |", "|---|---:|---:|"]
+    h24 = s[(s.H == 24) & (s.scope != "all")]
+    for sc in EVAL_SCENARIOS:
+        cells = []
+        for fr in (False, True):
+            r = h24[(h24.scope == sc) & (h24.frozen == fr)]
+            cells.append(f"{100 * r.agree.iloc[0]:.0f} % / {100 * r.captured.iloc[0]:.0f} %"
+                         if len(r) else "pending")
+        md.append(f"| {sc} | {cells[0]} | {cells[1]} |")
+    doc = ROOT / "docs" / "SEQUENTIALITY_AUDIT.md"
+    text = doc.read_text()
+    a, b = "<!-- SEQ:BEGIN -->", "<!-- SEQ:END -->"
+    if a in text:
+        pre, rest = text.split(a, 1)
+        doc.write_text(pre + a + "\n" + "\n".join(md) + "\n" + b + rest.split(b, 1)[1])
     for frozen, tag in ((False, "Live"), (True, "Frozen")):
         a = s[(s.frozen == frozen) & (s.scope == "all")]
         for h in (1, 3, 6, 12, 24):
