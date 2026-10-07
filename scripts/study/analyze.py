@@ -608,7 +608,7 @@ def section_tuning(data: dict) -> None:
 
 def status(text: str, name: str) -> None:
     """One generated sentence for the hypothesis-outcome table."""
-    (ROOT / "paper" / "generated" / f"{name}.tex").write_text(text)
+    (ROOT / "paper" / "generated" / f"{name}.tex").write_text(tex_minus(text))
 
 
 def pair_roots(sel: pd.DataFrame, a: str, b: str) -> dict:
