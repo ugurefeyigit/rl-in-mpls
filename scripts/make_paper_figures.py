@@ -32,11 +32,12 @@ RAW = ROOT / "experiments" / "raw"
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#ffffff"
 COLOR = {"bandit": "#2a78d6", "ppo": "#eb6834", "greedy": "#1baf7a", "cspf": "#eda100",
          "static": "#4a3aa7", "noop": "#8a8984", "random_valid": "#b5b4ae",
-         "oracle": "#0b0b0b", "q": "#1baf7a"}
+         "oracle": "#0b0b0b", "q": "#1baf7a", "milp_track": "#e87ba4", "ppog0": "#eb6834"}
 MARK = {"bandit": "o", "ppo": "s", "greedy": "^", "cspf": "D", "static": "v",
-        "noop": "x", "random_valid": "+", "oracle": "*", "q": "P"}
+        "noop": "x", "random_valid": "+", "oracle": "*", "q": "P", "milp_track": "h", "ppog0": "s"}
 LABEL = {"bandit": "Masked bandit", "ppo": "MaskablePPO", "greedy": "Greedy", "cspf": "CSPF",
          "static": "Static SP", "noop": "No-op", "random_valid": "Random valid",
+         "milp_track": "MILP-track", "ppog0": "MaskablePPO, γ = 0",
          "oracle_h1": "Oracle H=1", "oracle_h3": "Oracle H=3", "oracle_h6": "Oracle H=6"}
 SCEN_SHORT = {"full_day": "full day", "evening_peak": "evening peak", "flash_crowd": "flash crowd",
               "link_failure": "link failure", "deceptive_local_optimum": "deceptive",
@@ -152,15 +153,21 @@ def fig_learning_curves() -> None:
     if cur.empty:
         print("skip curves")
         return
-    cur = cur[(cur.seedset == "validation") & cur.policy.isin(["bandit", "ppo"])]
-    fig, ax = plt.subplots(figsize=(3.4, 2.3))
-    for pol in ("bandit", "ppo"):
+    cur = cur[(cur.seedset == "validation") & cur.policy.isin(["bandit", "ppo", "E2:ppog0"])]
+    cur = cur.assign(policy=cur.policy.replace({"E2:ppog0": "ppog0"}))
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    for pol, ls in (("bandit", "-"), ("ppo", "-"), ("ppog0", "--")):
         g = cur[cur.policy == pol]
-        for _, r in g.groupby("root"):
-            ax.plot(r.checkpoint / 1e3, r.mean_return, color=COLOR[pol], lw=0.7, alpha=0.35)
+        if g.empty:
+            continue
+        if pol != "ppog0":
+            for _, r in g.groupby("root"):
+                ax.plot(r.checkpoint / 1e3, r.mean_return, color=COLOR[pol], lw=0.6, alpha=0.3)
         m = g.groupby("checkpoint").mean_return.mean()
-        ax.plot(m.index / 1e3, m.values, color=COLOR[pol], marker=MARK[pol],
-                label=f"{LABEL[pol]} (mean of {g.root.nunique()} roots)")
+        lab = LABEL[pol] + (", γ = 0.995" if pol == "ppo" else "")
+        ax.plot(m.index / 1e3, m.values, color=COLOR[pol], marker=MARK[pol], ls=ls,
+                mfc="white" if pol == "ppog0" else COLOR[pol],
+                label=f"{lab} ({g.root.nunique()} roots)")
     ax.set_xlabel("training transitions (thousands)")
     ax.set_ylabel("mean validation return")
     ax.legend(loc="lower right")
@@ -178,14 +185,16 @@ def fig_main() -> None:
     ax = axes[0]
     order = [p for p in ("noop", "static", "random_valid", "cspf", "greedy", "milp_track", "ppo",
                          "bandit", "oracle_h1") if p in set(main.policy)]
-    main = main.set_index("policy").loc[order].reset_index()
+    main = main.set_index("policy").loc[order].reset_index().sort_values("mean").reset_index(drop=True)
     y = np.arange(len(main))
     for i, r in main.iterrows():
         key = "oracle" if r.policy.startswith("oracle") else r.policy
         c = COLOR.get(key, INK2)
+        ax.text(r["hi"] + 3, i, f"{r['mean']:.1f}", va="center", fontsize=6.5, color=INK2)
         ax.errorbar(r["mean"], i, xerr=[[r["mean"] - r["lo"]], [r["hi"] - r["mean"]]],
                     fmt=MARK.get(key, "o"), color=c, ms=5, capsize=2, lw=1.2)
     ax.set_yticks(y, [LABEL.get(p, p) + (" †" if p.startswith("oracle") else "") for p in main.policy])
+    ax.set_xlim(right=main["hi"].max() + 22)
     ax.axvline(0, color=INK2, lw=0.6)
     ax.set_xlabel("mean test return (95% CI)")
     ax.grid(axis="y", visible=False)

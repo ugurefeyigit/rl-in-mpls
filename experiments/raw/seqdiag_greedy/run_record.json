@@ -1,6 +1,6 @@
 {
- "created_utc": "2026-10-07T01:01:44.439660+00:00",
- "git_commit": "4e1e5a2e124d35e5615fb9af2dd2b1c2da1e23e1",
+ "created_utc": "2026-10-07T02:29:32.052091+00:00",
+ "git_commit": "41f00a55957015cc6a64f3137bd8ac71892eed70",
  "git_dirty": true,
  "software": {
   "python": "3.13.16",
@@ -40,5 +40,5 @@
   "out": "experiments/raw/seqdiag_greedy",
   "frozen": false
  },
- "wall_seconds": 993.117946842
+ "wall_seconds": 0.00023948899979586713
 }

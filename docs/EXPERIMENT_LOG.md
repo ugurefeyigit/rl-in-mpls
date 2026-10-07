@@ -36,5 +36,6 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 20 | 01:40–02:00 | Frozen-exogenous sequentiality diagnostic complete (495 states paired with the clairvoyant pass) | myopic = 24-step best in 88 % of states with traffic frozen vs 33 % with true future; non-myopic value is anticipation of exogenous change [science]. Motivated post-hoc E7 (`docs/HYPOTHESES.md` H9) |
 | 21 | 01:47 | E1 complete (5 roots per learner) | bandit − PPO positive on 5/5 roots |
 | 22 | 02:27 | E2 PPO γ = 0, 3 roots | **23.6 vs bandit 24.2 on the same roots (−0.6 [−5.2, 2.7]); PPO γ = 0.995: −6.4.** Flapping disappears (≤ 2.4 reversals/episode). Supports H2 and H10 [science] |
+| 23 | 02:35 | Compute re-planning (≈34 run-equivalents left). Training slots 3 → 4; queue reordered by information value (Q γ0.9 → E4 → E7 → PPO γ0.9 → E3 → rest of E2 → E6 → E5). E3 trimmed from 8 to 6 configurations (`ns128`, `net64` dropped **before running**) [process] | |
 
-Entries after #22 are appended as experiments complete.
+Entries after #23 are appended as experiments complete.
