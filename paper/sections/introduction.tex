@@ -59,8 +59,9 @@ reroutes less (\S\ref{sec:rq1}).
 expiry, a small immediate cost that, we argue, its long-horizon advantage
 estimates fail to attribute (\S\ref{sec:analysis}). Horizon and algorithm
 are separated by varying the discount within each learner family
-(\S\ref{sec:rq2}), and tuning, budget, shaping and observation are varied in
-\S\ref{sec:rq3}.
+(\S\ref{sec:rq2}). A PPO configuration tuned on one root, which beats the
+bandit there, falls below it on all \RQThreeTunedVsBanditRoots{} fresh roots
+(\S\ref{sec:rq3}).
 \item \textbf{A measurement of the value of lookahead.} Re-planning every
 interval with perfect foresight, a controller gains only a few points from
 looking beyond the next interval. Open-loop rollouts show where the per-decision

@@ -15,7 +15,9 @@ discount within each learner family points to the planning horizon rather
 than the algorithm: PPO with $\gamma=0$ matches the bandit, while with
 $\gamma=0.995$ it oscillates at hold-down expiry on \PPOFlappingRoots{} of \TestPPORoots{} roots and
 reconfiguration costs make up most of its deficit; a bootstrapped value learner
-with $\gamma=0.9$ is worse than the bandit. Clairvoyant lookahead explains why
+with $\gamma=0.9$ is worse than the bandit. A tuning study does not close the
+gap: the PPO configuration selected on one root's validation seeds falls
+below the bandit on all \RQThreeTunedVsBanditRoots{} fresh roots. Clairvoyant lookahead explains why
 there is little to plan for: a controller that re-plans every interval with
 perfect knowledge of future traffic gains only \OracleThreeMinusOne{} return
 from looking three intervals ahead instead of one, while knowing the next

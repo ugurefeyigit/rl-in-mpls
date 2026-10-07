@@ -20,7 +20,10 @@ noisy, so the configuration was retrained on the four other primary roots
 \RQThreeTunedVsBandit{} (positive on \RQThreeTunedVsBanditRootsPositive{} of
 \RQThreeTunedVsBanditRoots{} roots), and tuned minus default PPO is
 \RQThreeTunedVsDefault{} (positive on \RQThreeTunedVsDefaultRootsPositive{}
-of \RQThreeTunedVsDefaultRoots{}; Table~\ref{tab:rq3}).}{ (E3b pending.)}
+of \RQThreeTunedVsDefaultRoots{}; Table~\ref{tab:rq3}). The improvement on
+the selection root did not transfer; even there it depended on checkpoint
+selection, since the final checkpoint on root 42 oscillates again. With the tuned
+configuration PPO still oscillates on two of the four fresh roots.}{ (E3b pending.)}
 
 \paragraph{Budget (E5).} \ifmacro{RQThreeBudgetPPOvsBandit}{With three times
 the budget (1.2M transitions, root 42), PPO reaches \RQThreeBudgetPPOvsBanditA{}
