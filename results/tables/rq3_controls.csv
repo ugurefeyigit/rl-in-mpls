@@ -1,0 +1,3 @@
+family,comparison,roots,a,b,diff,per_root,roots_positive
+E7,bandit + clock vs.\ bandit,2,23.967199633586766,22.044946244311554,1.9222533892752134,+1.9 / +1.9,2
+E7,Q $\gamma=0.9$ + clock vs.\ Q $\gamma=0.9$,1,18.698259676547156,16.352974488491693,2.345285188055461,+2.3,1

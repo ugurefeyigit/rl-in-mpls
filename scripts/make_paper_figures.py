@@ -244,11 +244,12 @@ def fig_delay() -> None:
         print("skip delay")
         return
     d = pd.read_csv(f).set_index("policy")
-    rows = [("bandit", "bandit", "Masked bandit"), ("qg09", "q", "Q-learner γ = 0.9"),
+    rows = [("bandit", "bandit", "Masked bandit"), ("qg05", "q", "Q-learner γ = 0.5"),
+            ("qg09", "q", "Q-learner γ = 0.9"),
             ("ppo", "ppo", "MaskablePPO γ = 0.995"), ("ref:milp_track", "milp_track", "MILP-track"),
             ("ref:greedy", "greedy", "Greedy"), ("ref:cspf", "cspf", "CSPF")]
     rows = [r for r in rows if r[0] in d.index]
-    fig, ax = plt.subplots(figsize=(3.4, 2.1))
+    fig, ax = plt.subplots(figsize=(3.4, 0.35 * len(rows) + 0.5))
     for i, (key, ck, lab) in enumerate(rows):
         a, b = d.loc[key, "mean_L0_same_roots"], d.loc[key, "mean_L1"]
         c = COLOR.get(ck, INK2)

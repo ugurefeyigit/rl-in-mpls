@@ -1,1 +1,8 @@
-% Q-learner under delay: added when E4 qg09 runs complete.
+The masked Q-learner with $\gamma=0.9$, whose target includes the discounted
+value of the next state and hence the delayed effect, partly recovers:
+\DelayQNine{} under delay against \DelayQNineLZero{} without, above the bandit
+on \DelayQNineRootsBetter{} of \DelayQNineRoots{} roots (mean difference
+\DelayQNineVs) but below PPO.\ifcsname DelayQFive\endcsname{} With $\gamma=0.5$
+(an effective horizon of about two intervals) it reaches \DelayQFive{}
+(\DelayQFiveLZero{} without delay; above the bandit on
+\DelayQFiveRootsBetter{} of \DelayQFiveRoots{} roots).\fi

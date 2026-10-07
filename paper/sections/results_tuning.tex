@@ -1,3 +1,55 @@
 \subsection{RQ3: Is the gap an artifact of tuning, budget, shaping or the observation?}
 \label{sec:rq3}
-% Filled from E3/E3b (PPO tuning), E5 (budget), E6 (no shaping), E7 (time of day) as results complete.
+% Every number is generated; a guarded block prints "pending" until its
+% experiment has finished, so the paper compiles at every stage.
+\newcommand{\ifmacro}[3]{\ifcsname #1\endcsname #2\else #3\fi}
+
+\paragraph{PPO tuning (E3).} Eight one-factor variations of PPO's
+configuration were trained on root 42 and compared with the default on
+validation seeds only (Appendix~\ref{app:hyper}).
+\ifmacro{TuneEThreeRuns}{Of the \TuneEThreeRuns{} that have finished, the
+best by validation return is \texttt{\TuneBest} (\TuneBestVal, against
+\TuneDefaultVal{} for the default and \TuneBanditValBest{} for the bandit on
+the same root); Table~\ref{tab:tuning} lists all of them with their test
+returns, which played no role in selection.}{(pending)}
+
+\paragraph{Budget (E5).} \ifmacro{RQThreeBudgetPPOvsBandit}{With three times
+the budget (1.2M transitions, root 42), PPO reaches \RQThreeBudgetPPOvsBanditA{}
+against \RQThreeBudgetPPOvsBanditB{} for the bandit at 400k (difference
+\RQThreeBudgetPPOvsBandit).\ifmacro{RQThreeBudgetBandit}{ The bandit itself
+changes by \RQThreeBudgetBandit{} with the larger budget.}{}}{(pending)}
+
+\paragraph{Shaping (E6).} The bandit is trained on the shaped reward, and
+potential-based shaping is policy-invariant only for the discount it was
+designed for; for a myopic learner it adds one step of lookahead on the
+potential. \ifmacro{RQThreeNoShaping}{Training the bandit with the shaping
+term removed and evaluating it on the primary reward changes its return by
+\RQThreeNoShaping{} (\RQThreeNoShapingRootsPositive{} of
+\RQThreeNoShapingRoots{} roots higher), so the bandit's advantage does not rest
+on the shaping term.}{(pending)}
+
+\paragraph{Time of day (E7).} The open-loop diagnostic attributes the
+non-myopic value to anticipation of exogenous change, and the observation has
+no clock. If that is the missing ingredient for a sequential learner, adding
+the time of day should help a $\gamma=0.9$ Q-learner more than the bandit
+(H9, exploratory). \ifmacro{RQThreeTimeQ}{Adding the clock changes the
+bandit's return by \RQThreeTimeBandit{} (\RQThreeTimeBanditRootsPositive{} of
+\RQThreeTimeBanditRoots{} roots higher) and the Q-learner's by
+\RQThreeTimeQ{} (\RQThreeTimeQRootsPositive{} of \RQThreeTimeQRoots{}
+roots higher).}{(pending)}
+
+\begin{table}[t]
+\centering\small
+\caption{Control experiments: per-root mean test returns of the compared
+policies on their common roots, and the paired difference (mean; per root).}
+\label{tab:rq3}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Comparison & Roots & A & B & A $-$ B \\
+\midrule
+\IfFileExists{tables/rq3_controls.tex}{\tabinput{tables/rq3_controls}}{\multicolumn{5}{c}{pending}\\}
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
