@@ -57,7 +57,7 @@ an experiment registry, and a paper built from scripts.
 | Static shortest path | -96.5 [-98.9, -94.0] | – | 90.40 % | 346 | 0.37 |
 | Random valid | -107.5 [-111.3, -103.6] | – | 89.44 % | 401 | 11.66 |
 
-Bandit − PPO, paired: **24.9** [12.2, 39.1], positive on 5/5 roots.
+Bandit − PPO, paired: **24.9**; t-interval over roots [3.4, 46.4], two-stage bootstrap [12.2, 39.1]; positive on 5/5 roots.
 <!-- RESULTS:END -->
 
 All numbers: 7 scripted scenarios × 20 test seeds (3001–3020), paired;

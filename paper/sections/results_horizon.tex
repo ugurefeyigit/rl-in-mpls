@@ -11,7 +11,11 @@ each family on the three preregistered roots, holding everything else fixed
 reaches \HPPOZero{} against the bandit's \HQZero{} on the same roots (mean
 difference \HPPOZeroVs, above the bandit on \HPPOZeroRootsBetter{} of
 \HPPOZeroRoots{} roots), while PPO with $\gamma=0.995$ reaches \HPPODefault{}
-(above the bandit on \HPPODefaultRootsBetter{} of \HPPODefaultRoots{} roots). The oscillation disappears with the horizon: reversals
+(above the bandit on \HPPODefaultRootsBetter{} of \HPPODefaultRoots{} roots);
+with the intermediate $\gamma=0.9$ it reaches \HPPOPointNine{} (above the bandit
+on \HPPOPointNineRootsBetter{} of \HPPOPointNineRoots{} roots), so PPO's return
+falls monotonically as its horizon grows, and at $\gamma=0.9$ it is close to
+the Q-learner with the same discount (\HQPointNine). The oscillation disappears with the horizon: reversals
 fall from \HPPODefaultRev{} to \HPPOZeroRev{} per episode, and the validation
 curves become monotone (Fig.~\ref{fig:curves}). This points to the long horizon,
 rather than the policy-gradient algorithm, as what limits PPO here. It does not
