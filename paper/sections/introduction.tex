@@ -43,28 +43,35 @@ as a claim to be tested. Our contributions are:
 \begin{itemize}
 \item \textbf{A reproduction and its lesson.} Retraining all of the closed
 study's runs on different hardware with byte-identical training traffic, the
-bandit's result reproduces and PPO's does not: floating-point differences
-alone move PPO's per-root holdout return by up to \ReproMaxShiftPPO{} points
-and the bandit's by at most \ReproMaxShiftBandit{} (\S\ref{sec:repro}).
+bandit's result reproduces and PPO's does not: a change of device and library
+versions, which alters PPO's sampling stream and arithmetic, moves PPO's
+per-root holdout return by up to \ReproMaxShiftPPO{} points and the bandit's
+by at most \ReproMaxShiftBandit{} (\S\ref{sec:repro}).
 \item \textbf{A controlled comparison with a non-learning optimizer.} On
 \TestBanditRoots{} training roots and 140 disjoint test episodes the bandit
-beats PPO on every root and is statistically indistinguishable from a
-per-interval min-max-utilization MILP controller that does not learn at all
-(\S\ref{sec:rq1}).
-\item \textbf{A mechanism.} PPO's deficit is dominated by reconfiguration
-cost: on most roots it settles into flipping a demand at every hold-down
-expiry, a small immediate cost that its long-horizon advantage estimates fail
-to attribute (\S\ref{sec:analysis}). Horizon and algorithm are separated by
-varying the discount within each learner family (\S\ref{sec:rq2}).
-\item \textbf{A measured sequentiality diagnostic.} Clairvoyant rollouts show
-that the problem is far from myopic per decision under the true future, but
-that almost all of the non-myopic value is anticipation of exogenous traffic
-change; with traffic held fixed, the myopic choice is the 24-interval choice
-in \SeqFrozenAgreeHTwentyFour\,\% of states (\SeqLiveAgreeHTwentyFour\,\% under the true future) (\S\ref{sec:sequentiality}).
-\item \textbf{A regime where sequential RL is necessary.} Delaying the effect
-of a move by one interval---a controlled form of actuation latency---removes
-the bandit's signal by construction; the bandit collapses while PPO is
-unaffected, reversing the ranking (\S\ref{sec:rq5}).
+beats PPO on every root and reaches the return of a per-interval
+min-max-utilization MILP controller that does not learn at all, with
+different trade-offs: MILP-track attains higher network utility, the bandit
+reroutes less (\S\ref{sec:rq1}).
+\item \textbf{A mechanism.} Most of PPO's deficit
+(\GapCostSharePct\,\%) is reconfiguration cost: on \PPOFlappingRoots{} of
+\TestPPORoots{} roots it settles into flipping a demand at every hold-down
+expiry, a small immediate cost that, we argue, its long-horizon advantage
+estimates fail to attribute (\S\ref{sec:analysis}). Horizon and algorithm
+are separated by varying the discount within each learner family
+(\S\ref{sec:rq2}), and tuning, budget, shaping and observation are varied in
+\S\ref{sec:rq3}.
+\item \textbf{A measurement of the value of lookahead.} Re-planning every
+interval with perfect foresight, a controller gains only a few points from
+looking beyond the next interval. Open-loop rollouts show where the per-decision
+non-myopic value lies: with traffic held fixed, the myopic choice is the
+24-interval choice in \SeqFrozenAgreeHTwentyFour\,\% of states
+(\SeqLiveAgreeHTwentyFour\,\% under the true future), so it is almost
+entirely anticipation of exogenous change (\S\ref{sec:sequentiality}).
+\item \textbf{A regime where the myopic learner fails.} Delaying the effect of
+a move by one interval---a controlled form of actuation latency---removes the
+bandit's signal by construction; the bandit collapses and falls below PPO,
+while the optimization baseline remains ahead of both (\S\ref{sec:rq5}).
 \end{itemize}
 
 We make no algorithmic or theoretical claim. All code, configurations,

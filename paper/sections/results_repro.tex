@@ -14,9 +14,18 @@ scenario) holdout means and standard deviations (to $\BaselineReproMaxDiff$), th
 training episode-seed ledger of every root (byte-identical), and all integrity
 counters. The bandit reproduces statistically (\ReproBandit{} vs.\
 \HistBandit{}; Table~\ref{tab:repro}); PPO does not (\ReproPPO{} vs.\
-\HistPPO{}). With identical training traffic, the only difference between the
-executions is floating-point arithmetic, and it moved PPO's per-root holdout
-return by up to \ReproMaxShiftPPO{} points while moving the bandit's by at most \ReproMaxShiftBandit{}: on
+\HistPPO{}). With identical training traffic, the executions differ in device
+(CUDA vs.\ CPU), in library versions (PyTorch, NumPy, Python patch level) and
+hence in floating-point arithmetic and in PPO's action-sampling random stream,
+which SB3 draws from the device's generator; the bandit's exploration and
+replay sampling use a NumPy generator and are device-independent. These
+differences moved PPO's per-root holdout return by up to \ReproMaxShiftPPO{}
+points and the bandit's by at most \ReproMaxShiftBandit{}. The comparison is
+therefore not a pure numerical-perturbation experiment for PPO; it shows that
+PPO's outcome depends strongly on incidental properties of an execution, which
+the spread across our five CPU training roots confirms (root standard
+deviation \TestPPORootSd{} for PPO vs.\ \TestBanditRootSd{} for the
+bandit). On
 \ReproPPONeverPositive{} of 3 roots the reproduced PPO never reached a positive
 validation return at any checkpoint. The bandit's advantage reappeared on all
 three roots and grew to \ReproGap{} (two-stage bootstrap 95\,\% CI

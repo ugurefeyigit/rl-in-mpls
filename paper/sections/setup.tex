@@ -35,8 +35,14 @@ intervals (resample roots, then scenario-stratified episodes within roots), and
 we also report a $t$-interval over root-level means and the number of roots on
 which a difference has a given sign. Paired differences are reported in reward
 units together with the paired standardized effect $d_z$. We do not use
-significance tests as decision rules; with five roots, root-level intervals are
-wide, and we say so where it matters~\citep{agarwal2021precipice,patterson2024empirical}.
+significance tests as decision rules~\citep{agarwal2021precipice,patterson2024empirical}.
+The two-stage bootstrap conditions on the roots that were drawn: with two or
+three roots it stays close to the range of the root means and therefore
+understates between-root uncertainty. For the five-root primary comparison we
+report both intervals and lead with the $t$-interval; for ablations with two or
+three roots (horizon sweep, delay, tuning) we report per-root values and sign
+counts, and the bootstrap interval only as a description of episode-level
+variability. Per-scenario intervals resample roots, then episodes within roots.
 
 \paragraph{Hardware.} All new results were produced on a 4-core Intel Xeon
 (2.1\,GHz) virtual machine without GPU, one thread per run (PyTorch 2.14 CPU,

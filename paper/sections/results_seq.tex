@@ -2,48 +2,65 @@
 \label{sec:sequentiality}
 
 Formally the problem is an MDP (\S\ref{sec:formulation}); the question is how
-much the omitted future terms matter. On \SeqLiveStates{} states visited by
-the greedy controller (diagnostic seeds 4001--4003, every fourth decision), we
-roll the cloned simulator forward from every legal action for up to 24
-intervals---the action, then no further change---and compare the action that
-is best for the first interval with the action that is best over $H$
-intervals (Fig.~\ref{fig:seqdiag}). This is the effective-horizon idea of
-Laidlaw et al.~\citep{laidlaw2023effective} with a no-change base policy.
+much a controller gains by looking beyond the current interval. We answer it
+first in closed loop, then per decision.
 
-\emph{Under the true future}, the problem is far from myopic per decision: the
-first-interval choice is the 24-interval choice in only
-\SeqLiveAgreeHTwentyFour\,\% of states, it captures \SeqLiveCapturedHTwentyFour\,\%
-of the available 24-interval gain, and in \SeqLiveSacrificeHTwentyFour\,\% of
-states the 24-interval best move has a \emph{negative} immediate advantage.
-\emph{Holding traffic and link state at their current values} during the same
-rollouts, the picture reverses: agreement is \SeqFrozenAgreeHTwentyFour\,\%,
-the myopic choice captures \SeqFrozenCapturedHTwentyFour\,\% of the gain, and
-such ``sacrifice'' moves occur in \SeqFrozenSacrificeHTwentyFour\,\% of states.
-The pattern holds in every scenario (Appendix~\ref{app:results}). Almost all
-of the non-myopic value is therefore \emph{anticipation of exogenous change}
-(traffic growth, bursts, failures and recoveries), not the trade-off between a
-one-off move cost and a persistent gain. That value is visible to a learner
-only to the extent that future traffic is predictable from the observation,
-which contains current volumes but not the clock.
-
-The same conclusion follows from using the rollouts as controllers. On the
-first five test seeds (35 episodes), the clairvoyant one-interval oracle
-reaches \LadderOraclehOne, against \LadderBandit{} for the bandit and
-\LadderMilptrack{} for MILP-track; extending its lookahead to three or six
+\paragraph{Closed loop: clairvoyant lookahead as a controller.} Oracle-$H$
+re-plans every interval with the true future: it rolls the cloned simulator
+forward $H$ intervals from every legal action (the action, then no further
+change) and takes the best. On the first five test seeds (35 episodes),
+Oracle-1 reaches \LadderOraclehOne, against \LadderBandit{} for the bandit and
+\LadderMilptrack{} for MILP-track. Extending the lookahead to three or six
 intervals adds only \OracleThreeMinusOne{} [\OracleThreeMinusOneLo,
 \OracleThreeMinusOneHi] and \OracleSixMinusOne{} [\OracleSixMinusOneLo,
-\OracleSixMinusOneHi]. The headroom above the learners lies in estimating the
-\emph{immediate} consequence of a move more accurately (the oracle knows the
-next five minutes of traffic exactly), not in planning further ahead.
+\OracleSixMinusOneHi] (Oracle-6 is not better than Oracle-3). Even with
+perfect foresight, lookahead beyond one interval is worth a few points to a
+controller that re-plans; knowing the next interval exactly is worth
+\BanditBehindOracleOne{} over the bandit on the full test set. The headroom
+above the learners lies in estimating the \emph{immediate} consequence of a
+move more accurately, not in planning further ahead.
+
+\paragraph{Per decision: open-loop rollouts.} On \SeqLiveStatesHOne{} states
+visited by the greedy controller (diagnostic seeds 4001--4003, every fourth
+decision; \SeqLiveStates{} of them have 24 remaining intervals), we compare the
+action that is best for the first interval with the action that is best over
+$H$ intervals under the same no-change continuation (Fig.~\ref{fig:seqdiag});
+this is the effective-horizon idea of Laidlaw et
+al.~\citep{laidlaw2023effective} with a no-change base policy. \emph{Under the
+true future}, the first-interval choice is the 24-interval choice in only
+\SeqLiveAgreeHTwentyFour\,\% of states and captures
+\SeqLiveCapturedHTwentyFour\,\% of the 24-interval gain; in
+\SeqLiveSacrificeHTwentyFour\,\% of states the 24-interval best move has a
+negative immediate advantage. These open-loop values overstate what a
+controller can realise: a move that pays off only after traffic changes can
+also be made when the change arrives, which is what the re-planning oracle
+does, and the closed-loop gains above are small. \emph{Holding traffic and
+link state at their current values} during the rollouts, agreement is
+\SeqFrozenAgreeHTwentyFour\,\%, the myopic choice captures
+\SeqFrozenCapturedHTwentyFour\,\% of the gain and sacrifice moves occur in
+\SeqFrozenSacrificeHTwentyFour\,\% of states, in every scenario
+(Appendix~\ref{app:results}). With constant exogenous inputs and no further
+moves, the $H$-interval value of a move is close to $H$ times its per-interval
+gain minus its one-off cost, so the frozen agreement measures one thing: how
+often amortizing a move's cost over a longer stay changes which move is best.
+It rarely does. The open-loop gap between the two rollouts is anticipation of
+exogenous change (traffic growth, bursts, failures and recoveries), which our
+observation does not provide information for (no clock, no forecast; \S\ref{sec:rq3}
+tests adding the clock). Neither rollout can detect value that arises from
+\emph{later} moves---the opportunity cost of a dwell lock, or a move that
+enables another under the protected-class rule---because the continuation
+never moves again; that value is bounded only by the closed-loop measurement.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{fig_seqdiag}
-\caption{Sequentiality diagnostic on \SeqLiveStates{} paired states. Left:
-probability that the action with the best first-interval reward is also the
-best over $H$ intervals (``take it, then change nothing''). Right: share of the
-best $H$-interval gain that the myopic action captures. Solid: rollouts carry
-the episode's true future traffic and failures (clairvoyant). Dashed: traffic
-and link state held at their current values.}
+\caption{Open-loop sequentiality diagnostic (greedy-visited states; from
+\SeqLiveStatesHOne{} states at $H=1$ to \SeqLiveStates{} at $H=24$, since
+states near an episode's end lack $H$ remaining intervals). Left: probability
+that the action with the best first-interval reward is also the best over $H$
+intervals (``take it, then change nothing''). Right: share of the best
+$H$-interval gain that the myopic action captures. Solid: rollouts carry the
+episode's true future traffic and failures (clairvoyant). Dashed: traffic and
+link state held at their current values.}
 \label{fig:seqdiag}
 \end{figure}

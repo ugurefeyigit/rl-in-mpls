@@ -254,8 +254,12 @@ def section_main(data: dict) -> None:
         num(f"Test{key}Lo", s["lo"])
         num(f"Test{key}Hi", s["hi"])
         num(f"Test{key}Roots", int(s["roots"]), "{}")
+        if p in learners:
+            num(f"Test{key}RootSd", s["root_sd"])
         num(f"Test{key}Reroutes", s["reroutes"], "{:.2f}")
         num(f"Test{key}Sla", s["sla"], "{:.0f}")
+        num(f"Test{key}MaxUtil", s["maxutil"], "{:.2f}")
+        num(f"Test{key}LossPct", 100 * s["loss"], "{:.1f}")
         num(f"Test{key}Delivered", 100 * s["delivered"], "{:.2f}")
         num(f"Test{key}DecisionMs", s["decision_ms"], "{:.2f}")
     main = pd.DataFrame(rows)
@@ -278,6 +282,7 @@ def section_main(data: dict) -> None:
         ps = per_scenario(pairs)
         write_table(ps, "main_per_scenario", latex_rows([[
             SCEN_LABEL[r.scenario], ci_str(r.diff_est, r.diff_lo, r.diff_hi),
+            f"{int(r.roots_positive)}/{int(r.roots)}",
             f"{100 * r.win_rate:.0f}\\,\\%"] for r in ps.itertuples()]))
         for r in ps.itertuples():
             num("Gap" + SCEN_LABEL[r.scenario].replace(" ", ""), r.diff_est)
@@ -314,6 +319,19 @@ def section_main(data: dict) -> None:
             num(key + "Lo", cl["boot_lo"])
             num(key + "Hi", cl["boot_hi"])
             num(key + "RootsPositive", int(cl["roots_positive"]), "{}")
+            num(key + "TLo", cl["t_lo"])
+            num(key + "THi", cl["t_hi"])
+            if r == "milp_track" and p == "bandit":
+                pm = per_scenario(j[["root", "scenario", "seed", "diff"]])
+                write_table(pm, "bandit_vs_milp_per_scenario", latex_rows([[
+                    SCEN_LABEL[x.scenario], ci_str(x.diff_est, x.diff_lo, x.diff_hi),
+                    f"{int(x.roots_positive)}/{int(x.roots)}"] for x in pm.itertuples()]))
+                for x in pm.itertuples():
+                    num("BanditMilp" + SCEN_LABEL[x.scenario].replace(" ", ""), x.diff_est)
+                    num("BanditMilp" + SCEN_LABEL[x.scenario].replace(" ", "") + "RootsPositive",
+                        int(x.roots_positive), "{}")
+            if r == "oracle_h1":
+                num({"bandit": "Bandit", "ppo": "PPO"}[p] + "BehindOracleOne", -cl["boot_est"])
     if comps:
         lv = pd.DataFrame(comps)
         write_table(lv, "learners_vs_references", latex_rows([[
@@ -428,6 +446,32 @@ def section_fidelity() -> None:
             num(f"Fid{k}NegRoots", int((g.g6_policy < 0).sum()), "{}")
 
 
+def section_ppo_critic() -> None:
+    """Final-update PPO critic explained variance (SB3 train/explained_variance)."""
+    rows = []
+    for f in sorted((RAW / "learner_eval").glob("*/manifest.json")):
+        m = json.loads(f.read_text())
+        if m.get("algorithm") != "maskable_ppo" or m.get("status") != "completed":
+            continue
+        ev = (m.get("diagnostics") or {}).get("train/explained_variance")
+        if ev is None:
+            continue
+        rows.append({"run_id": f.parent.name, "gamma": float(m["config"]["gamma"]),
+                     "variant": (m.get("env") or {}).get("variant", "base"),
+                     "explained_variance": float(ev)})
+    if not rows:
+        return
+    d = pd.DataFrame(rows)
+    write_table(d, "ppo_critic")
+    base = d[(d.variant == "base") & d.run_id.str.match(r"E[12]_")]  # default configuration only
+    for gamma, tag in ((0.995, "Default"), (0.0, "Zero"), (0.9, "PointNine")):
+        g = base[np.isclose(base.gamma, gamma)].explained_variance
+        if len(g):
+            num(f"PPOEV{tag}Min", g.min(), "{:.2f}")
+            num(f"PPOEV{tag}Max", g.max(), "{:.2f}")
+            num(f"PPOEV{tag}Runs", len(g), "{}")
+
+
 def section_final_flapping(data: dict) -> None:
     ep = data.get("episodes_test")
     if ep is None:
@@ -464,6 +508,8 @@ def section_horizon(data: dict) -> None:
                      "mean": g.mean(), "root_sd": g.std(ddof=1) if len(g) > 1 else np.nan,
                      "vs_bandit": cl.get("boot_est", np.nan), "vs_bandit_lo": cl.get("boot_lo"),
                      "vs_bandit_hi": cl.get("boot_hi"),
+                     "vs_bandit_per_root": " / ".join(
+                         f"{v:+.1f}" for v in j.groupby("root")["diff"].mean().values),
                      "reroutes": df.reroutes_per_hour.mean(), "noop": df.noop_frequency.mean(),
                      "reversals": df.te_reversals.mean(),
                      "roots_better": int((g > base[base.root.isin(g.index)]
@@ -475,7 +521,7 @@ def section_horizon(data: dict) -> None:
             ("Q-learner" if r.family == "Q" else "PPO") + (" (bandit)" if r.family == "Q" and r.gamma == 0 else ""),
             f"{r.gamma:g}", str(r.roots), f"{r.mean:.1f}",
             "--" if np.isnan(r.vs_bandit) or (r.family == "Q" and r.gamma == 0)
-            else ci_str(r.vs_bandit, r.vs_bandit_lo, r.vs_bandit_hi),
+            else f"{r.vs_bandit:+.1f} ({r.vs_bandit_per_root})",
             f"{r.reroutes:.2f}", f"{r.reversals:.1f}"] for r in h.itertuples()]))
         for r in h.itertuples():
             tag = f"{r.family}{str(r.gamma).replace('.', 'p')}"
@@ -526,9 +572,10 @@ def section_delay(data: dict) -> None:
         return
     roots = sorted(d1.root.unique())
     l0 = {"bandit": sel[sel.policy == "bandit"], "ppo": sel[sel.policy == "ppo"],
-          "qg09": sel[sel.policy == "E2:qg09"]}
+          "qg09": sel[sel.policy == "E2:qg09"], "qg05": sel[sel.policy == "E2:qg05"]}
     rows = []
-    for tag, pol in (("bandit", "E4:L1_bandit"), ("ppo", "E4:L1_ppo"), ("qg09", "E4:L1_qg09")):
+    for tag, pol in (("bandit", "E4:L1_bandit"), ("ppo", "E4:L1_ppo"), ("qg05", "E4:L1_qg05"),
+                     ("qg09", "E4:L1_qg09")):
         g = d1[d1.policy == pol]
         if g.empty:
             continue
@@ -536,7 +583,9 @@ def section_delay(data: dict) -> None:
         base = l0[tag][l0[tag].root.isin(rr.index)].groupby("root").operational_return.mean()
         row = {"policy": tag, "roots": len(rr), "mean_L1": rr.mean(),
                "mean_L0_same_roots": base.mean() if len(base) else np.nan,
-               "reroutes": g.reroutes_per_hour.mean(), "reversals": g.te_reversals.mean()}
+               "reroutes": g.reroutes_per_hour.mean(), "reversals": g.te_reversals.mean(),
+               "per_root_L1": " / ".join(f"{v:.1f}" for v in rr.values),
+               "per_root_L0": " / ".join(f"{base.get(k, np.nan):.1f}" for k in rr.index)}
         if tag != "bandit":
             b = d1[d1.policy == "E4:L1_bandit"]
             j2 = g.merge(b, on=["root", "scenario", "seed"], suffixes=("_a", "_b"))
@@ -544,7 +593,9 @@ def section_delay(data: dict) -> None:
             if len(j2):
                 cl = compare_learners(j2[["root", "scenario", "seed", "diff"]])
                 row.update(vs_bandit=cl["boot_est"], vs_bandit_lo=cl["boot_lo"],
-                           vs_bandit_hi=cl["boot_hi"], roots_better=cl["roots_positive"])
+                           vs_bandit_hi=cl["boot_hi"], roots_better=cl["roots_positive"],
+                           vs_bandit_per_root=" / ".join(
+                               f"{v:+.1f}" for v in j2.groupby("root")["diff"].mean().values))
         rows.append(row)
     refdir = RAW / "references_delay1"
     if refdir.exists():
@@ -559,19 +610,23 @@ def section_delay(data: dict) -> None:
     out = pd.DataFrame(rows)
     write_table(out, "delay_results")
     lab = {"bandit": "Masked bandit", "ppo": "MaskablePPO ($\\gamma=0.995$)",
+           "qg05": "Q-learner ($\\gamma=0.5$)",
            "qg09": "Q-learner ($\\gamma=0.9$)", "ref:milp_track": "MILP-track",
            "ref:greedy": "Greedy", "ref:cspf": "CSPF", "ref:static": "Static SP", "ref:noop": "No-op"}
     lat = []
     for r in out.itertuples():
         if r.policy not in lab:
             continue
-        vs = (ci_str(r.vs_bandit, r.vs_bandit_lo, r.vs_bandit_hi)
-              if "vs_bandit" in out and not pd.isna(getattr(r, "vs_bandit", np.nan)) else "--")
-        lat.append([lab[r.policy], str(int(r.roots)) if r.roots else "--", f"{r.mean_L0_same_roots:.1f}",
-                    f"{r.mean_L1:.1f}", vs, f"{r.reroutes:.2f}"])
+        vs = (str(r.vs_bandit_per_root)
+              if "vs_bandit_per_root" in out and isinstance(getattr(r, "vs_bandit_per_root", None), str)
+              else "--")
+        l1 = str(r.per_root_L1) if isinstance(getattr(r, "per_root_L1", None), str) else f"{r.mean_L1:.1f}"
+        l0 = str(r.per_root_L0) if isinstance(getattr(r, "per_root_L0", None), str) \
+            else f"{r.mean_L0_same_roots:.1f}"
+        lat.append([lab[r.policy], l0, l1, vs, f"{r.reroutes:.2f}"])
     (PTABLES / "delay_results.tex").write_text(latex_rows(lat))
     for r in out.itertuples():
-        key = {"bandit": "Bandit", "ppo": "PPO", "qg09": "QNine"}.get(
+        key = {"bandit": "Bandit", "ppo": "PPO", "qg09": "QNine", "qg05": "QFive"}.get(
             r.policy, r.policy.replace("ref:", "Ref").replace("_", "").capitalize())
         num(f"Delay{key}", r.mean_L1)
         num(f"Delay{key}LZero", r.mean_L0_same_roots)
@@ -688,9 +743,11 @@ def section_seqdiag() -> None:
             r = a[a.H == h]
             if len(r):
                 num(f"Seq{tag}AgreeH{h}", 100 * r.agree.iloc[0], "{:.0f}")
+                num(f"Seq{tag}DisagreeH{h}", 100 - round(100 * r.agree.iloc[0]), "{:.0f}")
                 num(f"Seq{tag}CapturedH{h}", 100 * r.captured.iloc[0], "{:.0f}")
                 num(f"Seq{tag}SacrificeH{h}", 100 * r.best_is_sacrifice.iloc[0], "{:.0f}")
                 num(f"Seq{tag}States", int(r.states.iloc[0]), "{}")
+                num(f"Seq{tag}StatesH{h}", int(r.states.iloc[0]), "{}")
 
 
 def _seqdiag_delay(d: pd.DataFrame) -> None:
@@ -950,6 +1007,7 @@ def write_numbers() -> None:
 def main() -> None:
     data = collect(copy=True)
     section_fidelity()
+    section_ppo_critic()
     for f in (section_reproduction, section_main, section_decomposition, section_final_flapping,
               section_horizon, section_tuning,
               section_delay, section_compute):

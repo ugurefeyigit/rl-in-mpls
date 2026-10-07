@@ -24,7 +24,7 @@ table at the end maps its items to what this study has since settled.
 
 | # | Item | Motivating finding | What it would settle | Cost |
 |---|---|---|---|---|
-| B1 | PPO tuning on more than one root (E3 selected on root 42 only) | per-root shifts of up to 41 points from numerical noise alone (reproduction) | whether any PPO configuration with γ = 0.995 closes the gap reliably | ≈ 24 runs for 3 roots × 8 configs |
+| B1 | PPO tuning on more than one root (E3 selected on root 42 only) | per-root shifts of up to 41 points from a change of device and library versions alone (reproduction) | whether any PPO configuration with γ = 0.995 closes the gap reliably | ≈ 24 runs for 3 roots × 8 configs |
 | B2 | Bandit tuning with the same budget as PPO tuning | the bandit was deliberately left untuned | the size of the gap under symmetric tuning (the ranking cannot reverse unless tuning *hurts* the bandit) | ≈ 8 runs |
 | B3 | Recurrent PPO (sb3-contrib RecurrentPPO, masked) | V3-2; the observation omits the clock, so history could carry phase information | whether memory substitutes for a clock (compare against E7) | ≈ 6 runs |
 | B4 | Non-clairvoyant MPC: Oracle-H with a forecast in place of the true future | Oracle-H uses the true future, so it bounds rather than competes | how much of Oracle-1's lead over the bandit (≈ 22) a realistic forecaster recovers; this separates "lookahead" from "knowing the future" | ≈ 1 day CPU, no training |

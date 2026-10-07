@@ -10,8 +10,8 @@
 \input{../paper/generated/numbers}
 \newcommand{\hl}[1]{\textcolor[HTML]{2A78D6}{\textbf{#1}}}
 
-\title{When does MPLS traffic engineering need sequential RL?}
-\subtitle{A controlled comparison of MaskablePPO and a masked contextual bandit}
+\title{Persistent state is not enough}
+\subtitle{A controlled study of planning horizons in incremental MPLS traffic engineering}
 \author{Uğur Efe Yiğit}
 \date{}
 
@@ -81,15 +81,15 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}{5. Result: the bandit wins and matches an optimizer}
+\begin{frame}{5. Result: the bandit beats PPO and reaches the optimizer's return}
 \begin{columns}
 \column{0.62\textwidth}
 \includegraphics[width=\textwidth]{fig_main}
 \column{0.36\textwidth}
 \small
 \begin{itemize}
-\item bandit $-$ PPO $=$ \hl{\Gap} [\GapLo, \GapHi], positive on \GapRootsPositive/\GapRoots{} roots
-\item bandit $-$ MILP-track $=$ \BanditMinusMilp{} [\BanditMinusMilpLo, \BanditMinusMilpHi]
+\item bandit $-$ PPO $=$ \hl{\Gap}, $t$-interval over roots [\GapTLo, \GapTHi], positive on \GapRootsPositive/\GapRoots{} roots
+\item bandit $-$ MILP-track $=$ \BanditMinusMilp{} [\BanditMinusMilpTLo, \BanditMinusMilpTHi]; MILP has higher utility, more churn
 \item reroutes/h: bandit \TestBanditReroutes, MILP \TestMilpReroutes, PPO \TestPPOReroutes
 \end{itemize}
 \end{columns}
@@ -100,7 +100,7 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \small Utility: bandit \UtilBandit, PPO \UtilPPO; move costs: bandit \CostBandit, PPO \CostPPO
 \end{frame}
 
-\begin{frame}{7. Attribution: it is the horizon, not the algorithm}
+\begin{frame}{7. Attribution: the horizon, not the algorithm (so far)}
 \begin{columns}
 \column{0.5\textwidth}
 \includegraphics[width=\textwidth]{fig_learning_curves}
@@ -121,14 +121,15 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \column{0.4\textwidth}
 \small
 \begin{itemize}
-\item true future: myopic $=$ 24-step best in \SeqLiveAgreeHTwentyFour\,\% of states
+\item re-planning with perfect foresight: 3-step lookahead adds only \OracleThreeMinusOne{}
+\item open loop, true future: myopic $=$ 24-step best in \SeqLiveAgreeHTwentyFour\,\% of states
 \item traffic frozen: \hl{\SeqFrozenAgreeHTwentyFour\,\%}
-\item non-myopic value $\approx$ anticipating exogenous change, which the observation cannot see
+\item open-loop non-myopic value $\approx$ anticipating exogenous change, not provided by the observation
 \end{itemize}
 \end{columns}
 \end{frame}
 
-\begin{frame}{9. When is sequential RL needed? Delay the effect of a move}
+\begin{frame}{9. When does the myopic learner fail? Delay the effect of a move}
 \begin{columns}
 \column{0.55\textwidth}
 \includegraphics[width=\textwidth]{fig_delay}
@@ -137,10 +138,11 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \begin{itemize}
 \item move requested at $t$, active from $t+1$: the immediate reward contains only its cost
 \item bandit: \DelayBanditLZero{} $\to$ \hl{\DelayBandit}
-\item PPO: \DelayPPOLZero{} $\to$ \DelayPPO{} (unaffected)
-\item PPO $-$ bandit under delay: \hl{\DelayPPOVs} [\DelayPPOVsLo, \DelayPPOVsHi],
+\item PPO: \DelayPPOLZero{} $\to$ \DelayPPO{} (mean; per-root shifts in both directions)
+\item PPO $-$ bandit under delay: \hl{\DelayPPOVs} (mean), ahead on
   \DelayPPORootsBetter/\DelayPPORoots{} roots
-\item MILP-track: \DelayRefmilptrackLZero{} $\to$ \DelayRefmilptrack
+\item MILP-track: \DelayRefmilptrackLZero{} $\to$ \DelayRefmilptrack{} --- still ahead of every learner
+\item shows: decision-time regression fails; not that long-horizon RL is needed
 \end{itemize}
 \end{columns}
 \end{frame}
@@ -166,7 +168,7 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 
 \begin{frame}{12. Take-aways and future work}
 \begin{itemize}
-\item measure sequentiality before choosing an RL algorithm
+\item measure the value of lookahead (closed loop) before choosing a sequential learner
 \item a myopic learner (or a per-interval optimizer) is the baseline to beat
 \item long horizons can hurt by hiding small immediate costs
 \item future: delayed actuation and elastic traffic; packet-level validation; GNN policies;

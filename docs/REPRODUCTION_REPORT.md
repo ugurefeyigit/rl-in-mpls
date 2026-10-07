@@ -39,8 +39,13 @@ historical numbers come from `results/v2_final_holdout/` and
 ## Why the bandit reproduces and PPO does not
 
 The two learners of a root saw the same training episodes as historically.
-What differs is only floating-point arithmetic in the networks (CUDA kernels vs
-CPU BLAS, different library versions). Validation (continuity-seed) curves of
+What differs is the device (CUDA vs CPU) and library versions (torch
+2.11.0+cu128 → 2.14.1+cpu, numpy 2.3.0 → 2.5.3, Python 3.13.4 → 3.13.16).
+That changes floating-point arithmetic for both learners and, for PPO only,
+the action-sampling random stream: SB3 samples from the device's torch
+generator, whereas the bandit's ε-greedy and replay sampling use a NumPy
+generator that is device-independent. *(Corrected after round-2 review; an
+earlier version attributed the difference to floating-point arithmetic alone.)* Validation (continuity-seed) curves of
 the reproduction, per 50k transitions:
 
 | Run | 50k | 100k | 150k | 200k | 250k | 300k | 350k | 400k |
@@ -55,7 +60,7 @@ the reproduction, per 50k transitions:
 Historical continuity curves had the same shape for the bandit (monotone rise
 to ≈20–30 by 250–400k) and the same instability for PPO (e.g. root 42:
 −8.5, −2.9, 10.3, −16.8, 13.5, 2.9, −8.8, −17.8). The bandit's outcome is
-insensitive to numerical perturbation; PPO's is not: on identical data, two
+insensitive to a change of execution (device, versions); PPO's is not: on identical data, two
 of three reproduced PPO roots never reached a positive validation return.
 We read this as evidence about PPO's optimization in this environment (high
 run-to-run variance), not as a defect of either execution. It also means the

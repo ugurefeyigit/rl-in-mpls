@@ -1,0 +1,35 @@
+\section{Preregistered hypotheses and outcomes}
+\label{app:hypotheses}
+
+Hypotheses H0--H8 were committed before any new learner result existed
+(\texttt{docs/HYPOTHESES.md}); H9--H11 were added later and are exploratory.
+Three of the five primary training roots are the reproduction runs, whose
+direction was known from the closed study when H1 was written; the two
+additional roots were new. The frozen-exogenous rollout was added after an
+early look at the clairvoyant diagnostic.
+
+\begin{table}[h]
+\centering\small
+\caption{Outcome of every hypothesis. ``Pending'': the experiment had not
+finished when this version was compiled.}
+\label{tab:hypotheses}
+\begin{tabular}{@{}lp{0.38\textwidth}p{0.47\textwidth}@{}}
+\toprule
+ID & Hypothesis (abridged) & Outcome \\
+\midrule
+H0 & Closed-study bandit $>$ PPO reproduces & Direction reproduced on 3/3 roots; magnitude not (\ReproGap{} vs.\ \HistGap) \\
+H1 & Gap survives new protocol and more roots & Supported: \Gap{}, $t$-interval [\GapTLo, \GapTHi], \GapRootsPositive/\GapRoots{} roots \\
+H2 & Shortening PPO's horizon does not hurt it & Supported: PPO $\gamma=0$ \HPPOZero{} vs.\ $\gamma=0.995$ \HPPODefault{} \\
+H3 & Bootstrapping does not help a value learner & Supported so far ($\gamma=0.5$: \HQPointFiveVs; $\gamma=0.9$: \HQPointNineVs, \HQPointNineRootsBetter/\HQPointNineRoots{} roots better); $\gamma=0.99$ \input{generated/status_qg099} \\
+H4 & PPO deficit is not a tuning artefact & \input{generated/status_e3} \\
+H5 & Non-myopic structure exists, mostly from (a) one-off cost vs.\ persistent gain and (b) clairvoyance & Prediction met (frozen agreement \SeqFrozenAgreeHTwentyFour\,\% $>$ live \SeqLiveAgreeHTwentyFour\,\%; Oracle-3/6 gains small). Component (a) \emph{not} supported: cost amortization changes the best move in only \SeqFrozenDisagreeHTwentyFour\,\% of states \\
+H6 & Under delay the bandit fails and sequential learners do better & Bandit fails (\DelayBanditLZero{} $\rightarrow$ \DelayBandit); PPO better on \DelayPPORootsBetter/\DelayPPORoots{} roots; Q $\gamma=0.9$ \DelayQNine{} (\DelayQNineRootsBetter/\DelayQNineRoots{} roots better). No learner reaches MILP-track (\DelayRefmilptrack) \\
+H7 & PPO does not catch up with $3\times$ budget & \input{generated/status_e5} \\
+H8 & The bandit is a good myopic optimizer; PPO does not find non-myopic value & Supported (Table~\ref{tab:fidelity}) \\
+\midrule
+H9 & Time of day helps Q $\gamma=0.9$ more than the bandit & \input{generated/status_e7} \\
+H10 & PPO $\gamma=0$ removes most flapping & Supported: reversals \HPPODefaultRev{} $\rightarrow$ \HPPOZeroRev{} per episode \\
+H11 & The diagnostic flags the delayed regime (frozen agreement drops) & \input{generated/status_h11} \\
+\bottomrule
+\end{tabular}
+\end{table}

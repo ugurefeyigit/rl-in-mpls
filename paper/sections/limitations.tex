@@ -9,12 +9,27 @@ transfer to packet-level dynamics~\citep{boltres2024packerl}; our conclusions
 are about this model. Inelastic traffic in particular removes a natural
 source of temporal coupling (congestion that suppresses future demand).
 
+\paragraph{Load regime.} The test scenarios are heavily loaded: the mean
+per-interval maximum link utilization is \TestMilpMaxUtil{} for MILP-track,
+\TestBanditMaxUtil{} for the bandit and \TestNoopMaxUtil{} without TE, and even
+the best controllers lose about \TestMilpLossPct\,\% of offered traffic. TE
+here mostly decides where traffic is lost. In a provisioned backbone
+(utilization well below one), keeping headroom ahead of failures and peaks is
+a plausible source of sequential value that this study does not test.
+
 \paragraph{Formulation.} One trunk may move per interval network-wide and each
 demand has four fixed candidate paths. These choices create the incremental,
 stateful character of the problem; a controller that re-optimizes all trunks
 at once faces the one-shot problem studied by Teal and DOTE instead. We did
 not vary the number of candidates or the per-interval move limit, because the
 environment definition is frozen.
+
+\paragraph{Observation.} The observation contains, for every candidate move,
+the projected gross bottleneck utilization the move would create---a
+hand-built one-step model of the network. It makes the immediate consequence of
+a move nearly observable and so favours a learner that regresses the
+immediate reward; we did not ablate it (the environment is frozen). It omits
+the clock and any forecast; \S\ref{sec:rq3} tests adding the clock.
 
 \paragraph{Scale and data.} One hand-designed 18-router topology, 17 demands,
 hand-written diurnal profiles and seven scripted test scenarios; no operator
@@ -26,7 +41,13 @@ two to three for ablations; root-level intervals are wide and are reported.
 A budget of 400k transitions (about 1{,}390 simulated days), with one longer
 run per learner. PPO received a bounded one-factor sensitivity study, the
 bandit none; neither used graph-structured networks, observation
-normalization or learning-rate schedules. A discount below the true one can
+normalization or learning-rate schedules. The Q-learner performs one gradient
+step per 64 transitions (about 6{,}200 in total) with a target update every 250
+steps, and treats the time-limit end of an episode as terminal; that budget
+may be too small to propagate value over long horizons, so its $\gamma>0$
+results are a statement about this budget. Learners are trained on
+randomized days and tested only on scripted scenarios; a shift that affects
+the two learners differently cannot be excluded. A discount below the true one can
 help with limited data~\citep{jiang2015horizon,amit2020discount}, so ``the
 myopic learner wins at this budget'' does not imply that no sequential
 structure exists---which is why we measure the structure separately.

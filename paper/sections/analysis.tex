@@ -6,9 +6,11 @@ Splitting each episode's return into network utility (delivery, disconnection,
 SLA, utilization and overload terms), shaping, and move costs
 (Table~\ref{tab:decomp}) localizes PPO's deficit. Averaged over roots, the
 bandit earns a utility of \UtilBandit{} and pays \CostBandit{} in move and
-reversal costs; PPO earns \UtilPPO{} and pays \CostPPO. PPO's utility is not
-uniformly worse---its best root reaches \PPOUtilMax, above the bandit's best
-(\BanditUtilMax)---but on \PPOFlappingRoots{} of \TestPPORoots{} roots more
+reversal costs; PPO earns \UtilPPO{} and pays \CostPPO. Of the
+\Gap-point gap, \GapFromCosts{} (\GapCostSharePct\,\%) is move and reversal
+cost and \GapFromUtility{} is network utility. PPO's utility varies widely
+across roots (\PPOUtilMin{} to \PPOUtilMax, against \BanditUtilMin{} to
+\BanditUtilMax{} for the bandit); its best root is above the bandit's best. On \PPOFlappingRoots{} of \TestPPORoots{} roots more
 than half of its accepted moves are \emph{reversals} (up to \PPORevShareMax\,\%),
 and its per-root move costs range from \PPOCostMin{} to \PPOCostMax{}, against
 \BanditCostMin{} to \BanditCostMax{} for the bandit. The shaping term

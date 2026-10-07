@@ -8,21 +8,25 @@ each family on the three preregistered roots, holding everything else fixed
 (Table~\ref{tab:horizon}, Fig.~\ref{fig:curves}).
 
 \emph{Within PPO}, removing the horizon closes the gap. PPO with $\gamma=0$
-reaches \HPPOZero{} against the bandit's \HQZero{} on the same roots (difference
-\HPPOZeroVs{} [\HPPOZeroVsLo, \HPPOZeroVsHi]), while PPO with $\gamma=0.995$
-reaches \HPPODefault. The oscillation disappears with the horizon: reversals
+reaches \HPPOZero{} against the bandit's \HQZero{} on the same roots (mean
+difference \HPPOZeroVs, above the bandit on \HPPOZeroRootsBetter{} of
+\HPPOZeroRoots{} roots), while PPO with $\gamma=0.995$ reaches \HPPODefault{}
+(above the bandit on \HPPODefaultRootsBetter{} of \HPPODefaultRoots{} roots). The oscillation disappears with the horizon: reversals
 fall from \HPPODefaultRev{} to \HPPOZeroRev{} per episode, and the validation
-curves become monotone (Fig.~\ref{fig:curves}). The policy-gradient algorithm
-itself is therefore not what limits PPO in this environment; the long horizon
-is.
+curves become monotone (Fig.~\ref{fig:curves}). This points to the long horizon,
+rather than the policy-gradient algorithm, as what limits PPO here. It does not
+exclude an interaction between PPO and long horizons---for example the scale of
+undiscounted-sum value targets---which the reward-normalization and GAE
+configurations of \S\ref{sec:rq3} probe.
 
 \input{sections/results_horizon_q}
 
 \begin{table}[t]
 \centering\small
-\caption{Horizon sweep on roots 42, 314159, 271828 (test return, selected
-checkpoints). The value learner with $\gamma=0$ is the bandit. ``vs.\ bandit'':
-paired difference to the bandit on the same roots, two-stage bootstrap 95\,\% CI.}
+\caption{Horizon sweep (test return, selected checkpoints) on up to three
+training roots (42, 314159, 271828; column Roots). The value learner with
+$\gamma=0$ is the bandit. ``vs.\ bandit'': mean paired difference to the
+bandit on the same roots, and per root in the order listed.}
 \label{tab:horizon}
 \setlength{\tabcolsep}{3.5pt}
 \begin{adjustbox}{max width=\columnwidth}

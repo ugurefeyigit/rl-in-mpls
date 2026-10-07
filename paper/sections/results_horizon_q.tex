@@ -1,9 +1,9 @@
 \emph{Within the value family}, adding a horizon does not help. The masked
 Q-learner is the bandit with one change---a bootstrapped, discounted target
-(Eq.~\ref{eq:qtarget}). With $\gamma=0.5$ it is indistinguishable from the
-bandit (\HQPointFiveVs{} [\HQPointFiveVsLo, \HQPointFiveVsHi], \HQPointFiveRoots{}
-roots); with $\gamma=0.9$ it is worse (\HQPointNine{} vs \HQZero; \HQPointNineVs{}
-[\HQPointNineVsLo, \HQPointNineVsHi]; better than the bandit on
+(Eq.~\ref{eq:qtarget}). With $\gamma=0.5$ it is close to the
+bandit (mean difference \HQPointFiveVs, better on \HQPointFiveRootsBetter{} of
+\HQPointFiveRoots{} roots); with $\gamma=0.9$ it is worse (\HQPointNine{} vs
+\HQZero; mean difference \HQPointNineVs, better than the bandit on
 \HQPointNineRootsBetter{} of \HQPointNineRoots{} roots), mainly through lower
 network utility rather than higher churn (\HQPointNineRev{} reversals per
 episode). This matches the sequentiality diagnostic: the part of the future

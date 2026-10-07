@@ -10,6 +10,6 @@ runs:
   - {tag: L1_bandit, algorithm: masked_bandit}
   - {tag: L1_ppo,    algorithm: maskable_ppo}
   - {tag: L1_qg09,   algorithm: masked_q, overrides: {gamma: 0.9}}
-  # Added 05:40 UTC (post-hoc, EXPERIMENT_LOG #33, before any result): shortest
+  # Added 04:55 UTC (post-hoc, EXPERIMENT_LOG #33, before any result): shortest
   # useful horizon under L=1.
   - {tag: L1_qg05,   algorithm: masked_q, overrides: {gamma: 0.5}}

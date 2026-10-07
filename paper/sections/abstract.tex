@@ -5,22 +5,27 @@ measured. We study an incremental MPLS-TE problem in which routing state
 persists, one label-switched path may move per five-minute interval, moves
 are costly, a hold-down follows each move and an action mask enforces
 failures and protected-class capacity---formally a Markov decision process.
-On a flow-level 18-router backbone, a masked contextual bandit that predicts
+On a flow-level 18-router backbone, a masked contextual bandit that regresses
 only the immediate reward of each action beats MaskablePPO on all
-\TestBanditRoots{} training roots (paired return difference \Gap{}, 95\,\% CI
-[\GapLo, \GapHi]) and matches a non-learning per-interval min-max-utilization
-MILP controller. The cause is the planning horizon, not the algorithm: PPO with
-$\gamma=0$ matches the bandit, while PPO with $\gamma=0.995$ oscillates at
-hold-down expiry and loses its network gains to reconfiguration costs, and a
-bootstrapped value learner does not improve on the bandit. A clairvoyant
-lookahead diagnostic explains why: with traffic held fixed, the
-first-interval best action is the 24-interval best action in
-\SeqFrozenAgreeHTwentyFour\,\% of states, against \SeqLiveAgreeHTwentyFour\,\%
-under the true future, so almost all non-myopic value is anticipation of
-exogenous change that the controller cannot observe. Delaying the effect of a
-move by one interval reverses the ranking (PPO $-$ bandit $=\DelayPPOVs$
-[\DelayPPOVsLo, \DelayPPOVsHi]). We also show that a prior internal study's
-bandit result reproduces on different hardware while its PPO result does not.
-Sequential RL for TE should be justified by measured temporal coupling, not by
-the formal presence of state.
+\TestBanditRoots{} training roots (paired return difference \Gap{}; $t$-interval
+over roots [\GapTLo, \GapTHi]) and reaches the return of a non-learning
+per-interval min-max-utilization MILP controller (difference
+\BanditMinusMilp{}, [\BanditMinusMilpTLo, \BanditMinusMilpTHi]). Varying the
+discount within each learner family points to the planning horizon rather
+than the algorithm: PPO with $\gamma=0$ matches the bandit, while with
+$\gamma=0.995$ it oscillates at hold-down expiry on \PPOFlappingRoots{} of \TestPPORoots{} roots and
+reconfiguration costs make up most of its deficit; a bootstrapped value learner
+with $\gamma=0.9$ is worse than the bandit. Clairvoyant lookahead explains why
+there is little to plan for: a controller that re-plans every interval with
+perfect knowledge of future traffic gains only \OracleThreeMinusOne{} return
+from looking three intervals ahead instead of one, while knowing the next
+interval exactly is worth \BanditBehindOracleOne{} over the bandit. When a
+move's effect is delayed by one interval, the bandit's decision-time target
+loses the move's benefit and the bandit collapses (\DelayBanditLZero{}
+$\rightarrow$ \DelayBandit), below PPO on \DelayPPORootsBetter{} of \DelayPPORoots{} roots tested; the
+optimization baseline stays ahead of both. A prior internal study's bandit
+result reproduces on a different machine and software stack, while its PPO
+result does not. In this setting, persistent state alone does not make RL's
+planning horizon useful; the value of lookahead should be measured before
+choosing a sequential learner.
 \end{abstract}

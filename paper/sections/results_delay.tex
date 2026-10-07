@@ -1,38 +1,48 @@
-\subsection{RQ5: When does sequential RL become necessary?}
+\subsection{RQ5: When does a myopic learner fail?}
 \label{sec:rq5}
 
 In the frozen environment a move carries traffic in the interval in which it is
-made, so its first-interval effect is in the immediate reward. We remove that
-property with the delayed-activation variant ($L=1$): a request is charged when
-it is made and takes effect one interval later; everything else, including
-the observation of pending requests, is unchanged
-(Table~\ref{tab:delay}).
+made, so its first-interval effect is in the immediate reward. The
+delayed-activation variant ($L=1$) removes that property: a request is
+charged when it is made and takes effect one interval later; the observation
+adds the pending request of every demand (689 features), so the state stays
+Markov. Two side effects are part of the variant: a demand with a pending
+request cannot be moved again, which lengthens the effective lock from three
+to four intervals, and a request that has become illegal at activation is
+cancelled but keeps its charge (Table~\ref{tab:delay}).
 
-The ranking reverses. On the same roots, the bandit falls from
-\DelayBanditLZero{} without delay to \DelayBandit{} with it, because its target
-now contains the cost of a move but none of its benefit. PPO is essentially
-unaffected (\DelayPPOLZero{} $\rightarrow$ \DelayPPO), so under delay PPO beats
-the bandit by \DelayPPOVs{} [\DelayPPOVsLo, \DelayPPOVsHi] (better on
-\DelayPPORootsBetter{} of \DelayPPORoots{} roots). \input{sections/results_delay_q}
-The non-learning controllers degrade too, because they react to a state that
-the delayed move no longer matches (MILP-track \DelayRefmilptrackLZero{}
+The bandit fails by construction, and the ranking of the two learners
+reverses. On the same two roots the bandit falls from \DelayBanditLZero{}
+without delay to \DelayBandit{}, because its regression target now contains
+the cost of a move but none of its benefit, and it learns to move less. PPO's
+mean is nearly unchanged (\DelayPPOLZero{} $\rightarrow$ \DelayPPO), but this
+average hides opposite per-root shifts, and on root 42 PPO still flips demands
+at hold-down expiry under delay; it is ahead of the bandit on
+\DelayPPORootsBetter{} of \DelayPPORoots{} roots (mean \DelayPPOVs).
+\input{sections/results_delay_q}
+The non-learning controllers degrade because they react to a state that the
+delayed move no longer matches (MILP-track \DelayRefmilptrackLZero{}
 $\rightarrow$ \DelayRefmilptrack, greedy \DelayRefgreedyLZero{} $\rightarrow$
-\DelayRefgreedy); MILP-track remains the strongest policy, which is a
-reminder that ``sequential RL becomes necessary'' is a statement about
-learners whose targets omit the delayed effect, not about optimization-based
-control.
+\DelayRefgreedy), yet MILP-track remains better than every learner. What this
+experiment establishes is therefore narrow: a learner whose target is the
+decision-time reward cannot work when effects are delayed, so some form of
+delayed credit assignment is needed. It does not show that a long-horizon
+learner is needed---a target that sums the next $L+1$ rewards would suffice
+in principle---nor that RL beats optimization-based control in this regime.
 
 \begin{table}[t]
 \centering\small
-\caption{Delayed TE activation ($L=1$), test return. Learners: roots 42 and 314159
-(``No delay'' on the same roots); non-learning references: same test episodes.
-``vs.\ bandit'': paired difference under delay.}
+\caption{Delayed TE activation ($L=1$), mean test return per training root
+(roots 42 / 314159; ``No delay'': the same roots without delay).
+Non-learning references: the same 140 test episodes. ``vs.\ bandit'': paired
+difference to the bandit under delay, per root. Rer./h: reroutes per hour
+under delay.}
 \label{tab:delay}
 \setlength{\tabcolsep}{3.5pt}
 \begin{adjustbox}{max width=\columnwidth}
-\begin{tabular}{@{}lrrrrr@{}}
+\begin{tabular}{@{}lrrrr@{}}
 \toprule
-Policy & Roots & No delay & $L=1$ & vs.\ bandit & Rer./h \\
+Policy & No delay & $L=1$ & vs.\ bandit & Rer./h \\
 \midrule
 \tabinput{tables/delay_results}
 \bottomrule

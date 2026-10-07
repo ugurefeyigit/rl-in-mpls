@@ -4,23 +4,33 @@
 \paragraph{What the results mean.} In this formulation the current LSP
 assignment is genuine state, and a move constrains the future through
 hold-downs, reversal costs and coupled protected-class legality. Yet a learner
-that ignores the future matches a per-interval optimizer, and a learner that
-plans over a 17-hour horizon does worse than both. The diagnostic explains why
-there is little to plan for: once the effect of a move is felt in the interval
-in which it is made, the value of a move that is predictable from the current
-observation is almost entirely captured by its first-interval reward. What is
-not myopic---anticipating bursts, failures and diurnal change---is not visible
-in an observation without a clock or forecasts. A sequential learner pays the
-price of a long-horizon objective (noisy advantages, unstable optimization)
-without access to the signal that would make it worthwhile.
+that ignores the future reaches the return of a per-interval optimizer, and a
+learner trained with an effective horizon of about 200 intervals
+($1/(1-\gamma)$, 17 hours) does worse than both. The closed-loop oracle ladder
+shows why there is little to gain from looking ahead: even with perfect
+foresight, a controller that re-plans every interval gains only a few points
+from lookahead beyond the next interval. When a move's effect is felt in the
+interval in which it is made, the immediate reward ranks moves almost as a
+longer criterion would; what is not myopic---anticipating bursts, failures
+and diurnal change---is not provided by an observation without a clock or
+forecasts. A sequential learner pays the price of a long-horizon objective
+(noisy advantages, unstable optimization) without access to the signal that
+would make it worthwhile.
 
 \paragraph{Long horizons can hide small immediate costs.} The concrete failure
-is instructive for RL practice. Reconfiguration costs are small, immediate and
+on three of five PPO roots is instructive for RL practice. Reconfiguration costs are small, immediate and
 certain; congestion rewards are large, delayed and noisy. With $\gamma=0.995$
 PPO's advantage estimates are dominated by the latter and fail to attribute
 the former, so the policy settles into flipping a demand whenever the
-hold-down allows. Setting $\gamma=0$ removes the oscillation and closes the
-gap. The discount factor is thus a decisive hyper-parameter here, and the
+hold-down allows. We have not measured the advantage noise directly. The
+evidence for this explanation is that setting $\gamma=0$ removes the
+oscillation and closes the gap; against it, the critic is not poorly fitted
+in aggregate (explained variance at the last update
+\PPOEVDefaultMin--\PPOEVDefaultMax{} with $\gamma=0.995$, versus
+\PPOEVZeroMin--\PPOEVZeroMax{} with $\gamma=0$), so the failure would have to
+lie in the small residual differences between moves rather than in the value
+scale; and the PPO roots that do not oscillate fall short through lower network utility
+rather than churn. The discount factor is thus a decisive hyper-parameter here, and the
 default $\gamma\approx0.99$ that most RL-for-networking work inherits is not a
 neutral choice when costs and benefits live on different time scales.
 
@@ -30,22 +40,31 @@ effects are delayed relative to the decision, so that the immediate reward
 does not contain them (\S\ref{sec:rq5}); (ii) exogenous dynamics that are
 predictable from the observation, so that anticipation can be learned; and
 (iii) decisions that change the future feasible set substantially. The
-sequentiality diagnostic of \S\ref{sec:sequentiality} measures (ii) and (iii)
-cheaply from a simulator, with no learning, and we recommend reporting it.
+closed-loop oracle ladder of \S\ref{sec:sequentiality} bounds the value of
+lookahead under perfect foresight and the frozen rollout measures how much
+cost amortization changes the ranking of moves, both from a simulator without
+learning; neither measures (iii) beyond the bound, because their continuation
+never moves again. We recommend reporting both before choosing an algorithm.
 
 \paragraph{When should simpler methods be preferred?} When effects are
 immediate, a myopic learner---or, if a model of the objective is available, a
-per-interval optimizer---is both stronger and cheaper: the bandit's inference
-costs \InfBanditMs{}\,ms per decision, PPO's \InfPPOMs{}\,ms and MILP-track's
-\InfMilpMs{}\,ms. The bandit additionally reroutes \ChurnRatioBanditMilp{} times as often as
-MILP-track at statistically indistinguishable return (\TestBanditReroutes{}
-vs.\ \TestMilpReroutes{} per hour), which matters operationally because every LSP
-move is signalling and risk.
+per-interval optimizer---reaches a higher return than PPO here. Inference cost
+does not discriminate at a five-minute interval (the bandit needs
+\InfBanditMs{}\,ms per decision, PPO \InfPPOMs{}\,ms, MILP-track
+\InfMilpMs{}\,ms). The bandit and MILP-track trade differently: MILP-track
+attains higher network utility and pays more in move costs, which its
+objective does not contain; the bandit reroutes \ChurnRatioBanditMilp{} times
+as often as MILP-track (\TestBanditReroutes{} vs.\ \TestMilpReroutes{} per
+hour) at a return we cannot distinguish from MILP-track's, which matters
+operationally because every LSP move is signalling and risk. A churn-aware
+optimizer would be the natural stronger baseline.
 
-\paragraph{Networking implications.} The results support the view of
-Teal and DOTE that TE is close to one-shot, and extend it to a setting with
-persistent state, incremental changes and stability timers, where one might
-have expected sequential structure to matter. They also show that churn
+\paragraph{Networking implications.} Teal and DOTE treat TE as a one-shot
+problem per traffic matrix. Our results support that treatment in a setting
+with persistent state, incremental changes and stability timers, where one
+might have expected sequential structure to matter---as long as a change takes
+effect within the interval in which it is decided, and in a heavily loaded
+regime where TE mostly decides which traffic to lose (\S\ref{sec:limitations}). They also show that churn
 metrics (reroutes, reversals) must be reported with the objective: PPO's best
 root reaches a higher network utility than any bandit root (\PPOUtilMax{}
 vs.\ at most \BanditUtilMax) but would be unacceptable to an operator because of its oscillation.

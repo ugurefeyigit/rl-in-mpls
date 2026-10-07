@@ -5,9 +5,9 @@ Table~\ref{tab:main} reports all policies on the 140 test episodes. The bandit
 reaches a mean return of \TestBandit{} [\TestBanditLo, \TestBanditHi] over
 \TestBanditRoots{} training roots and PPO \TestPPO{} [\TestPPOLo, \TestPPOHi]
 over \TestPPORoots{}. On paired episodes the bandit's advantage is \Gap{}
-(two-stage bootstrap [\GapLo, \GapHi]; $t$-interval over roots
-[\GapTLo, \GapTHi]); it is positive on \GapRootsPositive{} of \GapRoots{} roots
-and in \GapWinRate\,\% of paired episodes ($d_z=\GapDz$). The ordering does not
+($t$-interval over roots [\GapTLo, \GapTHi]; two-stage bootstrap
+[\GapLo, \GapHi]); it is positive on \GapRootsPositive{} of \GapRoots{} roots
+and in \GapWinRate\,\% of paired episodes (paired $d_z=\GapDz$, pooled over roots and episodes). The ordering does not
 depend on checkpoint selection: with the final 400k checkpoints the gap is
 \GapFinal{} [\GapFinalLo, \GapFinalHi] (\GapFinalRootsPositive{} of \GapRoots{}
 roots).
@@ -21,18 +21,27 @@ ahead on \BanditMinusGreedyRootsPositive{} of \GapRoots{} roots
 \PPOMinusGreedyRootsPositive{} of \GapRoots{} (\PPOMinusGreedy{}
 [\PPOMinusGreedyLo, \PPOMinusGreedyHi]).
 
-The most informative comparison is with a controller that does not learn at
-all. MILP-track, which solves a min-max-utilization path-selection problem on
+We also compare with a controller that does not learn at all. MILP-track, which solves a min-max-utilization path-selection problem on
 current telemetry every interval and moves one demand towards the solution,
-reaches \TestMilp{} [\TestMilpLo, \TestMilpHi]. The bandit and MILP-track are
-statistically indistinguishable (bandit $-$ MILP-track $=\BanditMinusMilp{}$
-[\BanditMinusMilpLo, \BanditMinusMilpHi]); PPO falls short of MILP-track
-($\PPOMinusMilp$ [\PPOMinusMilpLo, \PPOMinusMilpHi]). Operationally, the
+reaches \TestMilp{} [\TestMilpLo, \TestMilpHi]. We detect no difference in return
+between the bandit and MILP-track at five roots (bandit $-$ MILP-track
+$=\BanditMinusMilp{}$, $t$-interval [\BanditMinusMilpTLo,
+\BanditMinusMilpTHi], positive on \BanditMinusMilpRootsPositive{} of
+\GapRoots{} roots); this is not an equivalence claim, and the two differ by
+scenario (Table~\ref{tab:milp_perscen}): on the double-failure
+scenario the bandit's difference is \BanditMilpDoublefailure{} and positive on
+\BanditMilpDoublefailureRootsPositive{} of \GapRoots{} roots. PPO falls
+short of MILP-track ($\PPOMinusMilp$, $t$-interval [\PPOMinusMilpTLo,
+\PPOMinusMilpTHi], \PPOMinusMilpRootsPositive{} of \GapRoots{} roots
+positive). Operationally, the
 bandit delivers \TestBanditDelivered\,\% of offered traffic with
 \TestBanditReroutes{} reroutes per hour, against \TestPPODelivered\,\% and
 \TestPPOReroutes{} for PPO and \TestMilpDelivered\,\% and \TestMilpReroutes{}
-for MILP-track: the learned myopic policy matches the optimizer's return with
-\ChurnRatioBanditMilp{} times its reroute rate.
+for MILP-track. MILP-track attains higher network utility and pays more in
+move costs, which its objective does not contain (Table~\ref{tab:decomp}); the
+bandit reaches a similar return with \ChurnRatioBanditMilp{} times its reroute
+rate. MILP-track's two parameters were not tuned for this reward; a
+validation-tuned variant is reported in Appendix~\ref{app:results}.
 
 \begin{table*}[t]
 \centering\small
@@ -55,12 +64,13 @@ Policy & Return [95\,\% CI] & Per-interval & Delivered & SLA & Mean max-util & R
 \begin{table}[t]
 \centering\small
 \caption{Bandit $-$ PPO paired return difference per scenario (selected
-checkpoints, all roots pooled; bootstrap 95\,\% CI over paired episodes) and
-share of paired episodes the bandit wins.}
+checkpoints; two-stage bootstrap 95\,\% CI over roots, then episodes), number
+of roots with a positive difference, and share of paired episodes the bandit
+wins.}
 \label{tab:perscen}
-\begin{tabular}{@{}lrr@{}}
+\begin{tabular}{@{}lrrr@{}}
 \toprule
-Scenario & Difference [95\,\% CI] & Bandit wins \\
+Scenario & Difference [95\,\% CI] & Roots $+$ & Episodes won \\
 \midrule
 \tabinput{tables/main_per_scenario}
 \bottomrule

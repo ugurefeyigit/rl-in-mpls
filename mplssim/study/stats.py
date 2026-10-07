@@ -133,14 +133,29 @@ def compare_learners(pairs: pd.DataFrame, seed: int = 0) -> dict[str, float]:
             "d_z_pooled": paired_effect(pairs["diff"].to_numpy())}
 
 
-def per_scenario(pairs: pd.DataFrame, seed: int = 0) -> pd.DataFrame:
-    """Per-scenario paired mean difference with a bootstrap CI (episodes, roots pooled)."""
+def per_scenario(pairs: pd.DataFrame, seed: int = 0, n_boot: int = 10_000) -> pd.DataFrame:
+    """Per-scenario paired mean difference with a two-stage bootstrap CI.
+
+    Within a scenario, roots are resampled, then episodes within each resampled
+    root (so between-root variability is not treated as episode noise). With a
+    single root this reduces to an episode bootstrap. ``win_rate`` is the share
+    of paired episodes with a positive difference (all roots pooled).
+    """
     rows = []
     for s, g in pairs.groupby("scenario"):
-        d = g["diff"].to_numpy()
         rng = np.random.default_rng(seed)
-        boots = d[rng.integers(len(d), size=(10_000, len(d)))].mean(axis=1)
+        groups = [grp["diff"].to_numpy() for _, grp in g.groupby("root")] if "root" in g \
+            else [g["diff"].to_numpy()]
+        root_means = np.array([x.mean() for x in groups])
+        boots = np.empty(n_boot)
+        for b in range(n_boot):
+            idx = rng.integers(len(groups), size=len(groups))
+            boots[b] = np.mean([groups[i][rng.integers(len(groups[i]), size=len(groups[i]))].mean()
+                                for i in idx])
         lo, hi = np.quantile(boots, [0.025, 0.975])
-        rows.append({"scenario": s, "diff_est": d.mean(), "diff_lo": lo, "diff_hi": hi,
-                     "n": len(d), "win_rate": float(np.mean(d > 0))})
+        d = g["diff"].to_numpy()
+        rows.append({"scenario": s, "diff_est": root_means.mean(), "diff_lo": lo, "diff_hi": hi,
+                     "n": len(d), "roots": len(groups),
+                     "roots_positive": int((root_means > 0).sum()),
+                     "win_rate": float(np.mean(d > 0))})
     return pd.DataFrame(rows)

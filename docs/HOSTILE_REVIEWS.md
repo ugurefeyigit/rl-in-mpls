@@ -69,4 +69,54 @@ limitations; no theory is claimed.
 
 ## Round 2
 
-*(written after the final results; see bottom of this file once complete)*
+Written at about 04:50 UTC on 2026-10-07 by an independent reviewing agent. It was
+given the compiled paper, code, tables and docs, and told to verify every
+quantitative claim against the stored results and not to modify files. Some
+experiments were still running (E3, E5, E6, E7, PPO γ = 0.9, Q γ = 0.99).
+Each criticism was checked against the repository before acting; the
+"verified" column records that check.
+
+### A. Networking reviewer
+
+| # | Criticism | Sev. | Verified? | Response / action |
+|---|---|---|---|---|
+| N1 | MILP-track is an untuned heuristic: `eps`, `min_gain` never tuned; it ignores move cost and moves the largest-volume (most expensive) demand; it has +6.3 more utility than the bandit and wins `ood_double_failure` on 5/5 roots, so "matches" hides a trade-off. | major | yes | **Experiment:** validation-seed grid over min_gain × move selection (largest/smallest volume), selected config tested (log #32). **Text:** "no detectable difference in return", utility/cost trade-off stated, per-scenario bandit − MILP table added (App.), reroute-ratio sentence now says MILP's objective has no churn term. |
+| N2 | Test regime is chronic overload (mean max-util > 1 for every controller); TE is loss triage, so the sequential value of headroom planning is absent. | major | yes (1.00–1.05 for MILP/bandit/PPO, 1.38 no-op) | New *Load regime* limitation with generated numbers; discussion conditions the Teal/DOTE remark on this. An operational-load scenario would need a new environment version (roadmap). |
+| N3 | "Anticipation the controller cannot observe" is a design choice (no clock). | major | yes | Reworded to "not provided by our observation"; E7 (clock) is the test, reported in RQ3. |
+| N4 | "Sequential RL is necessary" under delay overclaims: MILP-track beats PPO there; a lag-aware myopic target would recover; the delay lengthens the lock and cancelled requests keep their charge. | major | yes | RQ5 renamed "When does a myopic learner fail?"; claim narrowed to "a decision-time-reward learner fails"; side effects disclosed. **Experiment:** Q-learner γ = 0.5 (≈ 2-interval horizon) under delay (log #33). Title changed (`paper/TITLES.md`). |
+| N5 | The observation contains the projected bottleneck of every candidate move — a hand-built one-step model that favours the bandit. | moderate | yes (features 536–604) | Disclosed as a limitation; not ablated (frozen environment). |
+| N6 | Inference-latency argument is irrelevant at 300 s; gaps should be translated to operational units. | minor | yes | Latency now reported as non-discriminating; operational metrics (delivered %, SLA, reroutes/h) are in Table 2 and RQ1 text. |
+
+### B. RL reviewer
+
+| # | Criticism | Sev. | Verified? | Response / action |
+|---|---|---|---|---|
+| R1 | With 2–3 roots the two-stage bootstrap ≈ range of root means; calling it a 95 % CI and using it in the abstract is misleading. | critical | yes (e.g. delay roots +21.5/+41.6 → [20.6, 42.6]) | Statistics paragraph rewritten; abstract and RQ1 lead with the root t-interval; ablation tables (delay) report per-root values; sign counts emphasised. |
+| R2 | "Floating-point differences alone" is false: SB3 samples PPO actions from the device generator; versions differ. | major | yes (manifests: torch 2.11.0+cu128, numpy 2.3.0, py 3.13.4) | Corrected in paper, intro, reproduction report, overview; CPU-root spread (SD) added as the like-for-like evidence. |
+| R3 | "Horizon, not algorithm" is confounded (unnormalized ~200-step returns for PPO; (1−γ) scaling for Q). | major | partly | Abstract hedged ("points to"); pending PPO γ = 0.9, Q γ = 0.99 and E3 `rewnorm`/`gae08` decide it; RQ2/RQ3 will report whichever way they fall. |
+| R4 | Q-learner is under-resourced (≈ 6.2k updates, ≈ 25 target syncs, truncation as terminal). | major | yes | Stated as a limitation; Q results described as budget-bound. |
+| R5 | No-op continuation cannot see dwell or coupling effects; frozen Δ_H ≈ H·g − c, so 88 % agreement is close to guaranteed; claims that §6.4 "measures" the discarded terms are false. | major | yes (claims in §3 and §8) | Both claims rewritten; RQ4 now states exactly what the frozen rollout measures (whether cost amortization changes the ranking) and that later-move value is bounded only by the closed-loop ladder. Reactive continuation not run (cost). |
+| R6 | Seqdiag (33 % agreement) and oracle ladder (+1.4 to +2.9) are in tension: open-loop non-myopic value is largely not realisable by a re-planning controller. | major | yes | RQ4 restructured around the closed-loop result; open-loop numbers presented as an overstatement of realisable value; abstract uses the ladder. |
+| R7 | Delay: bandit failure is tautological; PPO "unaffected" hides ±10 root shifts and PPO r42 still flaps; Q (1 root) CI misleading. | major | yes | Per-root table; text says the bandit fails by construction and that PPO r42 still flaps; Q results per root. |
+| R8 | Shaping argument (per-episode ≈ 0) says nothing about per-step argmax effects. | moderate | yes | Argument to rest on E6 (no-shaping bandit) when it lands. |
+| R9 | GAE mechanism asserted, not measured; one PPO root has 0 reversals but low utility; costs explain 15.3 of 24.9. | moderate | yes | Mechanism now "we argue"; text states that 2 roots fail through utility; decomposition split generated (62 % costs). Critic explained variance reported where logged. |
+| R10 | 3 of 5 primary roots are reproduction runs whose sign was known; frozen diagnostic added after an early look; H5(a) falsified and not reported. | moderate | yes | Disclosed; hypothesis-outcome table added (`docs/HYPOTHESES.md`, paper appendix), including H5(a) not supported. |
+| R11 | Per-scenario CIs, win rate and d_z treat root × episode pairs as iid. | moderate | yes | Per-scenario intervals are now two-stage (roots, then episodes) with root sign counts; d_z labelled as pooled. |
+| R12 | Only scripted OOD scenarios tested; train/test shift may differ between learners. | moderate | yes | Limitation reworded; `random_day` test not run (compute). |
+
+### C. Paper reviewer
+
+| # | Criticism | Sev. | Response / action |
+|---|---|---|---|
+| P1 | Abstract/conclusion overclaim ("the cause is the horizon"; "regime where sequential RL is necessary"). | major | Both rewritten (see R3, N4); title changed. |
+| P2 | "Matches"/"statistically indistinguishable" without an equivalence margin. | moderate | Replaced by "no detectable difference at five roots" with t-interval; per-scenario differences shown. |
+| P3 | Fig. 4 caption state count is wrong for H < 24. | minor | Caption gives the range of states per H. |
+| P4 | Stale PDF (App. B grid; missing RQ3). | minor | Recompiled; RQ3 section added. |
+| P5 | Table 4/5 caption inaccuracies. | minor | Captions corrected (roots per row; interval type). |
+| P6 | Loose wording ("most informative", "plans over 17 hours", "stronger and cheaper"). | minor | Reworded. |
+
+**Verified by the reviewer (no action needed):** main gap, intervals, root
+counts, win rate, d_z; per-root returns; bandit − MILP and PPO − MILP;
+reproduction numbers; horizon sweep; delay table values; seqdiag H = 24
+values; oracle ladder; model-fidelity means; decomposition; gradient-step
+counts.
