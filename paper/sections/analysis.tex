@@ -17,7 +17,8 @@ and its per-root move costs range from \PPOCostMin{} to \PPOCostMax{}, against
 contributes at most \ShapingMaxAbs{} per episode to the evaluated return of
 any policy, but that does not bound its effect on learning: a learner trained
 on the shaped reward sees it at every step, and removing it changes the
-bandit's return by several points (\S\ref{sec:rq3}).
+bandit's return by \RQThreeNoShaping{} on two roots, within learner noise
+(\S\ref{sec:rq3}).
 
 \begin{table}[t]
 \centering\small

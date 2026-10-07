@@ -29,7 +29,7 @@ exogenous process).
 
 | # | Finding | Evidence |
 |---|---|---|
-| F1 | The closed predecessor study's bandit result reproduces; its PPO result does not. Training traffic was byte-identical; a change of device and library versions (which alters PPO's action-sampling stream and arithmetic) moved PPO's per-root holdout return by up to 41 points (bandit ≤ 4). The "PPO wins the deceptive scenario" claim does not reproduce. | `docs/REPRODUCTION_REPORT.md` |
+| F1 | The closed predecessor study's bandit result reproduces; its PPO result does not. Training traffic was byte-identical; a change of device and library versions (which alters PPO's action-sampling stream and arithmetic) moved PPO's per-root holdout return by up to 41.2 points (bandit ≤ 4.2; within one root its learner seed alone moves it by up to 10.4, F11). The "PPO wins the deceptive scenario" claim does not reproduce. | `docs/REPRODUCTION_REPORT.md` |
 | F2 | The bandit beats PPO on all 5 training roots (paired +24.9; t-interval over roots [3.4, 46.4]). Its return is not detectably different from a non-learning per-interval min-max-utilization MILP controller (+1.2, t-interval [−4.0, 6.3]; not an equivalence claim). MILP-track has higher network utility and higher move costs, and it wins the double-failure scenario. **With its two parameters selected on validation seeds, MILP-track reaches 30.9 and is ahead of the bandit on 5/5 roots (+5.7, t-interval [0.5, 10.9])**: per-interval optimization beats both learners. | `results/tables/main_*.csv` |
 | F3 | Most of PPO's deficit is reconfiguration cost (15.4 of the 24.9-point gap; 9.5 is lower network utility): on 3 of 5 roots most of its moves are reversals at hold-down expiry, and its utility varies widely across roots (7.8–32.2 vs 20.9–31.6 for the bandit). Over 6 intervals PPO's chosen actions are worth less than doing nothing on 3/3 analysed roots. | `decomposition_by_root.csv`, `model_fidelity.csv`, case study |
 | F4 | Varying the discount within each family points to the horizon, not the algorithm: PPO with γ = 0 is not detectably different from the bandit (−0.6; 2/3 roots above) and stops oscillating, and a bootstrapped Q-learner (γ = 0.9) is worse than the bandit (−4.8; 0/3 roots above). PPO with γ = 0.9 lands in between (15.4), close to Q with γ = 0.9 (19.4), and Q with γ = 0.99 falls to 3.3 (0/3 roots above the bandit): return falls with the horizon in both families. A PPO-specific interaction with long horizons is probed by E3 (reward normalization, GAE λ). | `horizon_sweep.csv` |
@@ -59,7 +59,8 @@ All registered experiments are complete.
 * **Methodological:** a cheap simulator-based rollout diagnostic (clairvoyant
   vs frozen-exogenous, no-change continuation) that separates the base
   environment, where the myopic choice captures almost all of the
-  multi-interval gain, from the delayed variant, where it captures none,
+  multi-interval gain under a no-change continuation (56 % with a reactive
+  one), from the delayed variant, where it captures none,
   without training anything. It measures a no-change-continuation planner,
   not an upper bound on the value of lookahead.
 * **Not contributed:** a new algorithm, a theorem, topology generalization,

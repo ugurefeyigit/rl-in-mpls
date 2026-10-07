@@ -176,7 +176,7 @@ def section_reproduction(data: dict) -> None:
     rep = pd.DataFrame(rows)
     rep["holdout_diff"] = rep.holdout_return_repro - rep.holdout_return_hist
     for pol, k in (("bandit", "Bandit"), ("ppo", "PPO")):
-        num(f"ReproMaxShift{k}", rep[rep.policy == pol].holdout_diff.abs().max(), "{:.0f}")
+        num(f"ReproMaxShift{k}", rep[rep.policy == pol].holdout_diff.abs().max(), "{:.1f}")
     br = PROCESSED / "baseline_reproduction.csv"
     if br.exists():
         b = pd.read_csv(br)
@@ -784,7 +784,8 @@ def section_rq3(data: dict) -> None:
             num(f"NoShape{k}VsBanditRootsPositive", r["roots_positive"], "{}")
             num(f"NoShape{k}VsBanditRoots", r["roots"], "{}")
     if all(r and r["roots"] >= 2 for r in nsh.values()):
-        status("Shaping-free, minus shaping-free bandit (per root 42 / 314159): "
+        status("Supported (ordering holds on both roots; on root 314159 Q $\\gamma=0.9$ and PPO "
+               "$\\gamma=0.995$ are close). Shaping-free, minus shaping-free bandit (per root 42 / 314159): "
                f"Q $\\gamma=0.9$ {nsh['Q']['per_root']}; PPO $\\gamma=0$ {nsh['PPOZero']['per_root']}; "
                f"PPO $\\gamma=0.995$ {nsh['PPO']['per_root']}", "status_h13")
     else:

@@ -11,8 +11,7 @@ early look at the clairvoyant diagnostic.
 
 \begin{table}[h]
 \centering\small
-\caption{Outcome of every hypothesis. ``Pending'': the experiment had not
-finished when this version was compiled.}
+\caption{Outcome of every hypothesis (all experiments complete).}
 \label{tab:hypotheses}
 \begin{tabular}{@{}lp{0.38\textwidth}p{0.47\textwidth}@{}}
 \toprule
@@ -23,7 +22,7 @@ H1 & Gap survives new protocol and more roots & Supported: \Gap{}, $t$-interval 
 H2 & Shortening PPO's horizon does not hurt it & Supported: PPO $\gamma=0$ \HPPOZero{} vs.\ $\gamma=0.995$ \HPPODefault{} \\
 H3 & Bootstrapping does not help a value learner & Supported ($\gamma=0.5$: \HQPointFiveVs; $\gamma=0.9$: \HQPointNineVs, \HQPointNineRootsBetter/\HQPointNineRoots{} roots better; $\gamma=0.99$: \input{generated/status_qg099}) \\
 H4 & PPO deficit is not a tuning artefact & \input{generated/status_e3} \\
-H5 & Non-myopic structure exists, mostly from (a) one-off cost vs.\ persistent gain and (b) clairvoyance & Prediction met (frozen agreement \SeqFrozenAgreeHTwentyFour\,\% $>$ live \SeqLiveAgreeHTwentyFour\,\%; Oracle-3/6 gains small). Component (a) \emph{not} supported: cost amortization changes the best move in only \SeqFrozenDisagreeHTwentyFour\,\% of states \\
+H5 & Non-myopic structure exists, mostly from (a) one-off cost vs.\ persistent gain and (b) clairvoyance & Prediction met (frozen agreement \SeqFrozenAgreeHTwentyFour\,\% $>$ live \SeqLiveAgreeHTwentyFour\,\%; Oracle-3/6 gains small). Component (a) \emph{not} supported under the no-change continuation (H12 shows further structure from later moves): cost amortization changes the best move in only \SeqFrozenDisagreeHTwentyFour\,\% of states \\
 H6 & Under delay the bandit fails and sequential learners do better & Bandit fails (\DelayBanditLZero{} $\rightarrow$ \DelayBandit); PPO better on \DelayPPORootsBetter/\DelayPPORoots{} roots; Q $\gamma=0.9$ \DelayQNine{} (\DelayQNineRootsBetter/\DelayQNineRoots{} roots better). No learner reaches MILP-track (\DelayRefmilptrack) \\
 H7 & PPO does not catch up with $3\times$ budget & \input{generated/status_e5} \\
 H8 & The bandit is closer to the myopic optimum than PPO; PPO does not find non-myopic value & Supported, though neither learner is close to the optimum (Table~\ref{tab:fidelity}) \\

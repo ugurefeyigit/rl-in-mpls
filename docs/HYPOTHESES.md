@@ -43,7 +43,7 @@ Interpretation rules fixed in advance:
 ## Outcomes
 
 The authoritative, generated outcome table is in the paper
-(`paper/appendix/hypotheses.tex`; statuses of pending experiments come from
+(`paper/appendix/hypotheses.tex`; statuses of post-hoc experiments come from
 `paper/generated/status_*.tex`, written by `scripts/study/analyze.py`).
 Outcomes are reported for every hypothesis, including those that failed:
 
@@ -56,8 +56,9 @@ Outcomes are reported for every hypothesis, including those that failed:
 * **H14**: falsified — three learner seeds on identical root-42 traffic give the bandit 18.3 / 17.8 / 28.2.
 * **H5**: prediction met, but component (a), one-off cost vs persistent gain,
   is **not** supported: with traffic frozen, cost amortization changes the
-  best move in only 12 % of states. The non-myopic value is (b),
-  anticipation of exogenous change.
+  best move in only 12 % of states. Under the no-change continuation
+  the non-myopic value is (b), anticipation of exogenous change; H12 shows
+  further structure from later moves.
 * **H6**: the bandit fails under delay (22.0 → −30.3); PPO and Q γ = 0.9 are
   above it on 2/2 roots, but neither reaches MILP-track (11.3).
 * **H8**: supported (bandit top-1 55 %, PPO 7 %; PPO's actions worth less than

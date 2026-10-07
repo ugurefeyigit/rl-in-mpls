@@ -101,7 +101,7 @@ realised by a controller that re-plans every interval.*
    long-horizon best move often has a negative immediate advantage. These
    open-loop values overstate realisable value: a move that pays off only
    after traffic changes can also be made when the change arrives.
-3. **That open-loop non-myopic value is anticipation of exogenous change.**
+3. **Under a no-change continuation, the open-loop non-myopic value is anticipation of exogenous change.**
    With traffic and link state held fixed, the myopic choice is the
    24-interval best in the large majority of states. With constant exogenous
    inputs and no further moves, a move's H-interval value is close to H times
@@ -109,8 +109,8 @@ realised by a controller that re-plans every interval.*
    thing: how often amortizing a move's cost over a longer stay changes which
    move is best. It rarely does. It does **not** measure dwell opportunity
    cost or protected-class coupling, because the continuation never moves
-   again. Those are bounded only by the closed-loop ladder, and checked by
-   a reactive (greedy) continuation (H12).
+   again. Neither rollout nor the ladder bounds them; the reactive (greedy)
+   continuation (H12, item 5) shows that they exist.
 4. **The observation does not provide what anticipation needs.** It contains
    the current traffic but not the clock, the AR(1) state or scheduled events.
    That is a design choice of the environment, not a property of TE. E7 (time
@@ -136,4 +136,4 @@ realised by a controller that re-plans every interval.*
   measures structure, not an optimal policy.
 * States come from one reference controller; other controllers visit other
   states.
-* Three diagnostic seeds; per-scenario estimates rest on 45–216 states.
+* Three diagnostic seeds; per-scenario estimates rest on 21–216 states (fewer at larger H).

@@ -70,9 +70,10 @@ baseline any learned TE controller in this setting should be measured
 against.
 
 \paragraph{Networking implications.} Teal and DOTE treat TE as a one-shot
-problem per traffic matrix. Our results support that treatment in a setting
-with persistent state, incremental changes and stability timers, where one
-might have expected sequential structure to matter---as long as a change takes
+problem per traffic matrix. For the learners and controllers we tested, our results
+support that treatment in a setting with persistent state, incremental changes
+and stability timers---although rollouts show that sequential structure
+exists---as long as a change takes
 effect within the interval in which it is decided, and in a heavily loaded
 regime where TE mostly decides which traffic to lose (\S\ref{sec:limitations}). They also show that churn
 metrics (reroutes, reversals) must be reported with the objective: PPO's best

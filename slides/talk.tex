@@ -101,7 +101,7 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \small Utility: bandit \UtilBandit, PPO \UtilPPO; move costs: bandit \CostBandit, PPO \CostPPO
 \end{frame}
 
-\begin{frame}{7. Attribution: the horizon, not the algorithm (so far)}
+\begin{frame}{7. Attribution: the horizon, not the algorithm}
 \begin{columns}
 \column{0.5\textwidth}
 \includegraphics[width=\textwidth]{fig_learning_curves}
@@ -158,15 +158,15 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \item Oracle-1 \LadderOraclehOne, Oracle-3 \LadderOraclehThree, Oracle-6 \LadderOraclehSix{} (5 test seeds)
 \item Oracle-3 $-$ Oracle-1 $=$ \OracleThreeMinusOne{} [\OracleThreeMinusOneLo, \OracleThreeMinusOneHi];
   Oracle-6 $-$ Oracle-1 $=$ \OracleSixMinusOne{} [\OracleSixMinusOneLo, \OracleSixMinusOneHi]
-\item bandit $-$ Oracle-1 $=$ \BanditMinusOracleOne{}: \hl{knowing the next interval} is worth far
-  more than planning beyond it
+\item bandit $-$ Oracle-1 $=$ \BanditMinusOracleOne{}: an exact model plus \hl{knowledge of the next interval} is worth
+  far more than no-change lookahead beyond it
 \end{itemize}
 \end{frame}
 
 \begin{frame}{11. Limitations}
 \begin{itemize}
 \item flow-level model, exogenous inelastic traffic, instantaneous control plane
-\item one topology, scripted scenarios, one reward; 5 (main) / 2--3 (ablation) roots
+\item one topology, scripted scenarios, one reward; 5 (main) / 1--4 (ablation) roots
 \item single-move-per-interval formulation is a design choice
 \end{itemize}
 \end{frame}

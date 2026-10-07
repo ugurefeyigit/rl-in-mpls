@@ -18,7 +18,7 @@ validation seeds, that MILP controller beats both learners on every root.
 (2) Varying the discount within each learner family points to the planning
 horizon rather than the algorithm. PPO with γ = 0 is not detectably different from the bandit (3 roots); PPO with
 γ = 0.995 oscillates at hold-down expiry on 3 of 5 roots, and reconfiguration
-costs make up about 60 % of its deficit. A bootstrapped Q-learner is worse than the bandit with
+costs make up 62 % of its deficit. A bootstrapped Q-learner is worse than the bandit with
 γ = 0.9 and much worse with γ = 0.99. A PPO configuration tuned on one root
 falls below the bandit on all four fresh roots. (3) A clairvoyant planner that assumes no further change
 gains little from lookahead, but rollouts in which a controller reacts after
@@ -29,12 +29,12 @@ decision-time target loses the move's benefit, and the bandit collapses below
 PPO. MILP-track stays ahead of every learner, so this shows when the myopic
 learner fails, not that long-horizon RL is needed. (5) The predecessor study's
 bandit result reproduces on a different machine and software stack; its PPO
-result does not. Adding the time of day to the observation helps the bandit more than a
-sequential learner. The bandit's advantage does not rest on reward shaping. Learner noise within a
+result does not. Adding the time of day changes both learners by amounts within learner
+noise (H9 not supported). The bandit's advantage does not rest on reward shaping. Learner noise within a
 root is large (≈ 10 points across learner seeds), so small effects measured on
 one or two roots are reported as inconclusive. With 3× the training budget PPO improves but
 stays below the bandit on the root tested. A simulator-only diagnostic flags
-the delayed regime in which the bandit fails. Remaining checks are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
+the delayed regime in which the bandit fails. Every experiment, including failures, is logged in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
 [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 
 **What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,
@@ -131,7 +131,7 @@ mplssim/study/           this study: evaluator, oracles, Q-learner, delay varian
                          registry, trainer, statistics, diagnostics, collector
 mplssim/baselines/       static / greedy / CSPF controllers
 scripts/study/           job runner, scheduler, diagnostics, analysis; scripts/reproduce.py
-experiments/registry/    experiment definitions (E1–E6)        experiments/raw/  versioned per-episode outputs
+experiments/registry/    experiment definitions (E1–E8)        experiments/raw/  versioned per-episode outputs
 experiments/processed/   tidy tables                           results/          tables, figures, closed-study evidence
 paper/, report/, slides/ LaTeX sources (numbers in paper/generated/numbers.tex are generated)
 docs/, literature/       documentation listed above

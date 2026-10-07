@@ -44,7 +44,7 @@ Ordered roughly by how much each could change the conclusions.
 
 ## Validity of the learning comparison (RL methodology)
 
-9. **Five training roots** for the primary comparison and three for most
+9. **Five training roots** for the primary comparison and one to four (mostly two or three) for
    ablations. Root-level confidence intervals are wide. Episode-level
    intervals are narrow but reflect evaluation uncertainty for a *fixed*
    trained policy, not training variability; we report both.
@@ -80,8 +80,9 @@ Ordered roughly by how much each could change the conclusions.
     (greedy controller) on three diagnostic seeds, so it characterizes the
     states that controller visits. With the default no-change continuation it
     cannot see value from later moves (dwell opportunity cost, protected-class
-    coupling); a reactive (greedy) continuation is run as a check (H12), and
-    the closed-loop oracle ladder bounds that value under perfect foresight.
+    coupling); a reactive (greedy) continuation shows that such value exists (H12); the
+    closed-loop oracle ladder does not bound it, it measures one
+    no-change-continuation planner.
     Open-loop values overstate what a re-planning controller can realise.
 
 17a. **Heavily loaded regime** (round-2 review N2). In the test scenarios the
@@ -92,7 +93,7 @@ Ordered roughly by how much each could change the conclusions.
     sequential value that is not tested.
 17b. **The observation contains a one-step model** (round-2 review N5): for
     every candidate move, the projected gross bottleneck utilization it would
-    create (features 536–604). This makes the immediate consequence of a move
+    create (features 536–603, 0-indexed). This makes the immediate consequence of a move
     nearly observable and favours a learner of the immediate reward. Not
     ablated (frozen environment).
 17c. **Q-learner budget** (round-2 review R4): one gradient step per 64
@@ -101,11 +102,11 @@ Ordered roughly by how much each could change the conclusions.
 17d. **Delayed-activation side effects**: a pending request blocks further
     moves of its demand (effective lock L + 3 intervals), and a request that is
     illegal at activation is cancelled but keeps its charge.
-17f. **Learner noise within a root** (round-3 review, E8): three learner
+17e. **Learner noise within a root** (round-3 review, E8): three learner
     seeds on identical root-42 traffic give the bandit 18.3 / 17.8 / 28.2.
     Single- and two-root effects of a few points (E6, E7, Q γ = 0.5, the
     root-42 tuning result) are inconclusive.
-17e. **Small-root ablations**: with 2–3 roots the two-stage bootstrap stays
+17f. **Small-root ablations**: with 2–3 roots the two-stage bootstrap stays
     close to the range of root means; those comparisons are reported per root
     with sign counts.
 
