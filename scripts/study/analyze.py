@@ -559,6 +559,92 @@ def section_tuning(data: dict) -> None:
     num("TuneBest", best.policy.iloc[0].replace("E3:", ""))
     num("TuneBestVal", best.mean_return.iloc[0])
     num("TuneConfigs", int(best.policy.nunique()), "{}")
+    default = best[best.policy == "ppo"].mean_return
+    num("TuneDefaultVal", default.iloc[0] if len(default) else float("nan"))
+    e3 = best[best.policy.str.startswith("E3:")]
+    num("TuneEThreeRuns", len(e3), "{}")
+    done = len(e3) >= 8
+    if done and len(default):
+        top = e3.iloc[0]
+        better = top.mean_return > default.iloc[0]
+        status(("Not supported on root 42: " if better else "Supported on root 42: ")
+               + f"best configuration \\texttt{{{top.policy.replace('E3:', '').replace('_', '')}}} "
+               f"validation {top.mean_return:.1f} vs.\\ default {default.iloc[0]:.1f} "
+               f"(bandit {b42.mean_return.max():.1f}); "
+               + ("retrained on further roots (E3b)" if better else "E3b not run"), "status_e3")
+    else:
+        status(f"pending ({len(e3)} of 8 configurations finished)", "status_e3")
+
+
+def status(text: str, name: str) -> None:
+    """One generated sentence for the hypothesis-outcome table."""
+    (ROOT / "paper" / "generated" / f"{name}.tex").write_text(text)
+
+
+def pair_roots(sel: pd.DataFrame, a: str, b: str) -> dict:
+    """Per-root means of policies a and b on their common roots and test episodes."""
+    j = sel[sel.policy == a].merge(sel[sel.policy == b], on=["root", "scenario", "seed"],
+                                   suffixes=("_a", "_b"))
+    if j.empty:
+        return {}
+    j["diff"] = j.operational_return_a - j.operational_return_b
+    g = j.groupby("root")
+    return {"roots": int(g.ngroups), "a": g.operational_return_a.mean().mean(),
+            "b": g.operational_return_b.mean().mean(), "diff": g["diff"].mean().mean(),
+            "per_root": " / ".join(f"{v:+.1f}" for v in g["diff"].mean().values),
+            "roots_positive": int((g["diff"].mean() > 0).sum())}
+
+
+def section_rq3(data: dict) -> None:
+    """E5 (budget), E6 (no shaping), E7 (time of day): per-root paired comparisons."""
+    ep = data.get("episodes_test")
+    if ep is None:
+        return
+    sel = ep[(ep.kind == "learner") & (ep.role == "selected")]
+    rows = []
+    specs = [("E7", "TimeBandit", "E7:time_bandit", "bandit", "bandit + clock vs.\\ bandit"),
+             ("E7", "TimeQ", "E7:time_qg09", "E2:qg09", "Q $\\gamma=0.9$ + clock vs.\\ Q $\\gamma=0.9$"),
+             ("E6", "NoShaping", "E6:bandit_noshaping", "bandit", "bandit, no shaping vs.\\ bandit"),
+             ("E5", "BudgetBandit", "E5:bandit_1p2m", "bandit", "bandit 1.2M vs.\\ 400k"),
+             ("E5", "BudgetPPO", "E5:ppo_1p2m", "ppo", "PPO 1.2M vs.\\ 400k"),
+             ("E5", "BudgetPPOvsBandit", "E5:ppo_1p2m", "bandit", "PPO 1.2M vs.\\ bandit 400k")]
+    got = {}
+    for fam, key, a, b, label in specs:
+        r = pair_roots(sel, a, b)
+        if not r:
+            continue
+        got[key] = r
+        rows.append({"family": fam, "comparison": label, **r})
+        num(f"RQThree{key}", r["diff"])
+        num(f"RQThree{key}A", r["a"])
+        num(f"RQThree{key}B", r["b"])
+        num(f"RQThree{key}Roots", r["roots"], "{}")
+        num(f"RQThree{key}RootsPositive", r["roots_positive"], "{}")
+    if rows:
+        t = pd.DataFrame(rows)
+        write_table(t, "rq3_controls", latex_rows([[
+            r.comparison, str(r.roots), f"{r.a:.1f}", f"{r.b:.1f}", f"{r.diff:+.1f} ({r.per_root})"]
+            for r in t.itertuples()]))
+    if "TimeBandit" in got and "TimeQ" in got and got["TimeQ"]["roots"] >= 2 \
+            and got["TimeBandit"]["roots"] >= 2:
+        gq, gb = got["TimeQ"]["diff"], got["TimeBandit"]["diff"]
+        status(("Supported" if gq > gb else "Not supported")
+               + f": clock adds {gq:+.1f} to Q $\\gamma=0.9$ and {gb:+.1f} to the bandit "
+               f"({got['TimeQ']['roots']} roots)", "status_e7")
+    else:
+        status("pending", "status_e7")
+    if "BudgetPPOvsBandit" in got:
+        d = got["BudgetPPOvsBandit"]["diff"]
+        status(("Supported" if d < 0 else "Not supported")
+               + f" on root 42: PPO at 1.2M minus bandit at 400k $=$ {d:+.1f}", "status_e5")
+    else:
+        status("pending", "status_e5")
+    q = sel[sel.policy == "E2:qg099"]
+    if q.root.nunique() >= 3:
+        r = pair_roots(sel, "E2:qg099", "bandit")
+        status(f"{r['diff']:+.1f} ({r['roots_positive']}/{r['roots']} roots better)", "status_qg099")
+    else:
+        status("pending", "status_qg099")
 
 
 def section_delay(data: dict) -> None:
@@ -773,6 +859,13 @@ def _seqdiag_delay(d: pd.DataFrame) -> None:
                       if len(r) else ["--"] * 2)
         lat.append(cells)
     (PTABLES / "seqdiag_delay_per_scenario.tex").write_text(latex_rows(lat))
+    fz = d[(d.frozen) & (d.scope == "all") & (d.H == 24)]
+    n_files = len(glob.glob(str(RAW / "seqdiag_greedy_delay1_frozen" / "*.csv")))
+    if len(fz) and n_files >= 21:
+        status(f"Frozen 24-interval agreement at $L=1$: {100 * fz.agree.iloc[0]:.0f}\\,\\% "
+               f"(vs.\\ \\SeqFrozenAgreeHTwentyFour\\,\\% at $L=0$)", "status_h11")
+    else:
+        status(f"pending ({n_files} of 21 episodes)", "status_h11")
 
 
 def section_compute(data: dict) -> None:
@@ -1008,6 +1101,7 @@ def main() -> None:
     data = collect(copy=True)
     section_fidelity()
     section_ppo_critic()
+    section_rq3(data)
     for f in (section_reproduction, section_main, section_decomposition, section_final_flapping,
               section_horizon, section_tuning,
               section_delay, section_compute):

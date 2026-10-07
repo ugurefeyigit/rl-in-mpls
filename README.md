@@ -1,4 +1,4 @@
-# When does MPLS traffic engineering need sequential RL?
+# Persistent State Is Not Enough: planning horizons in incremental MPLS traffic engineering
 
 > **Author:** Uğur Efe Yiğit · **License:** proprietary, all rights reserved
 > ([LICENSE](LICENSE), [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
@@ -11,17 +11,24 @@ hold-down timers, protected traffic classes — does a sequential RL agent
 reward of each action (a masked neural contextual bandit, γ = 0)? If so,
 why? If not, when would it?
 
-**Principal findings.** (1) The myopic bandit beats PPO on all five training
-roots and matches a non-learning per-interval MILP optimizer. (2) The cause is
-the planning horizon, not the algorithm: PPO with γ = 0 matches the bandit,
-while PPO with γ = 0.995 oscillates at hold-down expiry and loses its network
-gains to reconfiguration costs. (3) A clairvoyant lookahead diagnostic shows
-why there is little to plan for: with traffic held fixed, the first-interval
-best move is the 24-interval best move in ~9 of 10 states; the non-myopic value
-that exists is anticipation of traffic change the controller cannot observe.
-(4) When a move's effect is delayed by one interval, the ranking reverses
-(PPO ≫ bandit). (5) The predecessor study's bandit result reproduces on
-different hardware; its PPO result does not. Details:
+**Principal findings** (numbers in the generated block below and in the paper).
+(1) The myopic bandit beats PPO on all five training roots and reaches the
+return of a non-learning per-interval MILP controller. The two make different
+trade-offs: MILP-track has higher network utility, the bandit reroutes less.
+(2) Varying the discount within each learner family points to the planning
+horizon rather than the algorithm. PPO with γ = 0 matches the bandit; PPO with
+γ = 0.995 oscillates at hold-down expiry on 3 of 5 roots, and reconfiguration
+costs make up about 60 % of its deficit. A bootstrapped Q-learner with γ = 0.9
+is worse than the bandit. (3) Lookahead is worth little here even with perfect
+foresight: a clairvoyant controller that re-plans every interval gains only
+1–3 return points from looking 3 or 6 intervals ahead instead of 1.
+(4) When a move's effect is delayed by one interval, the bandit's
+decision-time target loses the move's benefit, and the bandit collapses below
+PPO. MILP-track stays ahead of every learner, so this shows when the myopic
+learner fails, not that long-horizon RL is needed. (5) The predecessor study's
+bandit result reproduces on a different machine and software stack; its PPO
+result does not. Pending experiments (PPO tuning, budget, shaping, time of
+day) are listed in [docs/EXPERIMENT_LOG.md](docs/EXPERIMENT_LOG.md). Details:
 [docs/RESEARCH_OVERVIEW.md](docs/RESEARCH_OVERVIEW.md) and the paper.
 
 **What is here.** A deterministic flow-level MPLS-TE simulator (18 routers,

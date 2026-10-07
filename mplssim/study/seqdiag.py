@@ -36,12 +36,14 @@ DEFAULT_HORIZONS: tuple[int, ...] = (1, 2, 3, 6, 12, 24)
 
 
 def state_diagnostic(env: Any, mask: np.ndarray, h_max: int,
-                     horizons: tuple[int, ...], frozen: bool = False) -> dict[str, Any]:
+                     horizons: tuple[int, ...], frozen: bool = False,
+                     continuation: str = "noop") -> dict[str, Any]:
     """Per-state action-value table and summary statistics."""
     legal = [int(a) for a in np.flatnonzero(mask)]
     curves: dict[int, np.ndarray] = {}
     for a in legal:
-        _, rewards = simulate(env, [a], horizon=h_max, frozen=frozen)
+        _, rewards = simulate(env, [a], horizon=h_max, frozen=frozen,
+                              continuation=continuation)
         curves[a] = np.cumsum(rewards)
     length = min(len(c) for c in curves.values())
     hs = [h for h in horizons if h <= length]
@@ -79,7 +81,7 @@ def state_diagnostic(env: Any, mask: np.ndarray, h_max: int,
 def trajectory_diagnostic(policy: Policy, scenario: str, seed: int, every: int = 4,
                           h_max: int = 24, horizons: tuple[int, ...] = DEFAULT_HORIZONS,
                           env_factory: Callable[..., Any] | None = None,
-                          frozen: bool = False) -> pd.DataFrame:
+                          frozen: bool = False, continuation: str = "noop") -> pd.DataFrame:
     """Run ``policy`` for one episode; diagnose every ``every``-th state."""
     env = make_eval_env(scenario, seed, env_factory)
     raw = env.unwrapped
@@ -91,10 +93,12 @@ def trajectory_diagnostic(policy: Policy, scenario: str, seed: int, every: int =
     while not truncated:
         mask = env.action_masks()
         if step % every == 0:
-            row = state_diagnostic(raw, mask, h_max, horizons, frozen=frozen)
+            row = state_diagnostic(raw, mask, h_max, horizons, frozen=frozen,
+                                   continuation=continuation)
             row.update({"scenario": scenario, "seed": int(seed), "step": step,
                         "t_min": float(raw.eng.t_min),
-                        "reference_policy": policy.name, "frozen": frozen})
+                        "reference_policy": policy.name, "frozen": frozen,
+                        "continuation": continuation})
             rows.append(row)
         action = int(policy.act(obs, mask, raw))
         obs, _, _, truncated, _ = env.step(action)

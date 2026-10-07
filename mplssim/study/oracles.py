@@ -67,18 +67,33 @@ def simulate(env: Any, actions: list[int], continuation: str = "noop",
     """Return of an action sequence from the current state, then restore.
 
     ``actions`` are applied first; if ``horizon`` exceeds ``len(actions)`` the
-    remaining steps follow ``continuation`` (only "noop" is supported, which is
-    always legal). Stops early at scenario end. The environment is restored to
-    its exact prior state afterwards, including RNG state.
+    remaining steps follow ``continuation``: ``"noop"`` (change nothing; always
+    legal) or ``"greedy"`` (the repository's greedy controller, freshly
+    constructed for the rollout, choosing legal moves under the authoritative
+    mask -- a reactive continuation that can make later moves). Stops early at
+    scenario end. The environment is restored to its exact prior state
+    afterwards, including RNG state.
     """
+    if continuation not in ("noop", "greedy"):
+        raise ValueError(continuation)
     saved = snapshot(env)  # restored in ``finally``; the live state is consumed
     rewards: list[float] = []
+    controller = None
+    if continuation == "greedy":
+        from mplssim.baselines import make_baseline
+        from mplssim.experiments.evaluation_v2 import choose_baseline_action
+        controller = make_baseline("greedy", seed=0)
     try:
         if frozen:
             freeze_exogenous(env)
         steps = horizon if horizon is not None else len(actions)
         for i in range(steps):
-            a = actions[i] if i < len(actions) else 0
+            if i < len(actions):
+                a = actions[i]
+            elif controller is not None:
+                a = choose_baseline_action(controller, env.eng, env.action_masks())
+            else:
+                a = 0
             if i < len(actions) and a != 0 and not bool(env.action_masks()[a]):
                 raise ValueError(f"simulated action {a} is not legal at rollout step {i}")
             _, r, _, truncated, _ = env.step(int(a))

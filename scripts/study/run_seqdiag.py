@@ -40,6 +40,8 @@ def main() -> None:
     p.add_argument("--out", type=Path, required=True)
     p.add_argument("--frozen", action="store_true",
                    help="hold traffic and link state fixed during rollouts")
+    p.add_argument("--continuation", default="noop", choices=["noop", "greedy"],
+                   help="policy after the first action in each rollout")
     p.add_argument("--env", default='{"variant": "base"}',
                    help="environment variant spec (JSON), e.g. '{\"variant\": \"delayed\", \"delay_steps\": 1}'")
     a = p.parse_args()
@@ -55,7 +57,7 @@ def main() -> None:
             df = trajectory_diagnostic(reference_policy(a.reference, seed), scenario, seed,
                                        every=a.every, h_max=a.h_max,
                                        horizons=DEFAULT_HORIZONS, frozen=a.frozen,
-                                       env_factory=factory)
+                                       env_factory=factory, continuation=a.continuation)
             df.to_csv(path, index=False)
             print(f"{scenario} {seed} states={len(df)} t={time.perf_counter()-t0:.0f}s",
                   flush=True)

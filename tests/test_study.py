@@ -60,6 +60,29 @@ def test_simulated_first_step_equals_real_step():
     assert predicted == rewards[0] == real
 
 
+def test_greedy_continuation_matches_real_execution_and_restores():
+    from mplssim.baselines import make_baseline
+    from mplssim.experiments.evaluation_v2 import choose_baseline_action
+    env = make_env_v2("link_failure", root_seed=5)
+    env.reset(options={"episode_seed": 5})
+    for _ in range(20):
+        env.step(0)
+    mask = env.action_masks()
+    act = int(np.flatnonzero(mask)[3])
+    before = env.eng.fast_clone()
+    _, sim = simulate(env, [act], horizon=6, continuation="greedy")
+    # state restored exactly
+    assert np.array_equal(env.eng.current_path, before.current_path)
+    assert env.eng.t_min == before.t_min
+    # the rollout equals actually executing act, then a fresh greedy controller
+    ctl = make_baseline("greedy", seed=0)
+    real = [float(env.step(act)[1])]
+    for _ in range(5):
+        a = choose_baseline_action(ctl, env.eng, env.action_masks())
+        real.append(float(env.step(a)[1]))
+    assert sim == real
+
+
 def test_myopic_oracle_maximizes_exact_immediate_reward():
     env = make_env_v2("evening_peak", root_seed=11)
     env.reset(options={"episode_seed": 11})
