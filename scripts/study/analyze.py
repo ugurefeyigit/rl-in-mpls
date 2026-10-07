@@ -319,6 +319,55 @@ def section_main(data: dict) -> None:
         write_table(pd.DataFrame(rr), "references_pairwise")
 
 
+UTIL_COMPONENTS = ["rc_delivery", "rc_protected_disconnect", "rc_unprotected_disconnect",
+                   "rc_sla_severity", "rc_max_util", "rc_overload"]
+COST_COMPONENTS = ["rc_move_fixed", "rc_move_volume", "rc_move_divergence", "rc_reversal",
+                   "rc_invalid"]
+
+
+def section_decomposition(data: dict) -> None:
+    """Return = network utility + shaping + move costs, per policy instance."""
+    ep = data.get("episodes_test")
+    if ep is None:
+        return
+    s = ep[(ep.role == "selected") | (ep.kind != "learner")].copy()
+    s["utility"] = s[UTIL_COMPONENTS].sum(axis=1)
+    s["costs"] = s[COST_COMPONENTS].sum(axis=1)
+    s["shaping"] = s["rc_potential"]
+    g = s.groupby(["policy", "root"]).agg(
+        ret=("operational_return", "mean"), utility=("utility", "mean"), shaping=("shaping", "mean"),
+        costs=("costs", "mean"), reversal_cost=("rc_reversal", "mean"),
+        moves=("accepted_te_changes", "mean"), reversals=("te_reversals", "mean"),
+        noop=("noop_frequency", "mean")).reset_index()
+    g["reversal_share"] = g.reversals / g.moves.where(g.moves > 0)
+    write_table(g, "decomposition_by_root")
+    pol = g.groupby("policy")[["ret", "utility", "shaping", "costs", "moves", "reversals"]].mean()
+    order = [p for p in ("bandit", "ppo", "milp_track", "greedy", "cspf", "static", "noop",
+                         "oracle_h1") if p in pol.index]
+    write_table(pol.loc[order].reset_index(), "decomposition", latex_rows([[
+        POLICY_LABEL.get(p, p), f"{pol.loc[p, 'ret']:.1f}", f"{pol.loc[p, 'utility']:.1f}",
+        f"{pol.loc[p, 'costs']:.1f}", f"{pol.loc[p, 'shaping']:.2f}", f"{pol.loc[p, 'moves']:.1f}",
+        f"{pol.loc[p, 'reversals']:.1f}"] for p in order]))
+    for p, k in (("bandit", "Bandit"), ("ppo", "PPO"), ("milp_track", "Milp")):
+        if p in pol.index:
+            num(f"Util{k}", pol.loc[p, "utility"])
+            num(f"Cost{k}", pol.loc[p, "costs"])
+            num(f"Rev{k}", pol.loc[p, "reversals"])
+            num(f"Moves{k}", pol.loc[p, "moves"])
+    b = g[g.policy == "bandit"]
+    num("ShapingMaxAbs", s.shaping.abs().groupby(s.policy).mean().max(), "{:.2f}")
+    pp = g[g.policy == "ppo"]
+    if len(pp):
+        num("PPORevShareMax", 100 * pp.reversal_share.max(), "{:.0f}")
+        num("PPOCostMin", pp.costs.min())
+        num("PPOCostMax", pp.costs.max())
+        num("PPOUtilMax", pp.utility.max())
+        num("BanditUtilMax", b.utility.max())
+        num("BanditCostMin", b.costs.min())
+        num("BanditCostMax", b.costs.max())
+        num("PPOFlappingRoots", int((pp.reversal_share > 0.5).sum()), "{}")
+
+
 def section_horizon(data: dict) -> None:
     ep = data.get("episodes_test")
     if ep is None:
@@ -658,7 +707,7 @@ def write_numbers() -> None:
 
 def main() -> None:
     data = collect(copy=True)
-    for f in (section_reproduction, section_main, section_horizon, section_tuning,
+    for f in (section_reproduction, section_main, section_decomposition, section_horizon, section_tuning,
               section_delay, section_compute):
         try:
             f(data)

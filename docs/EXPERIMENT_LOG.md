@@ -30,5 +30,8 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 14 | 23:35 | Study scheduler had never started (it counted the four low-priority diagnostics as occupying slots); on restart it launched 3 jobs because it matched only commands starting with `python` and not `/usr/bin/python` [process] | fixed process matching; scheduler now also skips runs already executing (a restart would otherwise have renamed a live run directory) |
 | 15 | 00:27–00:43 | All 6 reproductions evaluated; E1 bandit r161803, r141421 and PPO r161803 completed | `docs/REPRODUCTION_REPORT.md` |
 | 16 | 00:43 | **Worker restart killed every background process** [process]. Lost: E1 PPO r141421 (608 episodes) and E2 qg05 r42 (672 episodes) mid-training, mask-audit pass 2, partial diagnostics. Persisted: all completed runs and every per-episode output. | interrupted run directories kept as `*.interrupted`; runs restarted from scratch (study checkpoints hold no replay buffer, so they are not resumable); diagnostics resumed per file; `scripts/study/relaunch_background.sh` makes relaunch idempotent |
+| 17 | 00:50 | MILP-track on all 140 test episodes | statistically indistinguishable from the bandit; above PPO [science] |
+| 18 | 01:00–01:15 | Model fidelity (root 42) and deceptive-scenario case study | PPO's actions are worse than no-op over 6 intervals; PPO flips one demand every 3 intervals (hold-down expiry) [science] |
+| 19 | 01:15 | Return decomposition over all test episodes | on 3 of 4 PPO roots > 50 % of moves are reversals; PPO's network utility is comparable to the bandit's but move/reversal costs are 5–13× larger; shaping contributes ≤ 0.02 per episode [science] |
 
-Entries after #16 are appended as experiments complete.
+Entries after #19 are appended as experiments complete.
