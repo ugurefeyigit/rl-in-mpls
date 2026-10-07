@@ -1,0 +1,156 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{default}
+\usecolortheme{dove}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\usepackage[T1]{fontenc}
+\usepackage{booktabs,siunitx,graphicx}
+\graphicspath{{../results/figures/paper/}}
+\makeatletter\newcommand{\tabinput}[1]{\@@input #1.tex }\makeatother
+\input{../paper/generated/numbers}
+\newcommand{\hl}[1]{\textcolor[HTML]{2A78D6}{\textbf{#1}}}
+
+\title{When does MPLS traffic engineering need sequential RL?}
+\subtitle{A controlled comparison of MaskablePPO and a masked contextual bandit}
+\author{Uğur Efe Yiğit}
+\date{}
+
+\begin{document}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{1. Problem: incremental MPLS traffic engineering}
+\begin{columns}
+\column{0.52\textwidth}
+\begin{itemize}
+\item 18 routers, 64 directed links, 17 demands with SLAs, 4 candidate LSPs each
+\item every 5 min: move \emph{one} demand to another candidate, or do nothing
+\item moves cost reconfiguration effort; 3-interval hold-down after a move
+\item action mask: failed links, hold-down, protected-class capacity
+\item reward: delivery, disconnection, SLA severity, utilization, overload, minus move costs
+\end{itemize}
+\column{0.46\textwidth}
+\includegraphics[width=\textwidth]{fig_topology}
+\end{columns}
+\end{frame}
+
+\begin{frame}{2. Why RL --- and why sequentiality should not be assumed}
+\begin{itemize}
+\item routes \hl{persist}, moves lock a demand, protected-class legality couples demands
+  $\Rightarrow$ formally an MDP
+\item but a move carries traffic \emph{in the interval it is made}, traffic is exogenous
+\item recent TE systems treat TE as one-shot (Teal, DOTE) --- in a setting \emph{without} persistent state
+\item \textbf{Question:} here, does a learner that plans ($\gamma=0.995$) beat one that only
+  predicts the immediate reward ($\gamma=0$)? Why?
+\end{itemize}
+\end{frame}
+
+\begin{frame}{3. The surprising observation, reproduced}
+\begin{itemize}
+\item closed predecessor study: bandit \HistBandit{} vs PPO \HistPPO{} (holdout return, 3 roots)
+\item retrained everything on different hardware, byte-identical training traffic:
+  \begin{itemize}
+  \item baselines: \hl{exact} ($\BaselineReproMaxDiff$)
+  \item bandit: \hl{reproduces} (\ReproBandit)
+  \item PPO: \hl{does not} (\ReproPPO); per-root shifts up to \ReproMaxShiftPPO{} points
+  \item ``PPO wins the deceptive scenario'': does not reproduce
+  \end{itemize}
+\end{itemize}
+\vspace{1ex}
+\small
+\begin{tabular}{@{}lrcrr@{}}
+\toprule
+Learner & Root & Selected (h./r.) & Hist. & Repr. \\
+\midrule
+\tabinput{../paper/tables/reproduction_per_root}
+\bottomrule
+\end{tabular}
+\end{frame}
+
+\begin{frame}{4. Methodology}
+\begin{itemize}
+\item same observation (604), mask, budget (400k transitions), paired traffic
+\item select on validation seeds, report on 140 disjoint test episodes; 5 training roots
+\item two-stage bootstrap CIs over roots and episodes
+\item references: static, greedy, CSPF, \hl{MILP-track} (per-interval min-max-util),
+  clairvoyant Oracle-$H$
+\item controls: PPO $\gamma\in\{0,0.9,0.995\}$; masked Q-learner $\gamma\in\{0,0.5,0.9,0.99\}$
+  ($\gamma=0$ = bandit, bit-identical); PPO tuning; delayed-effect variant; time-of-day observation
+\end{itemize}
+\end{frame}
+
+\begin{frame}{5. Result: the bandit wins and matches an optimizer}
+\begin{columns}
+\column{0.62\textwidth}
+\includegraphics[width=\textwidth]{fig_main}
+\column{0.36\textwidth}
+\small
+\begin{itemize}
+\item bandit $-$ PPO $=$ \hl{\Gap} [\GapLo, \GapHi], positive on \GapRootsPositive/\GapRoots{} roots
+\item bandit $-$ MILP-track $=$ \BanditMinusMilp{} [\BanditMinusMilpLo, \BanditMinusMilpHi]
+\item reroutes/h: bandit \TestBanditReroutes, MILP \TestMilpReroutes, PPO \TestPPOReroutes
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{6. Mechanism: PPO flaps at hold-down expiry}
+\includegraphics[width=\textwidth]{fig_case}
+\small Utility: bandit \UtilBandit, PPO \UtilPPO; move costs: bandit \CostBandit, PPO \CostPPO
+\end{frame}
+
+\begin{frame}{7. Attribution: it is the horizon, not the algorithm}
+\begin{columns}
+\column{0.5\textwidth}
+\includegraphics[width=\textwidth]{fig_learning_curves}
+\column{0.48\textwidth}
+\begin{itemize}
+\item PPO with $\gamma=0$: \hl{\HPPOZero} vs bandit \HQZero{} on the same roots
+\item difference \HPPOZeroVs{} [\HPPOZeroVsLo, \HPPOZeroVsHi]
+\item flapping disappears
+\item small one-off costs are drowned by long-horizon advantage noise
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{8. How sequential is the problem?}
+\begin{columns}
+\column{0.58\textwidth}
+\includegraphics[width=\textwidth]{fig_seqdiag}
+\column{0.4\textwidth}
+\small
+\begin{itemize}
+\item true future: myopic $=$ 24-step best in \SeqLiveAgreeHTwentyFour\,\% of states
+\item traffic frozen: \hl{\SeqFrozenAgreeHTwentyFour\,\%}
+\item non-myopic value $\approx$ anticipating exogenous change, which the observation cannot see
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{9. When would sequential RL be needed?}
+\begin{itemize}
+\item delayed effect ($L=1$ interval): the immediate reward contains only the cost
+\item results: see paper \S RQ5 (E4) and time-of-day observation (E7)
+\end{itemize}
+\end{frame}
+
+\begin{frame}{10. Limitations}
+\begin{itemize}
+\item flow-level model, exogenous inelastic traffic, instantaneous control plane
+\item one topology, scripted scenarios, one reward; 5 (main) / 2--3 (ablation) roots
+\item single-move-per-interval formulation is a design choice
+\end{itemize}
+\end{frame}
+
+\begin{frame}{11. Take-aways and future work}
+\begin{itemize}
+\item measure sequentiality before choosing an RL algorithm
+\item a myopic learner (or a per-interval optimizer) is the baseline to beat
+\item long horizons can hurt by hiding small immediate costs
+\item future: delayed actuation and elastic traffic; packet-level validation; GNN policies;
+  larger topologies; real traffic matrices
+\end{itemize}
+\end{frame}
+
+\end{document}
