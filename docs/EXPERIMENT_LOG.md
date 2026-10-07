@@ -39,5 +39,6 @@ Gymnasium 1.4.0, NumPy 2.5.3. All learners run on CPU with one thread.
 | 23 | 02:35 | Compute re-planning (≈34 run-equivalents left). Training slots 3 → 4; queue reordered by information value (Q γ0.9 → E4 → E7 → PPO γ0.9 → E3 → rest of E2 → E6 → E5). E3 trimmed from 8 to 6 configurations (`ns128`, `net64` dropped **before running**) [process] | |
 | 24 | 02:50 | Oracle-3 complete (5 test seeds) | Oracle-3 − Oracle-1 = +2.9 [1.5, 4.2], versus Oracle-1 − bandit ≈ 22 on the same episodes [science] |
 | 25 | 03:13 | E2 Q-learner γ = 0.9, 3 roots | 19.4 vs bandit 24.2 (−4.8 [−7.0, −2.1]), 0/3 roots better; supports H3 [science] |
+| 26 | 04:07 | E4 delayed activation (L = 1), bandit and PPO, roots 42/314159 | bandit 22.0 → −30.3; PPO 1.6 → 1.2; PPO − bandit = +31.5 [20.6, 42.6] under delay, 2/2 roots. Supports H6 [science] |
 
-Entries after #25 are appended as experiments complete.
+Entries after #26 are appended as experiments complete.
