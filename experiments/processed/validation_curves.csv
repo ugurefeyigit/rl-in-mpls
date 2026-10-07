@@ -407,6 +407,14 @@ E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,250000,-30.2051
 E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,300000,-19.920130797593,35
 E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,350000,-18.715978789607224,35
 E4_delay__L1_qg09__r42,E4:L1_qg09,E4_delay,L1_qg09,42,validation,400000,-30.215345568051102,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,50000,-7.3738145279073235,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,100000,0.0023116732046588595,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,150000,7.370317524332267,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,200000,11.826678671126711,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,250000,8.879078388683023,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,300000,19.834454517626586,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,350000,22.55389777461266,35
+E6_shaping__bandit_noshaping__r314159,E6:bandit_noshaping,E6_shaping,bandit_noshaping,314159,validation,400000,15.012495906959137,35
 E6_shaping__bandit_noshaping__r42,E6:bandit_noshaping,E6_shaping,bandit_noshaping,42,validation,50000,1.383142599322222,35
 E6_shaping__bandit_noshaping__r42,E6:bandit_noshaping,E6_shaping,bandit_noshaping,42,validation,100000,-5.5864182824189,35
 E6_shaping__bandit_noshaping__r42,E6:bandit_noshaping,E6_shaping,bandit_noshaping,42,validation,150000,8.116854300928123,35
