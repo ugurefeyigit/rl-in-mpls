@@ -62,6 +62,12 @@ def analyse(run_id: str, seeds: list[int], every: int) -> pd.DataFrame:
                            "policy_is_noop": a == 0,
                            "best_is_noop": bool(true[legal == 0][0] >= true.max() - 1e-12),
                            "agree_top1": bool(true[legal == a][0] >= true.max() - 1e-12)}
+                    # 6-interval value (no-op continuation) of the policy's action,
+                    # the exact myopic-best action and no-op: does the policy's
+                    # choice pay off later even when it loses in the first interval?
+                    a_best = int(legal[int(np.argmax(true))])
+                    for tag, act in (("policy", a), ("myopic_best", a_best), ("noop", 0)):
+                        row[f"g6_{tag}"] = simulate(raw, [int(act)], horizon=6)[0]
                     if alg == "masked_bandit":
                         with torch.no_grad():
                             pred = learner.network(torch.as_tensor(obs[None])).numpy()[0][legal]
@@ -86,6 +92,8 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     for rid in a.runs:
         f = out / f"{rid}.csv"
+        if f.exists() and "g6_policy" not in open(f).readline():
+            f.rename(f.with_suffix(".h1only.csv"))  # keep the first (H=1-only) pass
         if f.exists():
             continue
         df = analyse(rid, a.seeds, a.every)
@@ -93,7 +101,9 @@ def main() -> None:
         reg = (df.r_best - df.r_policy)
         print(rid, f"states={len(df)} top1={df.agree_top1.mean():.3f} "
               f"regret1={reg.mean():.4f} noop_share={df.policy_is_noop.mean():.3f} "
-              f"best_noop_share={df.best_is_noop.mean():.3f}", flush=True)
+              f"best_noop_share={df.best_is_noop.mean():.3f} "
+              f"g6(policy-noop)={(df.g6_policy - df.g6_noop).mean():.3f} "
+              f"g6(myopic-noop)={(df.g6_myopic_best - df.g6_noop).mean():.3f}", flush=True)
 
 
 if __name__ == "__main__":

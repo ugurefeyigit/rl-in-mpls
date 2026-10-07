@@ -1,0 +1,382 @@
+{
+ "created_utc": "2026-10-07T01:00:10.779973+00:00",
+ "git_commit": "4e1e5a2e124d35e5615fb9af2dd2b1c2da1e23e1",
+ "git_dirty": true,
+ "software": {
+  "python": "3.13.16",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pandas": "3.0.5",
+  "torch": "2.14.1+cpu",
+  "gymnasium": "1.4.0",
+  "stable_baselines3": "2.9.0",
+  "sb3_contrib": "2.9.0"
+ },
+ "hardware": {
+  "platform": "Linux-6.18.44-fc-v77-x86_64-with-glibc2.39",
+  "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+  "logical_cpus": 4,
+  "gpu": "none (CPU-only run)"
+ },
+ "kind": "mask_audit",
+ "wall_seconds": 916.161355263,
+ "counts": {
+  "states": 15480,
+  "actions_checked": 1068120,
+  "legal_te_actions": 711848,
+  "ppo_states_checked": 15480,
+  "protected_legal_moves": 155408,
+  "transitions": 15480,
+  "accepted_moves": 7832,
+  "frr_changes": 146,
+  "states_with_failed_link": 804,
+  "states_with_disconnected_demand": 144
+ },
+ "violations": {
+  "noop_illegal": 0,
+  "decode_mismatch": 0,
+  "mask_validator_disagreement": 0,
+  "masked_action_accepted": 0,
+  "masked_action_side_effect": 0,
+  "legal_action_rejected": 0,
+  "legal_action_wrong_path": 0,
+  "legal_action_no_dwell": 0,
+  "protected_projection_violation": 0,
+  "legal_over_failed_link": 0,
+  "mask_not_idempotent": 0,
+  "independent_projection_violation": 0,
+  "independent_projection_mismatch": 0,
+  "ppo_illegal_probability_mass": 0
+ },
+ "all_checks_passed": true,
+ "episodes": [
+  [
+   "full_day",
+   5000
+  ],
+  [
+   "full_day",
+   5001
+  ],
+  [
+   "full_day",
+   5002
+  ],
+  [
+   "full_day",
+   5003
+  ],
+  [
+   "full_day",
+   5004
+  ],
+  [
+   "full_day",
+   5005
+  ],
+  [
+   "evening_peak",
+   5000
+  ],
+  [
+   "evening_peak",
+   5001
+  ],
+  [
+   "evening_peak",
+   5002
+  ],
+  [
+   "evening_peak",
+   5003
+  ],
+  [
+   "evening_peak",
+   5004
+  ],
+  [
+   "evening_peak",
+   5005
+  ],
+  [
+   "flash_crowd",
+   5000
+  ],
+  [
+   "flash_crowd",
+   5001
+  ],
+  [
+   "flash_crowd",
+   5002
+  ],
+  [
+   "flash_crowd",
+   5003
+  ],
+  [
+   "flash_crowd",
+   5004
+  ],
+  [
+   "flash_crowd",
+   5005
+  ],
+  [
+   "link_failure",
+   5000
+  ],
+  [
+   "link_failure",
+   5001
+  ],
+  [
+   "link_failure",
+   5002
+  ],
+  [
+   "link_failure",
+   5003
+  ],
+  [
+   "link_failure",
+   5004
+  ],
+  [
+   "link_failure",
+   5005
+  ],
+  [
+   "deceptive_local_optimum",
+   5000
+  ],
+  [
+   "deceptive_local_optimum",
+   5001
+  ],
+  [
+   "deceptive_local_optimum",
+   5002
+  ],
+  [
+   "deceptive_local_optimum",
+   5003
+  ],
+  [
+   "deceptive_local_optimum",
+   5004
+  ],
+  [
+   "deceptive_local_optimum",
+   5005
+  ],
+  [
+   "ood_double_failure",
+   5000
+  ],
+  [
+   "ood_double_failure",
+   5001
+  ],
+  [
+   "ood_double_failure",
+   5002
+  ],
+  [
+   "ood_double_failure",
+   5003
+  ],
+  [
+   "ood_double_failure",
+   5004
+  ],
+  [
+   "ood_double_failure",
+   5005
+  ],
+  [
+   "overload_stress",
+   5000
+  ],
+  [
+   "overload_stress",
+   5001
+  ],
+  [
+   "overload_stress",
+   5002
+  ],
+  [
+   "overload_stress",
+   5003
+  ],
+  [
+   "overload_stress",
+   5004
+  ],
+  [
+   "overload_stress",
+   5005
+  ],
+  [
+   "random_day",
+   6000
+  ],
+  [
+   "random_day",
+   6001
+  ],
+  [
+   "random_day",
+   6002
+  ],
+  [
+   "random_day",
+   6003
+  ],
+  [
+   "random_day",
+   6004
+  ],
+  [
+   "random_day",
+   6005
+  ],
+  [
+   "random_day",
+   6006
+  ],
+  [
+   "random_day",
+   6007
+  ],
+  [
+   "random_day",
+   6008
+  ],
+  [
+   "random_day",
+   6009
+  ],
+  [
+   "random_day",
+   6010
+  ],
+  [
+   "random_day",
+   6011
+  ],
+  [
+   "random_day",
+   6012
+  ],
+  [
+   "random_day",
+   6013
+  ],
+  [
+   "random_day",
+   6014
+  ],
+  [
+   "random_day",
+   6015
+  ],
+  [
+   "random_day",
+   6016
+  ],
+  [
+   "random_day",
+   6017
+  ],
+  [
+   "random_day",
+   6018
+  ],
+  [
+   "random_day",
+   6019
+  ],
+  [
+   "random_day",
+   6020
+  ],
+  [
+   "random_day",
+   6021
+  ],
+  [
+   "random_day",
+   6022
+  ],
+  [
+   "random_day",
+   6023
+  ],
+  [
+   "random_day",
+   6024
+  ],
+  [
+   "random_day",
+   6025
+  ],
+  [
+   "random_day",
+   6026
+  ],
+  [
+   "random_day",
+   6027
+  ],
+  [
+   "random_day",
+   6028
+  ],
+  [
+   "random_day",
+   6029
+  ],
+  [
+   "random_day",
+   6030
+  ],
+  [
+   "random_day",
+   6031
+  ],
+  [
+   "random_day",
+   6032
+  ],
+  [
+   "random_day",
+   6033
+  ],
+  [
+   "random_day",
+   6034
+  ],
+  [
+   "random_day",
+   6035
+  ],
+  [
+   "random_day",
+   6036
+  ],
+  [
+   "random_day",
+   6037
+  ],
+  [
+   "random_day",
+   6038
+  ],
+  [
+   "random_day",
+   6039
+  ]
+ ]
+}
