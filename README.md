@@ -38,7 +38,7 @@ an experiment registry, and a paper built from scripts.
 <!-- RESULTS:BEGIN -->
 | Policy | Test return [95 % CI] | Roots | Delivered | SLA viol. | Reroutes/h |
 |---|---:|---:|---:|---:|---:|
-| Oracle-1 † (exact next-interval reward) (partial: 45 episodes) | 188.2 [184.4, 191.9] | – | 98.43 % | 128 | 2.49 |
+| Oracle-1 † (exact next-interval reward) (partial: 49 episodes) | 172.2 [168.7, 175.6] | – | 98.09 % | 131 | 2.70 |
 | Masked contextual bandit (γ=0) | 25.2 [21.5, 28.1] | 5 | 95.31 % | 164 | 2.30 |
 | MILP-track (per-interval min-max-util, no learning) | 24.0 [21.9, 26.3] | – | 95.51 % | 162 | 5.83 |
 | Greedy | 4.0 [1.7, 6.3] | – | 94.85 % | 187 | 4.60 |

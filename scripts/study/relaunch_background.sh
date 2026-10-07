@@ -5,7 +5,7 @@ cd /home/user/rl-in-mpls
 echo 0 > /proc/sys/kernel/sched_autogroup_enabled 2>/dev/null
 mkdir -p logs runs/study
 running() { ps -eo args | grep -v grep | grep -q -- "$1"; }
-running "scheduler.py --slots" || nohup python scripts/study/scheduler.py --slots 3 --ids E1_main E2_horizon E3_ppo_tuning E4_delay E6_shaping E5_budget >> runs/study/scheduler.log 2>&1 &
+running "scheduler.py --slots" || nohup python scripts/study/scheduler.py --slots 3 --ids E1_main E2_horizon__ppog0__r42 E2_horizon__ppog0__r314159 E2_horizon__ppog0__r271828 E2_horizon__qg09__r42 E2_horizon__qg09__r314159 E2_horizon__qg09__r271828 E4_delay E2_horizon E3_ppo_tuning E6_shaping E5_budget >> runs/study/scheduler.log 2>&1 &
 running "run_mask_audit.py" || [ -f experiments/raw/mask_audit/summary.json ] || nohup python scripts/study/run_mask_audit.py > logs/mask_audit2.log 2>&1 &
 running "run_seqdiag.py" || nohup bash -c "python scripts/study/run_seqdiag.py --reference greedy --out experiments/raw/seqdiag_greedy >> logs/seqdiag_greedy.log 2>&1; python scripts/study/run_seqdiag.py --reference greedy --frozen --out experiments/raw/seqdiag_greedy_frozen >> logs/seqdiag_greedy_frozen.log 2>&1" > /dev/null 2>&1 &
 running "policies oracle_h" || nohup bash -c "python scripts/study/run_oracles.py --policies oracle_h1 --seedset test --out experiments/raw/references >> logs/oracle_h1.log 2>&1; python scripts/study/run_oracles.py --policies oracle_h3 oracle_h6 --seeds 3001 3002 3003 3004 3005 --out experiments/raw/references >> logs/oracle_h36.log 2>&1" > /dev/null 2>&1 &

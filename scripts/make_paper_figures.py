@@ -244,7 +244,48 @@ def fig_delay() -> None:
     save(fig, "fig_delay")
 
 
-FIGURES = {"topology": fig_topology, "seqdiag": fig_seqdiag, "curves": fig_learning_curves,
+def fig_case() -> None:
+    f = RAW / "case_studies" / "deceptive_local_optimum_seed3001.csv"
+    if not f.exists():
+        print("skip case")
+        return
+    d = pd.read_csv(f)
+    names = {"E0_repro__bandit__r314159": ("bandit", "Masked bandit"),
+             "E0_repro__ppo__r314159": ("ppo", "MaskablePPO"),
+             "milp_track": ("cspf", "MILP-track"), "oracle_h1": ("oracle", "Oracle-1 †")}
+    fig, axes = plt.subplots(2, 1, figsize=(7.0, 3.3), sharex=True,
+                             gridspec_kw={"height_ratios": [1.5, 1]})
+    ax = axes[0]
+    for pol, (key, lab) in names.items():
+        g = d[d.policy == pol]
+        tot = g.reward.sum()
+        ax.plot(g.t_min / 60, g.max_util, color=COLOR[key], lw=1.3,
+                label=f"{lab} (return {tot:.0f})")
+    ax.axhline(1.0, color=INK2, lw=0.6, ls="--")
+    ax.axvspan(45 / 60, 225 / 60, color=GRID, alpha=0.6, lw=0)
+    ax.text(48 / 60, 0.42, "burst on D2, D4, D5 (×1.8)", fontsize=6.5, color=INK2, va="bottom")
+    ax.set_ylabel("max link utilization")
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=4, fontsize=6.5)
+    ax = axes[1]
+    ax.grid(axis="y", visible=False)
+    for i, (pol, (key, lab)) in enumerate(names.items()):
+        g = d[(d.policy == pol) & (d.action > 0) & d.action_accepted]
+        rev = g.te_reversals > 0
+        ax.scatter(g.t_min[~rev] / 60, np.full((~rev).sum(), i), marker="|", s=60,
+                   color=COLOR[key], lw=1.4)
+        ax.scatter(g.t_min[rev] / 60, np.full(rev.sum(), i), marker="x", s=22,
+                   color=COLOR[key], lw=1.0)
+    ax.set_yticks(range(len(names)), [v[1] for v in names.values()])
+    ax.set_ylim(-0.6, len(names) - 0.4)
+    ax.set_xlabel("hours since 09:00 (deceptive-local-optimum scenario, test seed 3001)")
+    ax.scatter([], [], marker="|", color=INK2, label="accepted move")
+    ax.scatter([], [], marker="x", color=INK2, label="reversal (back to previous path)")
+    ax.legend(loc="lower right", ncol=2, fontsize=6.5, bbox_to_anchor=(1.0, 0.98))
+    fig.tight_layout()
+    save(fig, "fig_case")
+
+
+FIGURES = {"case": fig_case, "topology": fig_topology, "seqdiag": fig_seqdiag, "curves": fig_learning_curves,
            "main": fig_main, "horizon": fig_horizon, "delay": fig_delay}
 
 

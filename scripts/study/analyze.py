@@ -368,6 +368,57 @@ def section_decomposition(data: dict) -> None:
         num("PPOFlappingRoots", int((pp.reversal_share > 0.5).sum()), "{}")
 
 
+def section_fidelity() -> None:
+    files = sorted((RAW / "model_fidelity").glob("*__r*.csv"))
+    files = [f for f in files if not f.name.endswith(".h1only.csv")]
+    if not files:
+        return
+    rows = []
+    for f in files:
+        d = pd.read_csv(f)
+        if "g6_policy" not in d:
+            continue
+        rid = f.stem
+        rows.append({"run_id": rid, "policy": "bandit" if "__bandit__" in rid else "ppo",
+                     "root": int(rid.rsplit("__r", 1)[1]), "states": len(d),
+                     "top1": d.agree_top1.mean(), "regret1": (d.r_best - d.r_policy).mean(),
+                     "noop_policy": d.policy_is_noop.mean(), "noop_optimal": d.best_is_noop.mean(),
+                     "g6_policy": (d.g6_policy - d.g6_noop).mean(),
+                     "g6_myopic": (d.g6_myopic_best - d.g6_noop).mean(),
+                     "spearman": d.spearman.mean() if "spearman" in d else np.nan})
+    if not rows:
+        return
+    t = pd.DataFrame(rows).sort_values(["policy", "root"])
+    write_table(t, "model_fidelity", latex_rows([[
+        ("Bandit" if r.policy == "bandit" else "PPO"), str(r.root), f"{100 * r.top1:.0f}\\,\\%",
+        f"{r.regret1:.2f}", f"{100 * r.noop_policy:.0f} / {100 * r.noop_optimal:.0f}\\,\\%",
+        f"{r.g6_policy:+.2f}", f"{r.g6_myopic:+.2f}"] for r in t.itertuples()]))
+    for pol, k in (("bandit", "Bandit"), ("ppo", "PPO")):
+        g = t[t.policy == pol]
+        if len(g):
+            num(f"Fid{k}TopOne", 100 * g.top1.mean(), "{:.0f}")
+            num(f"Fid{k}Regret", g.regret1.mean(), "{:.2f}")
+            num(f"Fid{k}NoopPolicy", 100 * g.noop_policy.mean(), "{:.0f}")
+            num(f"Fid{k}NoopOptimal", 100 * g.noop_optimal.mean(), "{:.0f}")
+            num(f"Fid{k}GSix", g.g6_policy.mean(), "{:+.2f}")
+            num(f"Fid{k}GSixMyopic", g.g6_myopic.mean(), "{:+.2f}")
+            num(f"Fid{k}Roots", len(g), "{}")
+            num(f"Fid{k}NegRoots", int((g.g6_policy < 0).sum()), "{}")
+
+
+def section_final_flapping(data: dict) -> None:
+    ep = data.get("episodes_test")
+    if ep is None:
+        return
+    f = ep[(ep.policy == "ppo") & (ep.role == "final")]
+    if f.empty:
+        return
+    g = f.groupby("root").agg(moves=("accepted_te_changes", "mean"), rev=("te_reversals", "mean"))
+    share = g.rev / g.moves.where(g.moves > 0)
+    num("PPOFinalFlappingRoots", int((share > 0.5).sum()), "{}")
+    num("PPOFinalRoots", len(g), "{}")
+
+
 def section_horizon(data: dict) -> None:
     ep = data.get("episodes_test")
     if ep is None:
@@ -707,7 +758,9 @@ def write_numbers() -> None:
 
 def main() -> None:
     data = collect(copy=True)
-    for f in (section_reproduction, section_main, section_decomposition, section_horizon, section_tuning,
+    section_fidelity()
+    for f in (section_reproduction, section_main, section_decomposition, section_final_flapping,
+              section_horizon, section_tuning,
               section_delay, section_compute):
         try:
             f(data)

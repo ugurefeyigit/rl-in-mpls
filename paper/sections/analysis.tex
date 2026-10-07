@@ -1,1 +1,97 @@
-% TODO analysis
+\section{Why the Bandit Wins}
+\label{sec:analysis}
+
+\paragraph{Where the return goes.}
+Splitting each episode's return into network utility (delivery, disconnection,
+SLA, utilization and overload terms), shaping, and move costs
+(Table~\ref{tab:decomp}) localizes PPO's deficit. Averaged over roots, the
+bandit earns a utility of \UtilBandit{} and pays \CostBandit{} in move and
+reversal costs; PPO earns \UtilPPO{} and pays \CostPPO. PPO's utility is not
+uniformly worse---its best root reaches \PPOUtilMax, above the bandit's best
+(\BanditUtilMax)---but on \PPOFlappingRoots{} of \TestPPORoots{} roots more
+than half of its accepted moves are \emph{reversals} (up to \PPORevShareMax\,\%),
+and its per-root move costs range from \PPOCostMin{} to \PPOCostMax{}, against
+\BanditCostMin{} to \BanditCostMax{} for the bandit. The shaping term
+contributes at most \ShapingMaxAbs{} per episode for any policy, so the
+bandit's use of a shaped reward does not explain its advantage.
+
+\begin{table}[t]
+\centering\small
+\caption{Return decomposition on the test episodes (means over episodes and,
+for learners, over roots). Utility = delivery + disconnection + SLA +
+utilization + overload terms; Costs = move and reversal terms.}
+\label{tab:decomp}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Policy & Return & Utility & Costs & Shaping & Moves & Reversals \\
+\midrule
+\tabinput{tables/decomposition}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{A degenerate oscillation.}
+Figure~\ref{fig:case} shows one test episode of the deceptive-local-optimum
+scenario. After moving at nearly every opportunity in the first hour, PPO
+settles into flipping one demand between two candidates every three
+intervals---exactly when the hold-down expires---and pays the reversal price
+each time. The bandit makes a handful of moves at the burst onset and
+otherwise holds its configuration. The behaviour is not an artefact of checkpoint selection:
+\PPOFinalFlappingRoots{} of \PPOFinalRoots{} final (400k) PPO checkpoints also
+reverse more than half of their moves.
+
+\paragraph{Credit assignment for small immediate costs.}
+A reversal costs about $0.5$ reward units once, while PPO's advantage
+estimates aggregate, through GAE with $\gamma\lambda\approx0.945$, the
+fluctuations of a reward that ranges from about $+2$ per interval in a healthy
+network to about $-30$ during protected outages (Eq.~\ref{eq:reward}), driven
+by the training scenario's random bursts and failures. A per-step cost of that size is
+small relative to the variance of the advantage target, and the policy
+gradient fails to attribute it to the step that incurs it. The bandit's
+regression target \emph{is} that step's reward, so the cost enters its
+estimate with no noise from future intervals. Section~\ref{sec:rq2} tests
+this explanation by removing PPO's horizon.
+
+\paragraph{What the learners' actions are worth.}
+On states visited by each learner on test episodes we compute, by cloning the
+simulator, the exact one-interval reward of every legal action and the
+six-interval value of the learner's action, of the exact myopic-best action,
+and of no-op (Table~\ref{tab:fidelity}). % CHECK after all roots
+Neither learner is close to the exact
+myopic optimum, but they fail in opposite directions: the bandit is
+conservative (it chooses no-op far more often than the optimum does), PPO
+over-acts, and over six intervals PPO's actions are on average worth less
+than doing nothing on some roots. PPO's frequent moves therefore do not buy
+delayed value that a myopic criterion would miss.
+
+\begin{table}[t]
+\centering\small
+\caption{What the learners' actions are worth, from exact simulator
+rollouts on states each learner visits (test seeds 3001--3003, every third
+step). Top-1: share of states in which the learner's action is the exact
+one-interval optimum; regret: exact one-interval reward lost; no-op: share
+of states in which the learner / the optimum chooses no-op; $\Delta G_6$:
+six-interval value over no-op (no-op continuation) of the learner's action
+and of the exact myopic-best action.}
+\label{tab:fidelity}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+ & Root & Top-1 & Regret & No-op (learner/opt.) & $\Delta G_6$ learner & $\Delta G_6$ myopic \\
+\midrule
+\tabinput{tables/model_fidelity}
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{fig_case}
+\caption{One test episode (deceptive-local-optimum, seed 3001; learners of root
+314159). Top: worst link utilization; bottom: accepted moves ($\times$ = return to
+the previous path within six intervals). PPO flips one demand every three
+intervals, the hold-down period; the bandit makes few moves. Oracle-1 sees the
+next interval's traffic and is shown for reference.}
+\label{fig:case}
+\end{figure*}
