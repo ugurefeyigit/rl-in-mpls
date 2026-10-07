@@ -128,14 +128,35 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \end{columns}
 \end{frame}
 
-\begin{frame}{9. When would sequential RL be needed?}
+\begin{frame}{9. When is sequential RL needed? Delay the effect of a move}
+\begin{columns}
+\column{0.55\textwidth}
+\includegraphics[width=\textwidth]{fig_delay}
+\column{0.43\textwidth}
+\small
 \begin{itemize}
-\item delayed effect ($L=1$ interval): the immediate reward contains only the cost
-\item results: see paper \S RQ5 (E4) and time-of-day observation (E7)
+\item move requested at $t$, active from $t+1$: the immediate reward contains only its cost
+\item bandit: \DelayBanditLZero{} $\to$ \hl{\DelayBandit}
+\item PPO: \DelayPPOLZero{} $\to$ \DelayPPO{} (unaffected)
+\item PPO $-$ bandit under delay: \hl{\DelayPPOVs} [\DelayPPOVsLo, \DelayPPOVsHi],
+  \DelayPPORootsBetter/\DelayPPORoots{} roots
+\item MILP-track: \DelayRefmilptrackLZero{} $\to$ \DelayRefmilptrack
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{10. Clairvoyance: how much is lookahead worth?}
+\begin{itemize}
+\item Oracle-$H$: enumerates every legal move with the true future, no-op continuation
+\item Oracle-1 \LadderOraclehOne, Oracle-3 \LadderOraclehThree, Oracle-6 \LadderOraclehSix{} (5 test seeds)
+\item Oracle-3 $-$ Oracle-1 $=$ \OracleThreeMinusOne{} [\OracleThreeMinusOneLo, \OracleThreeMinusOneHi];
+  Oracle-6 $-$ Oracle-1 $=$ \OracleSixMinusOne{} [\OracleSixMinusOneLo, \OracleSixMinusOneHi]
+\item bandit $-$ Oracle-1 $=$ \BanditMinusOracleOne{}: \hl{knowing the next interval} is worth far
+  more than planning beyond it
 \end{itemize}
 \end{frame}
 
-\begin{frame}{10. Limitations}
+\begin{frame}{11. Limitations}
 \begin{itemize}
 \item flow-level model, exogenous inelastic traffic, instantaneous control plane
 \item one topology, scripted scenarios, one reward; 5 (main) / 2--3 (ablation) roots
@@ -143,7 +164,7 @@ Learner & Root & Selected (h./r.) & Hist. & Repr. \\
 \end{itemize}
 \end{frame}
 
-\begin{frame}{11. Take-aways and future work}
+\begin{frame}{12. Take-aways and future work}
 \begin{itemize}
 \item measure sequentiality before choosing an RL algorithm
 \item a myopic learner (or a per-interval optimizer) is the baseline to beat

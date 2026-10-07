@@ -32,7 +32,7 @@ RAW = ROOT / "experiments" / "raw"
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#ffffff"
 COLOR = {"bandit": "#2a78d6", "ppo": "#eb6834", "greedy": "#1baf7a", "cspf": "#eda100",
          "static": "#4a3aa7", "noop": "#8a8984", "random_valid": "#b5b4ae",
-         "oracle": "#0b0b0b", "q": "#1baf7a", "milp_track": "#e87ba4", "ppog0": "#eb6834"}
+         "oracle": "#0b0b0b", "q": "#8c564b", "milp_track": "#e87ba4", "ppog0": "#eb6834"}
 MARK = {"bandit": "o", "ppo": "s", "greedy": "^", "cspf": "D", "static": "v",
         "noop": "x", "random_valid": "+", "oracle": "*", "q": "P", "milp_track": "h", "ppog0": "s"}
 LABEL = {"bandit": "Masked bandit", "ppo": "MaskablePPO", "greedy": "Greedy", "cspf": "CSPF",
@@ -234,22 +234,28 @@ def fig_horizon() -> None:
 
 
 def fig_delay() -> None:
+    """Dumbbell: test return without delay vs with L = 1, same roots/episodes."""
     f = ROOT / "results" / "tables" / "delay_results.csv"
     if not f.exists():
         print("skip delay")
         return
-    d = pd.read_csv(f)
-    fig, ax = plt.subplots(figsize=(3.4, 2.2))
-    d = d.sort_values("mean")
-    cols = []
-    for p in d.policy:
-        k = "bandit" if "bandit" in p else "ppo" if "ppo" in p else "q" if "qg" in p else \
-            p.replace("ref:", "")
-        cols.append(COLOR.get(k, INK2))
-    ax.barh(range(len(d)), d["mean"], color=cols, height=0.6)
-    ax.set_yticks(range(len(d)), [p.replace("E4:L1_", "").replace("ref:", "") for p in d.policy])
+    d = pd.read_csv(f).set_index("policy")
+    rows = [("bandit", "bandit", "Masked bandit"), ("qg09", "q", "Q-learner γ = 0.9"),
+            ("ppo", "ppo", "MaskablePPO γ = 0.995"), ("ref:milp_track", "milp_track", "MILP-track"),
+            ("ref:greedy", "greedy", "Greedy"), ("ref:cspf", "cspf", "CSPF")]
+    rows = [r for r in rows if r[0] in d.index]
+    fig, ax = plt.subplots(figsize=(3.4, 2.1))
+    for i, (key, ck, lab) in enumerate(rows):
+        a, b = d.loc[key, "mean_L0_same_roots"], d.loc[key, "mean_L1"]
+        c = COLOR.get(ck, INK2)
+        ax.annotate("", xy=(b, i), xytext=(a, i),
+                    arrowprops=dict(arrowstyle="-|>", color=c, lw=1.2, shrinkA=3, shrinkB=3))
+        ax.plot([a], [i], marker=MARK.get(ck, "o"), mfc=SURF, mec=c, ls="none")
+        ax.plot([b], [i], marker=MARK.get(ck, "o"), color=c, ls="none")
+    ax.set_yticks(range(len(rows)), [r[2] for r in rows])
+    ax.invert_yaxis()
     ax.axvline(0, color=INK2, lw=0.6)
-    ax.set_xlabel("mean test return with TE delay L = 1")
+    ax.set_xlabel("mean test return: no delay (hollow) → L = 1 (filled)")
     ax.grid(axis="y", visible=False)
     save(fig, "fig_delay")
 
